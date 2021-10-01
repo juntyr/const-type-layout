@@ -71,7 +71,6 @@ will only require minor version bumps, but will need significant justification.
 #[doc(hidden)]
 pub extern crate alloc;
 
-use alloc::borrow::Cow;
 use alloc::fmt::{self, Display};
 use alloc::str;
 use alloc::vec::Vec;
@@ -82,51 +81,86 @@ pub use type_layout_derive::TypeLayout;
 pub use memoffset;
 
 pub trait TypeLayout {
-    fn type_layout() -> TypeLayoutInfo;
+    const TYPE_LAYOUT: TypeLayoutInfo<'static>;
 }
 
-#[derive(Debug)]
-#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
-pub struct TypeLayoutInfo {
-    pub name: Cow<'static, str>,
+#[derive(Clone, Debug, PartialEq, Eq)]
+//#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
+pub struct TypeLayoutInfo<'a> {
+    pub name: &'a str,
     pub size: usize,
     pub alignment: usize,
-    pub structure: TypeStructure,
+    pub structure: TypeStructure<'a>,
 }
 
-#[derive(Debug)]
-#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
-pub enum TypeStructure {
-    Struct { fields: Vec<Field> },
-    Union { fields: Vec<Field> },
-    Enum { variants: Vec<Variant> },
+#[derive(Clone, Debug, PartialEq, Eq)]
+//#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
+pub enum TypeStructure<'a> {
+    Struct { fields: &'a [Field<'a>] },
+    Union { fields: &'a [Field<'a>] },
+    Enum { variants: &'a [Variant<'a>] },
 }
 
-#[derive(Debug)]
-#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
-pub struct Variant {
-    pub name: Cow<'static, str>,
-    pub discriminant: Cow<'static, str>,
-    pub fields: Vec<Field>,
+#[derive(Clone, Debug, PartialEq, Eq)]
+//#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
+pub struct Variant<'a> {
+    pub name: &'a str,
+    pub discriminant: usize,
+    pub fields: &'a [Field<'a>],
 }
 
-#[derive(Debug)]
-#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
-pub enum Field {
-    Field {
-        name: Cow<'static, str>,
-        ty: Cow<'static, str>,
-        offset: usize,
-        size: usize,
-        alignment: usize,
-    },
-    Padding {
-        offset: usize,
-        size: usize,
-    },
+impl<'a> Ord for Variant<'a> {
+    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
+        (&self.discriminant, &self.name, &self.fields).cmp(&(
+            &other.discriminant,
+            &other.name,
+            &other.fields,
+        ))
+    }
 }
 
-impl fmt::Display for TypeLayoutInfo {
+impl<'a> PartialOrd for Variant<'a> {
+    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+//#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
+pub struct Field<'a> {
+    pub name: &'a str,
+    pub ty: &'a str,
+    pub offset: usize,
+    pub size: usize,
+    pub alignment: usize,
+}
+
+impl<'a> Ord for Field<'a> {
+    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
+        (
+            &self.offset,
+            &self.size,
+            &self.alignment,
+            &self.name,
+            &self.ty,
+        )
+            .cmp(&(
+                &other.offset,
+                &other.size,
+                &other.alignment,
+                &other.name,
+                &other.ty,
+            ))
+    }
+}
+
+impl<'a> PartialOrd for Field<'a> {
+    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl<'a> fmt::Display for TypeLayoutInfo<'a> {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         writeln!(
             formatter,
@@ -141,24 +175,22 @@ impl fmt::Display for TypeLayoutInfo {
             self.alignment
         )?;
 
-        match &self.structure {
+        match self.structure {
             TypeStructure::Struct { fields } | TypeStructure::Union { fields } => {
-                format_fields(fields, formatter)?;
+                format_fields(self.size, fields, formatter)?;
             }
             TypeStructure::Enum { variants } => {
                 if variants.is_empty() {
                     return writeln!(formatter, "  never");
                 }
 
-                for Variant {
-                    name,
-                    discriminant,
-                    fields,
-                } in variants
-                {
-                    writeln!(formatter, "- {} @ {}:", name, discriminant)?;
+                let mut variants = Vec::from(variants);
+                variants.sort();
 
-                    format_fields(fields, formatter)?;
+                for variant in variants {
+                    writeln!(formatter, "- {} @ {}:", variant.discriminant, variant.name)?;
+
+                    format_fields(self.size, variant.fields, formatter)?;
                 }
             }
         }
@@ -167,32 +199,65 @@ impl fmt::Display for TypeLayoutInfo {
     }
 }
 
-fn format_fields(fields: &[Field], formatter: &mut fmt::Formatter) -> fmt::Result {
-    if fields.is_empty() {
+fn format_fields(
+    type_size: usize,
+    fields: &[Field],
+    formatter: &mut fmt::Formatter,
+) -> fmt::Result {
+    let mut field_rows = Vec::with_capacity(fields.len());
+
+    let mut sorted_fields = Vec::from(fields);
+    sorted_fields.sort();
+
+    let mut prior_field_end = 0;
+
+    for field in sorted_fields {
+        if field.offset > prior_field_end {
+            field_rows.push(Row {
+                offset: prior_field_end,
+                name: "[padding]",
+                ty: "[padding]",
+                size: field.offset - prior_field_end,
+                alignment: 0,
+            });
+        }
+
+        field_rows.push(Row {
+            offset: field.offset,
+            name: field.name,
+            ty: field.ty,
+            size: field.size,
+            alignment: field.alignment,
+        });
+
+        prior_field_end = field.offset + field.size;
+    }
+
+    if type_size > prior_field_end {
+        field_rows.push(Row {
+            offset: prior_field_end,
+            name: "[padding]",
+            ty: "[padding]",
+            size: type_size - prior_field_end,
+            alignment: 0,
+        });
+    }
+
+    if field_rows.is_empty() {
         return writeln!(formatter, "  unit");
     }
 
     let longest_name = "Name".len().max(
-        fields
+        field_rows
             .iter()
-            .map(|field| match field {
-                Field::Field { name, .. } => name.len(),
-                Field::Padding { .. } => "[padding]".len(),
-            })
+            .map(|row| row.name.len())
             .max()
             .unwrap_or(0),
     );
 
-    let longest_type = "Type".len().max(
-        fields
-            .iter()
-            .map(|field| match field {
-                Field::Field { ty, .. } => ty.len(),
-                Field::Padding { .. } => "[padding]".len(),
-            })
-            .max()
-            .unwrap_or(0),
-    );
+    let longest_type = "Type"
+        .len()
+        .max(field_rows.iter().map(|row| row.ty.len()).max().unwrap_or(0));
 
     let widths = RowWidths {
         offset: "Offset".len(),
@@ -226,41 +291,8 @@ fn format_fields(fields: &[Field], formatter: &mut fmt::Formatter) -> fmt::Resul
         },
     )?;
 
-    for field in fields {
-        match field {
-            Field::Field {
-                name,
-                ty,
-                offset,
-                size,
-                alignment,
-            } => {
-                write_row(
-                    formatter,
-                    widths,
-                    &Row {
-                        offset,
-                        name,
-                        ty,
-                        size,
-                        alignment,
-                    },
-                )?;
-            }
-            Field::Padding { offset, size } => {
-                write_row(
-                    formatter,
-                    widths,
-                    &Row {
-                        offset,
-                        name: "[padding]",
-                        ty: "[padding]",
-                        size,
-                        alignment: 0,
-                    },
-                )?;
-            }
-        }
+    for row in field_rows {
+        write_row(formatter, widths, &row)?;
     }
 
     Ok(())
