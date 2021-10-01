@@ -5,7 +5,8 @@
 #![feature(const_panic)]
 #![feature(const_refs_to_cell)]
 #![feature(const_maybe_uninit_assume_init)]
-#![allow(clippy::uninit_assumed_init)]
+#![feature(const_discriminant)]
+#![feature(const_transmute_copy)]
 
 use type_layout::TypeLayout;
 
@@ -36,6 +37,14 @@ union Bar {
 }
 
 #[derive(TypeLayout)]
+enum Never {}
+
+#[derive(TypeLayout)]
+enum Single {
+    Single,
+}
+
+#[derive(TypeLayout)]
 enum Quo<T> {
     Unit,
     Tuple(u8, T),
@@ -50,5 +59,7 @@ fn main() {
 
     println!("{}", Bar::TYPE_LAYOUT);
 
+    println!("{}", Never::TYPE_LAYOUT);
+    println!("{}", Single::TYPE_LAYOUT);
     println!("{}", Quo::<std::num::NonZeroU32>::TYPE_LAYOUT);
 }

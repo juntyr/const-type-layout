@@ -124,7 +124,7 @@ fn layout_of_type(
                                         offset: {
                                             let __variant_base: ::core::mem::MaybeUninit<#ty_name #ty_generics> = ::core::mem::MaybeUninit::new(#variant_constructor);
 
-                                            #[allow(unused_variables)]
+                                            #[allow(unused_variables, unreachable_patterns)]
                                             match unsafe { __variant_base.assume_init_ref() } {
                                                 #variant_destructor => unsafe {
                                                     (#field_name as *const #field_ty as *const u8).offset_from(__variant_base.as_ptr() as *const u8) as usize
@@ -151,7 +151,7 @@ fn layout_of_type(
                                         offset: {
                                             let __variant_base: ::core::mem::MaybeUninit<#ty_name #ty_generics> = ::core::mem::MaybeUninit::new(#variant_constructor);
 
-                                            #[allow(unused_variables)]
+                                            #[allow(unused_variables, unreachable_patterns)]
                                             match unsafe { __variant_base.assume_init_ref() } {
                                                 #variant_destructor => unsafe {
                                                     (#field_name as *const #field_ty as *const u8).offset_from(__variant_base.as_ptr() as *const u8) as usize
@@ -174,13 +174,15 @@ fn layout_of_type(
                             discriminant: {
                                 let __variant_base: ::core::mem::MaybeUninit<#ty_name #ty_generics> = ::core::mem::MaybeUninit::new(#variant_constructor);
 
-                                #[allow(unused_variables)]
-                                match unsafe { __variant_base.assume_init_ref() } {
-                                    #variant_destructor => {
-                                        /*::type_layout::alloc::format!("{:?}", ::core::mem::discriminant(
-                                            &#variant_constructor
-                                        ))*/0
-                                    },
+                                let discriminant = ::core::mem::discriminant(unsafe { __variant_base.assume_init_ref() });
+
+                                match ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>() {
+                                    0 => 0_u128,
+                                    1 => unsafe { ::core::mem::transmute_copy::<_, u8>(&discriminant) as u128 },
+                                    2 => unsafe { ::core::mem::transmute_copy::<_, u16>(&discriminant) as u128 },
+                                    4 => unsafe { ::core::mem::transmute_copy::<_, u32>(&discriminant) as u128 },
+                                    8 => unsafe { ::core::mem::transmute_copy::<_, u64>(&discriminant) as u128 },
+                                    16 => unsafe { ::core::mem::transmute_copy::<_, u128>(&discriminant) as u128 },
                                     _ => unreachable!(),
                                 }
                             },

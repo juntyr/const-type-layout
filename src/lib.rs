@@ -85,7 +85,7 @@ pub trait TypeLayout {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-//#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, /*serde::Deserialize*/))]
 pub struct TypeLayoutInfo<'a> {
     pub name: &'a str,
     pub size: usize,
@@ -94,7 +94,7 @@ pub struct TypeLayoutInfo<'a> {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-//#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, /*serde::Deserialize*/))]
 pub enum TypeStructure<'a> {
     Struct { fields: &'a [Field<'a>] },
     Union { fields: &'a [Field<'a>] },
@@ -102,10 +102,10 @@ pub enum TypeStructure<'a> {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-//#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, /*serde::Deserialize*/))]
 pub struct Variant<'a> {
     pub name: &'a str,
-    pub discriminant: usize,
+    pub discriminant: u128,
     pub fields: &'a [Field<'a>],
 }
 
@@ -126,7 +126,7 @@ impl<'a> PartialOrd for Variant<'a> {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-//#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
 pub struct Field<'a> {
     pub name: &'a str,
     pub ty: &'a str,
