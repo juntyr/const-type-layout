@@ -65,9 +65,16 @@ changes to the MSRV will require major version bumps. After 1.0, MSRV changes
 will only require minor version bumps, but will need significant justification.
 */
 
-use std::borrow::Cow;
-use std::fmt::{self, Display};
-use std::str;
+#![deny(clippy::pedantic)]
+#![no_std]
+
+#[doc(hidden)]
+pub extern crate alloc;
+
+use alloc::borrow::Cow;
+use alloc::fmt::{self, Display};
+use alloc::str;
+use alloc::vec::Vec;
 
 pub use type_layout_derive::TypeLayout;
 
@@ -84,6 +91,22 @@ pub struct TypeLayoutInfo {
     pub name: Cow<'static, str>,
     pub size: usize,
     pub alignment: usize,
+    pub structure: TypeStructure,
+}
+
+#[derive(Debug)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
+pub enum TypeStructure {
+    Struct { fields: Vec<Field> },
+    Union { fields: Vec<Field> },
+    Enum { variants: Vec<Variant> },
+}
+
+#[derive(Debug)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
+pub struct Variant {
+    pub name: Cow<'static, str>,
+    pub discriminant: Cow<'static, str>,
     pub fields: Vec<Field>,
 }
 
@@ -93,9 +116,12 @@ pub enum Field {
     Field {
         name: Cow<'static, str>,
         ty: Cow<'static, str>,
+        offset: usize,
         size: usize,
+        alignment: usize,
     },
     Padding {
+        offset: usize,
         size: usize,
     },
 }
@@ -104,67 +130,35 @@ impl fmt::Display for TypeLayoutInfo {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         writeln!(
             formatter,
-            "{} (size {}, alignment {})",
-            self.name, self.size, self.alignment
-        )?;
-
-        let longest_name = self
-            .fields
-            .iter()
-            .map(|field| match field {
-                Field::Field { name, .. } => name.len(),
-                Field::Padding { .. } => "[padding]".len(),
-            })
-            .max()
-            .unwrap_or(1);
-
-        let widths = RowWidths {
-            offset: "Offset".len(),
-            name: longest_name,
-            size: "Size".len(),
-        };
-
-        write_row(
-            formatter,
-            widths,
-            Row {
-                offset: "Offset",
-                name: "Name",
-                size: "Size",
+            "{} {} (size {}, alignment {})",
+            match self.structure {
+                TypeStructure::Struct { .. } => "STRUCT",
+                TypeStructure::Union { .. } => "UNION",
+                TypeStructure::Enum { .. } => "ENUM",
             },
+            self.name,
+            self.size,
+            self.alignment
         )?;
 
-        write_row(
-            formatter,
-            widths,
-            Row {
-                offset: "------",
-                name: str::repeat("-", longest_name),
-                size: "----",
-            },
-        )?;
-
-        let mut offset = 0;
-
-        for field in &self.fields {
-            match field {
-                Field::Field { name, size, .. } => {
-                    write_row(formatter, widths, Row { offset, name, size })?;
-
-                    offset += size;
+        match &self.structure {
+            TypeStructure::Struct { fields } | TypeStructure::Union { fields } => {
+                format_fields(fields, formatter)?;
+            }
+            TypeStructure::Enum { variants } => {
+                if variants.is_empty() {
+                    return writeln!(formatter, "  never");
                 }
-                Field::Padding { size } => {
-                    write_row(
-                        formatter,
-                        widths,
-                        Row {
-                            offset,
-                            name: "[padding]",
-                            size,
-                        },
-                    )?;
 
-                    offset += size;
+                for Variant {
+                    name,
+                    discriminant,
+                    fields,
+                } in variants
+                {
+                    writeln!(formatter, "- {} @ {}:", name, discriminant)?;
+
+                    format_fields(fields, formatter)?;
                 }
             }
         }
@@ -173,32 +167,139 @@ impl fmt::Display for TypeLayoutInfo {
     }
 }
 
+fn format_fields(fields: &[Field], formatter: &mut fmt::Formatter) -> fmt::Result {
+    if fields.is_empty() {
+        return writeln!(formatter, "  unit");
+    }
+
+    let longest_name = "Name".len().max(
+        fields
+            .iter()
+            .map(|field| match field {
+                Field::Field { name, .. } => name.len(),
+                Field::Padding { .. } => "[padding]".len(),
+            })
+            .max()
+            .unwrap_or(0),
+    );
+
+    let longest_type = "Type".len().max(
+        fields
+            .iter()
+            .map(|field| match field {
+                Field::Field { ty, .. } => ty.len(),
+                Field::Padding { .. } => "[padding]".len(),
+            })
+            .max()
+            .unwrap_or(0),
+    );
+
+    let widths = RowWidths {
+        offset: "Offset".len(),
+        name: longest_name,
+        ty: longest_type,
+        size: "Size".len(),
+        alignment: "Alignment".len(),
+    };
+
+    write_row(
+        formatter,
+        widths,
+        &Row {
+            offset: "Offset",
+            name: "Name",
+            ty: "Type",
+            size: "Size",
+            alignment: "Alignment",
+        },
+    )?;
+
+    write_row(
+        formatter,
+        widths,
+        &Row {
+            offset: "------",
+            name: str::repeat("-", longest_name),
+            ty: str::repeat("-", longest_type),
+            size: "----",
+            alignment: "---------",
+        },
+    )?;
+
+    for field in fields {
+        match field {
+            Field::Field {
+                name,
+                ty,
+                offset,
+                size,
+                alignment,
+            } => {
+                write_row(
+                    formatter,
+                    widths,
+                    &Row {
+                        offset,
+                        name,
+                        ty,
+                        size,
+                        alignment,
+                    },
+                )?;
+            }
+            Field::Padding { offset, size } => {
+                write_row(
+                    formatter,
+                    widths,
+                    &Row {
+                        offset,
+                        name: "[padding]",
+                        ty: "[padding]",
+                        size,
+                        alignment: 0,
+                    },
+                )?;
+            }
+        }
+    }
+
+    Ok(())
+}
+
 #[derive(Clone, Copy)]
 struct RowWidths {
     offset: usize,
     name: usize,
+    ty: usize,
     size: usize,
+    alignment: usize,
 }
 
-struct Row<O, N, S> {
+struct Row<O, N, T, S, A> {
     offset: O,
     name: N,
+    ty: T,
     size: S,
+    alignment: A,
 }
 
-fn write_row<O: Display, N: Display, S: Display>(
+fn write_row<O: Display, N: Display, T: Display, S: Display, A: Display>(
     formatter: &mut fmt::Formatter,
     widths: RowWidths,
-    row: Row<O, N, S>,
+    row: &Row<O, N, T, S, A>,
 ) -> fmt::Result {
     writeln!(
         formatter,
-        "| {:<offset_width$} | {:<name_width$} | {:<size_width$} |",
+        "| {:<offset_width$} | {:<name_width$} | {:<type_width$} | {:<size_width$} | {:<alignment_width$} |",
         row.offset,
         row.name,
+        row.ty,
         row.size,
+        row.alignment,
         offset_width = widths.offset,
         name_width = widths.name,
-        size_width = widths.size
+        type_width = widths.ty,
+        size_width = widths.size,
+        alignment_width = widths.alignment,
     )
 }
