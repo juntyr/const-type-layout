@@ -69,6 +69,12 @@ will only require minor version bumps, but will need significant justification.
 #![no_std]
 #![feature(const_type_name)]
 
+#![feature(const_raw_ptr_deref)]
+#![feature(const_ptr_offset)]
+#![feature(const_mut_refs)]
+#![feature(const_raw_ptr_comparison)]
+#![feature(const_trait_impl)]
+
 #[doc(hidden)]
 pub extern crate alloc;
 
@@ -284,6 +290,75 @@ impl<'a> PartialOrd for Field<'a> {
         Some(self.cmp(other))
     }
 }
+
+pub struct TypeLayoutGraph<'a> {
+    len: usize,
+    tys: [*const TypeLayoutInfo<'a>; 1024],
+}
+
+impl<'a> TypeLayoutGraph<'a> {
+    #[must_use]
+    pub const fn new() -> Self {
+        Self { len: 0, tys: [core::ptr::null(); 1024] }
+    }
+
+    pub const fn insert(&mut self, ty: &'a TypeLayoutInfo<'a>) -> bool {
+        let mut i = 0;
+
+        while i < self.len {
+            if unsafe { *self.tys.as_ptr().add(i) }.guaranteed_eq(ty) {
+                return false;
+            }
+
+            i += 1;
+        }
+
+        let item = unsafe { &mut *self.tys.as_mut_ptr().add(i) };
+        *item = ty;
+
+        self.len += 1;
+
+        true
+    }
+}
+
+impl<'a> fmt::Debug for TypeLayoutGraph<'a> {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        let cache = UnsafeCell::new(BTreeSet::new());
+
+        write!(fmt, "TypeLayoutGraph(")?;
+
+        let mut debug = fmt.debug_list();
+
+        for i in 0..self.len {
+            debug.entry(&TypeLayoutWrapper {
+                ty: TypeLayoutTypes::Info(unsafe { &**self.tys.as_ptr().add(i) }), cache: &cache,
+            });
+        }
+
+        debug.finish()?;
+
+        write!(fmt, ")")
+    }
+}
+
+trait TypeGraph {
+    fn populate_graph(graph: &mut TypeLayoutGraph<'static>);
+}
+
+impl const TypeGraph for u8 {
+    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
+        graph.insert(&u8::TYPE_LAYOUT);
+    }
+}
+
+pub const TEST: TypeLayoutGraph<'static> = {
+    let mut graph = TypeLayoutGraph::new();
+
+    u8::populate_graph(&mut graph);
+
+    graph
+};
 
 enum TypeLayoutTypes<'a> {
     Info(&'a TypeLayoutInfo<'a>),

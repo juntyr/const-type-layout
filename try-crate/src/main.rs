@@ -76,4 +76,6 @@ fn main() {
     println!("{:#}", <std::marker::PhantomData<String>>::TYPE_LAYOUT);
 
     println!("{:#}", <List<u8>>::TYPE_LAYOUT);
+
+    println!("{:#?}", type_layout::TEST);
 }

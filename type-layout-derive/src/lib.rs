@@ -4,12 +4,12 @@ use proc_macro::TokenStream;
 
 use proc_macro2::Literal;
 use quote::{quote, quote_spanned};
-use syn::{parse_macro_input, spanned::Spanned, Data, DeriveInput, Fields, FieldsNamed, Index};
+use syn::{parse_macro_input, spanned::Spanned};
 
 #[proc_macro_derive(TypeLayout)]
 pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     // Parse the input tokens into a syntax tree
-    let mut input = parse_macro_input!(input as DeriveInput);
+    let mut input = parse_macro_input!(input as syn::DeriveInput);
 
     // Used in the quasi-quotation below as `#ty_name`.
     let ty_name = input.ident;
@@ -19,37 +19,8 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     let ty_generics = input.generics.split_for_impl().1;
     let layout = layout_of_type(&ty_name, &ty_generics, &input.data, &mut consts);
 
-    let mut inner_types = Vec::new();
-
-    match &input.data {
-        syn::Data::Struct(syn::DataStruct { fields, .. }) => {
-            for field in fields {
-                inner_types.push(&field.ty);
-            }
-        }
-        syn::Data::Union(syn::DataUnion {
-            fields: FieldsNamed { named: fields, .. },
-            ..
-        }) => {
-            for field in fields {
-                inner_types.push(&field.ty);
-            }
-        }
-        syn::Data::Enum(syn::DataEnum { variants, .. }) => {
-            for variant in variants {
-                for field in &variant.fields {
-                    inner_types.push(&field.ty);
-                }
-            }
-        }
-    }
-
-    let where_clause = input.generics.make_where_clause();
-
-    for ty in inner_types {
-        where_clause.predicates.push(syn::parse_quote! {
-            #ty: ::type_layout::TypeLayout
-        });
+    for param in input.generics.type_params_mut() {
+        param.bounds.push(syn::parse_quote!(::type_layout::TypeLayout));
     }
 
     let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
@@ -79,11 +50,11 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
 fn layout_of_type(
     ty_name: &syn::Ident,
     ty_generics: &syn::TypeGenerics,
-    data: &Data,
+    data: &syn::Data,
     consts: &mut Vec<proc_macro2::TokenStream>,
 ) -> proc_macro2::TokenStream {
     match data {
-        Data::Struct(data) => {
+        syn::Data::Struct(data) => {
             let fields = quote_fields(
                 ty_name,
                 None,
@@ -95,7 +66,7 @@ fn layout_of_type(
                 ::type_layout::TypeStructure::Struct { fields: #fields }
             }
         }
-        Data::Enum(r#enum) => {
+        syn::Data::Enum(r#enum) => {
             let variants = r#enum
                 .variants
                 .iter()
@@ -127,7 +98,7 @@ fn layout_of_type(
                         syn::Fields::Unit => quote! { #ty_name::#variant_name },
                         syn::Fields::Unnamed(fields) => {
                             let destructors = fields.unnamed.iter().enumerate().map(|(field_index, _)| {
-                                let field_name = quote::format_ident!("f_{}", field_index);
+                                let field_name = quote::format_ident!("__self_{}", field_index);
 
                                 quote! { #field_name }
                             }).collect::<Vec<_>>();
@@ -146,7 +117,7 @@ fn layout_of_type(
                     };
 
                     let fields = quote_fields(ty_name, Some(variant_name), match &variant.fields {
-                        Fields::Named(fields) => {
+                        syn::Fields::Named(fields) => {
                             fields.named.iter().map(|field| {
                                 let field_name = field.ident.as_ref().unwrap();
                                 let field_name_str = Literal::string(&field_name.to_string());
@@ -171,9 +142,9 @@ fn layout_of_type(
                                 }
                             }).collect()
                         },
-                        Fields::Unnamed(fields) => {
+                        syn::Fields::Unnamed(fields) => {
                             fields.unnamed.iter().enumerate().map(|(field_index, field)| {
-                                let field_name = quote::format_ident!("f_{}", field_index);
+                                let field_name = quote::format_ident!("__self_{}", field_index);
                                 let field_name_str = Literal::string(&field_index.to_string());
                                 let field_ty = &field.ty;
 
@@ -196,7 +167,7 @@ fn layout_of_type(
                                 }
                             }).collect()
                         },
-                        Fields::Unit => vec![],
+                        syn::Fields::Unit => vec![],
                     }, consts);
 
                     quote! {
@@ -238,7 +209,7 @@ fn layout_of_type(
                 ::type_layout::TypeStructure::Enum { variants: Self::#ident }
             }
         }
-        Data::Union(union) => {
+        syn::Data::Union(union) => {
             let values = union.fields.named.iter().map(|field| {
                 let field_name = field.ident.as_ref().unwrap();
                 let field_name_str = Literal::string(&field_name.to_string());
@@ -265,10 +236,10 @@ fn layout_of_type(
 fn quote_field_values(
     ty_name: &syn::Ident,
     ty_generics: &syn::TypeGenerics,
-    fields: &Fields,
+    fields: &syn::Fields,
 ) -> Vec<proc_macro2::TokenStream> {
     match fields {
-        Fields::Named(fields) => {
+        syn::Fields::Named(fields) => {
             fields.named.iter().map(|field| {
                 let field_name = field.ident.as_ref().unwrap();
                 let field_name_str = Literal::string(&field_name.to_string());
@@ -283,9 +254,9 @@ fn quote_field_values(
                 }
             }).collect()
         },
-        Fields::Unnamed(fields) => {
+        syn::Fields::Unnamed(fields) => {
             fields.unnamed.iter().enumerate().map(|(field_index, field)| {
-                let field_name = Index::from(field_index);
+                let field_name = syn::Index::from(field_index);
                 let field_name_str = Literal::string(&field_index.to_string());
                 let field_ty = &field.ty;
 
@@ -298,7 +269,7 @@ fn quote_field_values(
                 }
             }).collect()
         },
-        Fields::Unit => vec![],
+        syn::Fields::Unit => vec![],
     }
 }
 
