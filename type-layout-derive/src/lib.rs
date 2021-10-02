@@ -4,24 +4,59 @@ use proc_macro::TokenStream;
 
 use proc_macro2::Literal;
 use quote::{quote, quote_spanned};
-use syn::{parse_macro_input, spanned::Spanned, Data, DeriveInput, Fields, Index};
+use syn::{parse_macro_input, spanned::Spanned, Data, DeriveInput, Fields, FieldsNamed, Index};
 
 #[proc_macro_derive(TypeLayout)]
 pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     // Parse the input tokens into a syntax tree
-    let input = parse_macro_input!(input as DeriveInput);
+    let mut input = parse_macro_input!(input as DeriveInput);
 
     // Used in the quasi-quotation below as `#ty_name`.
     let ty_name = input.ident;
 
     let mut consts = Vec::new();
 
-    let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
+    let ty_generics = input.generics.split_for_impl().1;
     let layout = layout_of_type(&ty_name, &ty_generics, &input.data, &mut consts);
+
+    let mut inner_types = Vec::new();
+
+    match &input.data {
+        syn::Data::Struct(syn::DataStruct { fields, .. }) => {
+            for field in fields {
+                inner_types.push(&field.ty);
+            }
+        }
+        syn::Data::Union(syn::DataUnion {
+            fields: FieldsNamed { named: fields, .. },
+            ..
+        }) => {
+            for field in fields {
+                inner_types.push(&field.ty);
+            }
+        }
+        syn::Data::Enum(syn::DataEnum { variants, .. }) => {
+            for variant in variants {
+                for field in &variant.fields {
+                    inner_types.push(&field.ty);
+                }
+            }
+        }
+    }
+
+    let where_clause = input.generics.make_where_clause();
+
+    for ty in inner_types {
+        where_clause.predicates.push(syn::parse_quote! {
+            #ty: ::type_layout::TypeLayout
+        });
+    }
+
+    let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
     // Build the output, possibly using quasi-quotation
     let expanded = quote! {
-        impl #impl_generics ::type_layout::TypeLayout for #ty_name #ty_generics #where_clause {
+        unsafe impl #impl_generics ::type_layout::TypeLayout for #ty_name #ty_generics #where_clause {
             const TYPE_LAYOUT: ::type_layout::TypeLayoutInfo<'static> = {
                 ::type_layout::TypeLayoutInfo {
                     name: ::core::any::type_name::<Self>(),
@@ -120,7 +155,6 @@ fn layout_of_type(
                                 quote_spanned! { field.span() =>
                                     ::type_layout::Field {
                                         name: #field_name_str,
-                                        ty: ::core::any::type_name::<#field_ty>(),
                                         offset: {
                                             let __variant_base: ::core::mem::MaybeUninit<#ty_name #ty_generics> = ::core::mem::MaybeUninit::new(#variant_constructor);
 
@@ -132,8 +166,7 @@ fn layout_of_type(
                                                 _ => unreachable!(),
                                             }
                                         },
-                                        size: ::core::mem::size_of::<#field_ty>(),
-                                        alignment: ::core::mem::align_of::<#field_ty>(),
+                                        ty: &<#field_ty as ::type_layout::TypeLayout>::TYPE_LAYOUT,
                                     }
                                 }
                             }).collect()
@@ -147,7 +180,6 @@ fn layout_of_type(
                                 quote_spanned! { field.span() =>
                                     ::type_layout::Field {
                                         name: #field_name_str,
-                                        ty: ::core::any::type_name::<#field_ty>(),
                                         offset: {
                                             let __variant_base: ::core::mem::MaybeUninit<#ty_name #ty_generics> = ::core::mem::MaybeUninit::new(#variant_constructor);
 
@@ -159,8 +191,7 @@ fn layout_of_type(
                                                 _ => unreachable!(),
                                             }
                                         },
-                                        size: ::core::mem::size_of::<#field_ty>(),
-                                        alignment: ::core::mem::align_of::<#field_ty>(),
+                                        ty: &<#field_ty as ::type_layout::TypeLayout>::TYPE_LAYOUT,
                                     }
                                 }
                             }).collect()
@@ -216,10 +247,8 @@ fn layout_of_type(
                 quote_spanned! { field.span() =>
                     ::type_layout::Field {
                         name: #field_name_str,
-                        ty: ::core::any::type_name::<#field_ty>(),
                         offset: ::type_layout::memoffset::offset_of_union!(#ty_name #ty_generics, #field_name),
-                        size: ::core::mem::size_of::<#field_ty>(),
-                        alignment: ::core::mem::align_of::<#field_ty>(),
+                        ty: &<#field_ty as ::type_layout::TypeLayout>::TYPE_LAYOUT,
                     }
                 }
             }).collect();
@@ -248,10 +277,8 @@ fn quote_field_values(
                 quote_spanned! { field.span() =>
                     ::type_layout::Field {
                         name: #field_name_str,
-                        ty: ::core::any::type_name::<#field_ty>(),
                         offset: ::type_layout::memoffset::offset_of!(#ty_name #ty_generics, #field_name),
-                        size: ::core::mem::size_of::<#field_ty>(),
-                        alignment: ::core::mem::align_of::<#field_ty>(),
+                        ty: &<#field_ty as ::type_layout::TypeLayout>::TYPE_LAYOUT,
                     }
                 }
             }).collect()
@@ -265,10 +292,8 @@ fn quote_field_values(
                 quote_spanned! { field.span() =>
                     ::type_layout::Field {
                         name: #field_name_str,
-                        ty: ::core::any::type_name::<#field_ty>(),
                         offset: ::type_layout::memoffset::offset_of!(#ty_name #ty_generics, #field_name),
-                        size: ::core::mem::size_of::<#field_ty>(),
-                        alignment: ::core::mem::align_of::<#field_ty>(),
+                        ty: &<#field_ty as ::type_layout::TypeLayout>::TYPE_LAYOUT,
                     }
                 }
             }).collect()

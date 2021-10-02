@@ -51,15 +51,29 @@ enum Quo<T> {
     Struct { a: T, b: u16, c: T },
 }
 
+// TODO: Recursive types do NOT work yet
+
+#[derive(TypeLayout)]
+enum List<T> {
+    Cons { item: T, next: Box<T> },
+    Tail,
+}
+
 fn main() {
-    println!("{}", Foo1::TYPE_LAYOUT);
-    println!("{}", Foo2::TYPE_LAYOUT);
-    println!("{}", Foo3::TYPE_LAYOUT);
-    println!("{}", Foo4::<u8>::TYPE_LAYOUT);
+    println!("{:#}", Foo1::TYPE_LAYOUT);
+    println!("{:#}", Foo2::TYPE_LAYOUT);
+    println!("{:#}", Foo3::TYPE_LAYOUT);
+    println!("{:#}", Foo4::<u8>::TYPE_LAYOUT);
 
-    println!("{}", Bar::TYPE_LAYOUT);
+    println!("{:#}", Bar::TYPE_LAYOUT);
 
-    println!("{}", Never::TYPE_LAYOUT);
-    println!("{}", Single::TYPE_LAYOUT);
-    println!("{}", Quo::<std::num::NonZeroU32>::TYPE_LAYOUT);
+    println!("{:#}", Never::TYPE_LAYOUT);
+    println!("{:#}", Single::TYPE_LAYOUT);
+    println!("{:#}", Quo::<u32>::TYPE_LAYOUT);
+
+    println!("{:#}", <()>::TYPE_LAYOUT);
+    println!("{:#}", <[u32; 3]>::TYPE_LAYOUT);
+    println!("{:#}", <std::marker::PhantomData<String>>::TYPE_LAYOUT);
+
+    println!("{:#}", <List<u8>>::TYPE_LAYOUT);
 }

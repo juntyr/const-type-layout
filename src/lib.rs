@@ -67,24 +67,124 @@ will only require minor version bumps, but will need significant justification.
 
 #![deny(clippy::pedantic)]
 #![no_std]
+#![feature(const_type_name)]
 
 #[doc(hidden)]
 pub extern crate alloc;
 
-use alloc::fmt::{self, Display};
+use alloc::collections::BTreeSet;
+use alloc::fmt;
 use alloc::str;
-use alloc::vec::Vec;
+use core::cell::UnsafeCell;
 
 pub use type_layout_derive::TypeLayout;
 
 #[doc(hidden)]
 pub use memoffset;
 
-pub trait TypeLayout {
+pub unsafe trait TypeLayout {
     const TYPE_LAYOUT: TypeLayoutInfo<'static>;
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+macro_rules! impl_primitive_type_layout {
+    (impl $ty:ty) => {
+        unsafe impl TypeLayout for $ty {
+            const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
+                name: ::core::any::type_name::<$ty>(),
+                size: ::core::mem::size_of::<$ty>(),
+                alignment: ::core::mem::align_of::<$ty>(),
+                structure: TypeStructure::Primitive,
+            };
+        }
+    };
+    ($($ty:ty),*) => {
+        $(impl_primitive_type_layout!{impl $ty})*
+    };
+}
+
+impl_primitive_type_layout! {
+    i8, i16, i32, i64, i128, isize,
+    u8, u16, u32, u64, u128, usize,
+    f32, f64,
+    char, bool, ()
+}
+
+unsafe impl<T: TypeLayout, const N: usize> TypeLayout for [T; N] {
+    const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
+        name: ::core::any::type_name::<[T; N]>(),
+        size: ::core::mem::size_of::<[T; N]>(),
+        alignment: ::core::mem::align_of::<[T; N]>(),
+        structure: TypeStructure::Array {
+            item: &T::TYPE_LAYOUT,
+            len: N,
+        },
+    };
+}
+
+unsafe impl<T> TypeLayout for core::marker::PhantomData<T> {
+    const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
+        name: ::core::any::type_name::<core::marker::PhantomData<T>>(),
+        size: ::core::mem::size_of::<core::marker::PhantomData<T>>(),
+        alignment: ::core::mem::align_of::<core::marker::PhantomData<T>>(),
+        structure: TypeStructure::Primitive,
+    };
+}
+
+/*unsafe impl<'a, T: TypeLayout + 'static> TypeLayout for &'a T {
+    const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
+        name: ::core::any::type_name::<&'a T>(),
+        size: ::core::mem::size_of::<&'a T>(),
+        alignment: ::core::mem::align_of::<&'a T>(),
+        structure: TypeStructure::Reference { inner: &T::TYPE_LAYOUT, mutability: false },
+    };
+}
+
+unsafe impl<'a, T: TypeLayout + 'static> TypeLayout for &'a mut T {
+    const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
+        name: ::core::any::type_name::<&'a mut T>(),
+        size: ::core::mem::size_of::<&'a mut T>(),
+        alignment: ::core::mem::align_of::<&'a mut T>(),
+        structure: TypeStructure::Reference { inner: &T::TYPE_LAYOUT, mutability: true },
+    };
+}*/
+
+unsafe impl<T: TypeLayout> TypeLayout for *const T {
+    const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
+        name: ::core::any::type_name::<*const T>(),
+        size: ::core::mem::size_of::<*const T>(),
+        alignment: ::core::mem::align_of::<*const T>(),
+        structure: TypeStructure::Pointer {
+            inner: &T::TYPE_LAYOUT,
+            mutability: false,
+        },
+    };
+}
+
+unsafe impl<T: TypeLayout> TypeLayout for *mut T {
+    const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
+        name: ::core::any::type_name::<*mut T>(),
+        size: ::core::mem::size_of::<*mut T>(),
+        alignment: ::core::mem::align_of::<*mut T>(),
+        structure: TypeStructure::Pointer {
+            inner: &T::TYPE_LAYOUT,
+            mutability: true,
+        },
+    };
+}
+
+unsafe impl<T: TypeLayout> TypeLayout for alloc::boxed::Box<T> {
+    const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
+        name: ::core::any::type_name::<alloc::boxed::Box<T>>(),
+        size: ::core::mem::size_of::<alloc::boxed::Box<T>>(),
+        alignment: ::core::mem::align_of::<alloc::boxed::Box<T>>(),
+        structure: TypeStructure::Pointer {
+            inner: &T::TYPE_LAYOUT,
+            mutability: true,
+        },
+    };
+}
+
+#[derive(Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(serde::Serialize, /*serde::Deserialize*/))]
 pub struct TypeLayoutInfo<'a> {
     pub name: &'a str,
@@ -93,15 +193,34 @@ pub struct TypeLayoutInfo<'a> {
     pub structure: TypeStructure<'a>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(serde::Serialize, /*serde::Deserialize*/))]
 pub enum TypeStructure<'a> {
-    Struct { fields: &'a [Field<'a>] },
-    Union { fields: &'a [Field<'a>] },
-    Enum { variants: &'a [Variant<'a>] },
+    Struct {
+        fields: &'a [Field<'a>],
+    },
+    Union {
+        fields: &'a [Field<'a>],
+    },
+    Enum {
+        variants: &'a [Variant<'a>],
+    },
+    Primitive,
+    Array {
+        item: &'a TypeLayoutInfo<'a>,
+        len: usize,
+    },
+    Reference {
+        inner: &'a TypeLayoutInfo<'a>,
+        mutability: bool,
+    },
+    Pointer {
+        inner: &'a TypeLayoutInfo<'a>,
+        mutability: bool,
+    },
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(serde::Serialize, /*serde::Deserialize*/))]
 pub struct Variant<'a> {
     pub name: &'a str,
@@ -125,31 +244,37 @@ impl<'a> PartialOrd for Variant<'a> {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "serde1", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, /*serde::Deserialize*/))]
 pub struct Field<'a> {
     pub name: &'a str,
-    pub ty: &'a str,
     pub offset: usize,
-    pub size: usize,
-    pub alignment: usize,
+    pub ty: &'a TypeLayoutInfo<'a>,
 }
+
+impl<'a> PartialEq for Field<'a> {
+    fn eq(&self, other: &Self) -> bool {
+        self.name == other.name && self.offset == other.offset && core::ptr::eq(self.ty, other.ty)
+    }
+}
+
+impl<'a> Eq for Field<'a> {}
 
 impl<'a> Ord for Field<'a> {
     fn cmp(&self, other: &Self) -> core::cmp::Ordering {
         (
             &self.offset,
-            &self.size,
-            &self.alignment,
+            &self.ty.size,
+            &self.ty.alignment,
             &self.name,
-            &self.ty,
+            &self.ty.name,
         )
             .cmp(&(
                 &other.offset,
-                &other.size,
-                &other.alignment,
+                &other.ty.size,
+                &other.ty.alignment,
                 &other.name,
-                &other.ty,
+                &other.ty.name,
             ))
     }
 }
@@ -160,178 +285,214 @@ impl<'a> PartialOrd for Field<'a> {
     }
 }
 
-impl<'a> fmt::Display for TypeLayoutInfo<'a> {
-    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(
-            formatter,
-            "{} {} (size {}, alignment {})",
-            match self.structure {
-                TypeStructure::Struct { .. } => "STRUCT",
-                TypeStructure::Union { .. } => "UNION",
-                TypeStructure::Enum { .. } => "ENUM",
+enum TypeLayoutTypes<'a> {
+    Info(&'a TypeLayoutInfo<'a>),
+    Structure(&'a TypeStructure<'a>),
+    Variant(&'a Variant<'a>),
+    Field(&'a Field<'a>),
+    Variants(&'a [Variant<'a>]),
+    Fields(&'a [Field<'a>]),
+}
+
+struct RecursiveTypeLayout;
+
+impl fmt::Debug for RecursiveTypeLayout {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("RECURSIVE").finish()
+    }
+}
+
+impl fmt::Display for RecursiveTypeLayout {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(self, fmt)
+    }
+}
+
+struct TypeLayoutWrapper<'a, 'b> {
+    ty: TypeLayoutTypes<'a>,
+    cache: &'b UnsafeCell<BTreeSet<*const TypeLayoutInfo<'a>>>,
+}
+
+#[allow(clippy::too_many_lines)]
+impl<'a, 'b> fmt::Debug for TypeLayoutWrapper<'a, 'b> {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        match &self.ty {
+            TypeLayoutTypes::Info(info) => {
+                let mut debug = fmt.debug_struct("TypeLayoutInfo");
+
+                debug
+                    .field("name", &info.name)
+                    .field("size", &info.size)
+                    .field("alignment", &info.alignment);
+
+                if unsafe { &mut *self.cache.get() }.insert(*info as *const TypeLayoutInfo<'a>) {
+                    debug.field(
+                        "structure",
+                        &TypeLayoutWrapper {
+                            ty: TypeLayoutTypes::Structure(&info.structure),
+                            cache: self.cache,
+                        },
+                    )
+                } else {
+                    debug.field("structure", &RecursiveTypeLayout)
+                };
+
+                debug.finish()
+            }
+            TypeLayoutTypes::Structure(structure) => match structure {
+                TypeStructure::Primitive => fmt.debug_struct("Primitive").finish(),
+                TypeStructure::Struct { fields } => fmt
+                    .debug_struct("Struct")
+                    .field(
+                        "fields",
+                        &TypeLayoutWrapper {
+                            ty: TypeLayoutTypes::Fields(fields),
+                            cache: self.cache,
+                        },
+                    )
+                    .finish(),
+                TypeStructure::Union { fields } => fmt
+                    .debug_struct("Union")
+                    .field(
+                        "fields",
+                        &TypeLayoutWrapper {
+                            ty: TypeLayoutTypes::Fields(fields),
+                            cache: self.cache,
+                        },
+                    )
+                    .finish(),
+                TypeStructure::Enum { variants } => fmt
+                    .debug_struct("Enum")
+                    .field(
+                        "fields",
+                        &TypeLayoutWrapper {
+                            ty: TypeLayoutTypes::Variants(variants),
+                            cache: self.cache,
+                        },
+                    )
+                    .finish(),
+                TypeStructure::Array { len, item } => fmt
+                    .debug_struct("Array")
+                    .field("len", len)
+                    .field(
+                        "item",
+                        &TypeLayoutWrapper {
+                            ty: TypeLayoutTypes::Info(item),
+                            cache: self.cache,
+                        },
+                    )
+                    .finish(),
+                TypeStructure::Reference { mutability, inner } => fmt
+                    .debug_struct("Reference")
+                    .field("mutability", mutability)
+                    .field(
+                        "item",
+                        &TypeLayoutWrapper {
+                            ty: TypeLayoutTypes::Info(inner),
+                            cache: self.cache,
+                        },
+                    )
+                    .finish(),
+                TypeStructure::Pointer { mutability, inner } => fmt
+                    .debug_struct("Pointer")
+                    .field("mutability", mutability)
+                    .field(
+                        "item",
+                        &TypeLayoutWrapper {
+                            ty: TypeLayoutTypes::Info(inner),
+                            cache: self.cache,
+                        },
+                    )
+                    .finish(),
             },
-            self.name,
-            self.size,
-            self.alignment
-        )?;
+            TypeLayoutTypes::Variant(variant) => fmt
+                .debug_struct("Variant")
+                .field("name", &variant.name)
+                .field("discriminant", &variant.discriminant)
+                .field(
+                    "fields",
+                    &TypeLayoutWrapper {
+                        ty: TypeLayoutTypes::Fields(variant.fields),
+                        cache: self.cache,
+                    },
+                )
+                .finish(),
+            TypeLayoutTypes::Field(field) => fmt
+                .debug_struct("Field")
+                .field("name", &field.name)
+                .field("offset", &field.offset)
+                .field(
+                    "ty",
+                    &TypeLayoutWrapper {
+                        ty: TypeLayoutTypes::Info(field.ty),
+                        cache: self.cache,
+                    },
+                )
+                .finish(),
+            TypeLayoutTypes::Variants(variants) => {
+                let mut debug = fmt.debug_list();
 
-        match self.structure {
-            TypeStructure::Struct { fields } | TypeStructure::Union { fields } => {
-                format_fields(self.size, fields, formatter)?;
+                for variant in variants.iter() {
+                    debug.entry(&TypeLayoutWrapper {
+                        ty: TypeLayoutTypes::Variant(variant),
+                        cache: self.cache,
+                    });
+                }
+
+                debug.finish()
             }
-            TypeStructure::Enum { variants } => {
-                if variants.is_empty() {
-                    return writeln!(formatter, "  never");
+            TypeLayoutTypes::Fields(fields) => {
+                let mut debug = fmt.debug_list();
+
+                for field in fields.iter() {
+                    debug.entry(&TypeLayoutWrapper {
+                        ty: TypeLayoutTypes::Field(field),
+                        cache: self.cache,
+                    });
                 }
 
-                let mut variants = Vec::from(variants);
-                variants.sort();
-
-                for variant in variants {
-                    writeln!(formatter, "- {} @ {}:", variant.discriminant, variant.name)?;
-
-                    format_fields(self.size, variant.fields, formatter)?;
-                }
+                debug.finish()
             }
         }
-
-        Ok(())
     }
 }
 
-fn format_fields(
-    type_size: usize,
-    fields: &[Field],
-    formatter: &mut fmt::Formatter,
-) -> fmt::Result {
-    let mut field_rows = Vec::with_capacity(fields.len());
+impl<'a, 'b> fmt::Display for TypeLayoutWrapper<'a, 'b> {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(self, fmt)
+    }
+}
 
-    let mut sorted_fields = Vec::from(fields);
-    sorted_fields.sort();
+macro_rules! impl_debug_display_for_layout_types {
+    (impl $ty:ident => $var:ident) => {
+        impl<'a> fmt::Debug for $ty<'a> {
+            fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+                let cache = UnsafeCell::new(BTreeSet::new());
 
-    let mut prior_field_end = 0;
-
-    for field in sorted_fields {
-        if field.offset > prior_field_end {
-            field_rows.push(Row {
-                offset: prior_field_end,
-                name: "[padding]",
-                ty: "[padding]",
-                size: field.offset - prior_field_end,
-                alignment: 0,
-            });
+                fmt::Debug::fmt(&TypeLayoutWrapper {
+                    ty: TypeLayoutTypes::$var(self), cache: &cache,
+                }, fmt)
+            }
         }
 
-        field_rows.push(Row {
-            offset: field.offset,
-            name: field.name,
-            ty: field.ty,
-            size: field.size,
-            alignment: field.alignment,
-        });
+        impl<'a> fmt::Display for $ty<'a> {
+            fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+                let cache = UnsafeCell::new(BTreeSet::new());
 
-        prior_field_end = field.offset + field.size;
-    }
-
-    if type_size > prior_field_end {
-        field_rows.push(Row {
-            offset: prior_field_end,
-            name: "[padding]",
-            ty: "[padding]",
-            size: type_size - prior_field_end,
-            alignment: 0,
-        });
-    }
-
-    if field_rows.is_empty() {
-        return writeln!(formatter, "  unit");
-    }
-
-    let longest_name = "Name".len().max(
-        field_rows
-            .iter()
-            .map(|row| row.name.len())
-            .max()
-            .unwrap_or(0),
-    );
-
-    let longest_type = "Type"
-        .len()
-        .max(field_rows.iter().map(|row| row.ty.len()).max().unwrap_or(0));
-
-    let widths = RowWidths {
-        offset: "Offset".len(),
-        name: longest_name,
-        ty: longest_type,
-        size: "Size".len(),
-        alignment: "Alignment".len(),
+                fmt::Display::fmt(&TypeLayoutWrapper {
+                    ty: TypeLayoutTypes::$var(self), cache: &cache,
+                }, fmt)
+            }
+        }
     };
-
-    write_row(
-        formatter,
-        widths,
-        &Row {
-            offset: "Offset",
-            name: "Name",
-            ty: "Type",
-            size: "Size",
-            alignment: "Alignment",
-        },
-    )?;
-
-    write_row(
-        formatter,
-        widths,
-        &Row {
-            offset: "------",
-            name: str::repeat("-", longest_name),
-            ty: str::repeat("-", longest_type),
-            size: "----",
-            alignment: "---------",
-        },
-    )?;
-
-    for row in field_rows {
-        write_row(formatter, widths, &row)?;
-    }
-
-    Ok(())
+    ($($ty:ident => $var:ident),*) => {
+        $(impl_debug_display_for_layout_types!{impl $ty => $var})*
+    };
 }
 
-#[derive(Clone, Copy)]
-struct RowWidths {
-    offset: usize,
-    name: usize,
-    ty: usize,
-    size: usize,
-    alignment: usize,
-}
-
-struct Row<O, N, T, S, A> {
-    offset: O,
-    name: N,
-    ty: T,
-    size: S,
-    alignment: A,
-}
-
-fn write_row<O: Display, N: Display, T: Display, S: Display, A: Display>(
-    formatter: &mut fmt::Formatter,
-    widths: RowWidths,
-    row: &Row<O, N, T, S, A>,
-) -> fmt::Result {
-    writeln!(
-        formatter,
-        "| {:<offset_width$} | {:<name_width$} | {:<type_width$} | {:<size_width$} | {:<alignment_width$} |",
-        row.offset,
-        row.name,
-        row.ty,
-        row.size,
-        row.alignment,
-        offset_width = widths.offset,
-        name_width = widths.name,
-        type_width = widths.ty,
-        size_width = widths.size,
-        alignment_width = widths.alignment,
-    )
+impl_debug_display_for_layout_types! {
+    TypeLayoutInfo => Info,
+    TypeStructure => Structure,
+    Variant => Variant,
+    Field => Field
 }
