@@ -7,7 +7,11 @@
 #![feature(const_maybe_uninit_assume_init)]
 #![feature(const_discriminant)]
 #![feature(const_transmute_copy)]
+#![feature(const_trait_impl)]
+#![feature(const_mut_refs)]
+#![feature(const_fn_trait_bound)]
 
+use type_layout::TypeGraphLayout;
 use type_layout::TypeLayout;
 
 #[repr(C)]
@@ -51,8 +55,6 @@ enum Quo<T> {
     Struct { a: T, b: u16, c: T },
 }
 
-// TODO: Recursive types do NOT work yet
-
 #[derive(TypeLayout)]
 enum List<T> {
     Cons { item: T, next: Box<T> },
@@ -60,22 +62,22 @@ enum List<T> {
 }
 
 fn main() {
-    println!("{:#}", Foo1::TYPE_LAYOUT);
-    println!("{:#}", Foo2::TYPE_LAYOUT);
-    println!("{:#}", Foo3::TYPE_LAYOUT);
-    println!("{:#}", Foo4::<u8>::TYPE_LAYOUT);
+    println!("{:#?}", Foo1::type_graph());
+    println!("{:#?}", Foo2::type_graph());
+    println!("{:#?}", Foo3::type_graph());
+    println!("{:#?}", Foo4::<u8>::type_graph());
 
-    println!("{:#}", Bar::TYPE_LAYOUT);
+    println!("{:#?}", Bar::type_graph());
 
-    println!("{:#}", Never::TYPE_LAYOUT);
-    println!("{:#}", Single::TYPE_LAYOUT);
-    println!("{:#}", Quo::<u32>::TYPE_LAYOUT);
+    println!("{:#?}", Never::type_graph());
+    println!("{:#?}", Single::type_graph());
+    println!("{:#?}", Quo::<u32>::type_graph());
 
-    println!("{:#}", <()>::TYPE_LAYOUT);
-    println!("{:#}", <[u32; 3]>::TYPE_LAYOUT);
-    println!("{:#}", <std::marker::PhantomData<String>>::TYPE_LAYOUT);
+    println!("{:#?}", <()>::type_graph());
+    println!("{:#?}", <[u32; 3]>::type_graph());
+    println!("{:#?}", <std::marker::PhantomData<String>>::type_graph());
+    println!("{:#?}", <Box<u8>>::type_graph());
+    println!("{:#?}", <Box<[u8]>>::type_graph());
 
-    println!("{:#}", <List<u8>>::TYPE_LAYOUT);
-
-    println!("{:#?}", type_layout::TEST);
+    println!("{:#?}", <List<u8>>::type_graph());
 }

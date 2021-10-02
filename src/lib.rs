@@ -68,20 +68,18 @@ will only require minor version bumps, but will need significant justification.
 #![deny(clippy::pedantic)]
 #![no_std]
 #![feature(const_type_name)]
-
 #![feature(const_raw_ptr_deref)]
 #![feature(const_ptr_offset)]
 #![feature(const_mut_refs)]
 #![feature(const_raw_ptr_comparison)]
 #![feature(const_trait_impl)]
+#![feature(const_fn_trait_bound)]
 
 #[doc(hidden)]
 pub extern crate alloc;
 
-use alloc::collections::BTreeSet;
 use alloc::fmt;
 use alloc::str;
-use core::cell::UnsafeCell;
 
 pub use type_layout_derive::TypeLayout;
 
@@ -102,6 +100,12 @@ macro_rules! impl_primitive_type_layout {
                 structure: TypeStructure::Primitive,
             };
         }
+
+        unsafe impl /*const*/ TypeGraph for $ty {
+            fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
+                graph.insert(&<$ty>::TYPE_LAYOUT);
+            }
+        }
     };
     ($($ty:ty),*) => {
         $(impl_primitive_type_layout!{impl $ty})*
@@ -121,10 +125,18 @@ unsafe impl<T: TypeLayout, const N: usize> TypeLayout for [T; N] {
         size: ::core::mem::size_of::<[T; N]>(),
         alignment: ::core::mem::align_of::<[T; N]>(),
         structure: TypeStructure::Array {
-            item: &T::TYPE_LAYOUT,
+            item: ::core::any::type_name::<T>(),
             len: N,
         },
     };
+}
+
+unsafe impl<T: TypeGraph, const N: usize> TypeGraph for [T; N] {
+    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
+        if graph.insert(&Self::TYPE_LAYOUT) {
+            <T as TypeGraph>::populate_graph(graph);
+        }
+    }
 }
 
 unsafe impl<T> TypeLayout for core::marker::PhantomData<T> {
@@ -136,13 +148,30 @@ unsafe impl<T> TypeLayout for core::marker::PhantomData<T> {
     };
 }
 
-/*unsafe impl<'a, T: TypeLayout + 'static> TypeLayout for &'a T {
+unsafe impl<T> TypeGraph for core::marker::PhantomData<T> {
+    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
+        graph.insert(&Self::TYPE_LAYOUT);
+    }
+}
+
+unsafe impl<'a, T: TypeLayout + 'static> TypeLayout for &'a T {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<&'a T>(),
         size: ::core::mem::size_of::<&'a T>(),
         alignment: ::core::mem::align_of::<&'a T>(),
-        structure: TypeStructure::Reference { inner: &T::TYPE_LAYOUT, mutability: false },
+        structure: TypeStructure::Reference {
+            inner: ::core::any::type_name::<T>(),
+            mutability: false,
+        },
     };
+}
+
+unsafe impl<'a, T: TypeGraph + 'static> TypeGraph for &'a T {
+    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
+        if graph.insert(&Self::TYPE_LAYOUT) {
+            <T as TypeGraph>::populate_graph(graph);
+        }
+    }
 }
 
 unsafe impl<'a, T: TypeLayout + 'static> TypeLayout for &'a mut T {
@@ -150,9 +179,20 @@ unsafe impl<'a, T: TypeLayout + 'static> TypeLayout for &'a mut T {
         name: ::core::any::type_name::<&'a mut T>(),
         size: ::core::mem::size_of::<&'a mut T>(),
         alignment: ::core::mem::align_of::<&'a mut T>(),
-        structure: TypeStructure::Reference { inner: &T::TYPE_LAYOUT, mutability: true },
+        structure: TypeStructure::Reference {
+            inner: ::core::any::type_name::<T>(),
+            mutability: true,
+        },
     };
-}*/
+}
+
+unsafe impl<'a, T: TypeGraph + 'static> TypeGraph for &'a mut T {
+    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
+        if graph.insert(&Self::TYPE_LAYOUT) {
+            <T as TypeGraph>::populate_graph(graph);
+        }
+    }
+}
 
 unsafe impl<T: TypeLayout> TypeLayout for *const T {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
@@ -160,10 +200,18 @@ unsafe impl<T: TypeLayout> TypeLayout for *const T {
         size: ::core::mem::size_of::<*const T>(),
         alignment: ::core::mem::align_of::<*const T>(),
         structure: TypeStructure::Pointer {
-            inner: &T::TYPE_LAYOUT,
+            inner: ::core::any::type_name::<T>(),
             mutability: false,
         },
     };
+}
+
+unsafe impl<T: TypeGraph> TypeGraph for *const T {
+    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
+        if graph.insert(&Self::TYPE_LAYOUT) {
+            <T as TypeGraph>::populate_graph(graph);
+        }
+    }
 }
 
 unsafe impl<T: TypeLayout> TypeLayout for *mut T {
@@ -172,10 +220,18 @@ unsafe impl<T: TypeLayout> TypeLayout for *mut T {
         size: ::core::mem::size_of::<*mut T>(),
         alignment: ::core::mem::align_of::<*mut T>(),
         structure: TypeStructure::Pointer {
-            inner: &T::TYPE_LAYOUT,
+            inner: ::core::any::type_name::<T>(),
             mutability: true,
         },
     };
+}
+
+unsafe impl<T: TypeGraph> TypeGraph for *mut T {
+    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
+        if graph.insert(&Self::TYPE_LAYOUT) {
+            <T as TypeGraph>::populate_graph(graph);
+        }
+    }
 }
 
 unsafe impl<T: TypeLayout> TypeLayout for alloc::boxed::Box<T> {
@@ -184,13 +240,41 @@ unsafe impl<T: TypeLayout> TypeLayout for alloc::boxed::Box<T> {
         size: ::core::mem::size_of::<alloc::boxed::Box<T>>(),
         alignment: ::core::mem::align_of::<alloc::boxed::Box<T>>(),
         structure: TypeStructure::Pointer {
-            inner: &T::TYPE_LAYOUT,
+            inner: ::core::any::type_name::<T>(),
             mutability: true,
         },
     };
 }
 
-#[derive(Clone, PartialEq, Eq)]
+unsafe impl<T: TypeGraph> TypeGraph for alloc::boxed::Box<T> {
+    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
+        if graph.insert(&Self::TYPE_LAYOUT) {
+            <T as TypeGraph>::populate_graph(graph);
+        }
+    }
+}
+
+unsafe impl<T: TypeLayout> TypeLayout for alloc::boxed::Box<[T]> {
+    const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
+        name: ::core::any::type_name::<alloc::boxed::Box<[T]>>(),
+        size: ::core::mem::size_of::<alloc::boxed::Box<[T]>>(),
+        alignment: ::core::mem::align_of::<alloc::boxed::Box<[T]>>(),
+        structure: TypeStructure::Pointer {
+            inner: ::core::any::type_name::<T>(),
+            mutability: true,
+        },
+    };
+}
+
+unsafe impl<T: TypeGraph> TypeGraph for alloc::boxed::Box<[T]> {
+    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
+        if graph.insert(&Self::TYPE_LAYOUT) {
+            <T as TypeGraph>::populate_graph(graph);
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(serde::Serialize, /*serde::Deserialize*/))]
 pub struct TypeLayoutInfo<'a> {
     pub name: &'a str,
@@ -199,34 +283,19 @@ pub struct TypeLayoutInfo<'a> {
     pub structure: TypeStructure<'a>,
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(serde::Serialize, /*serde::Deserialize*/))]
 pub enum TypeStructure<'a> {
-    Struct {
-        fields: &'a [Field<'a>],
-    },
-    Union {
-        fields: &'a [Field<'a>],
-    },
-    Enum {
-        variants: &'a [Variant<'a>],
-    },
+    Struct { fields: &'a [Field<'a>] },
+    Union { fields: &'a [Field<'a>] },
+    Enum { variants: &'a [Variant<'a>] },
     Primitive,
-    Array {
-        item: &'a TypeLayoutInfo<'a>,
-        len: usize,
-    },
-    Reference {
-        inner: &'a TypeLayoutInfo<'a>,
-        mutability: bool,
-    },
-    Pointer {
-        inner: &'a TypeLayoutInfo<'a>,
-        mutability: bool,
-    },
+    Array { item: &'a str, len: usize },
+    Reference { inner: &'a str, mutability: bool },
+    Pointer { inner: &'a str, mutability: bool },
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(serde::Serialize, /*serde::Deserialize*/))]
 pub struct Variant<'a> {
     pub name: &'a str,
@@ -250,12 +319,12 @@ impl<'a> PartialOrd for Variant<'a> {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde1", derive(serde::Serialize, /*serde::Deserialize*/))]
 pub struct Field<'a> {
     pub name: &'a str,
     pub offset: usize,
-    pub ty: &'a TypeLayoutInfo<'a>,
+    pub ty: &'a str,
 }
 
 impl<'a> PartialEq for Field<'a> {
@@ -268,20 +337,7 @@ impl<'a> Eq for Field<'a> {}
 
 impl<'a> Ord for Field<'a> {
     fn cmp(&self, other: &Self) -> core::cmp::Ordering {
-        (
-            &self.offset,
-            &self.ty.size,
-            &self.ty.alignment,
-            &self.name,
-            &self.ty.name,
-        )
-            .cmp(&(
-                &other.offset,
-                &other.ty.size,
-                &other.ty.alignment,
-                &other.name,
-                &other.ty.name,
-            ))
+        (&self.offset, &self.name, &self.ty).cmp(&(&other.offset, &other.name, &other.ty))
     }
 }
 
@@ -299,7 +355,10 @@ pub struct TypeLayoutGraph<'a> {
 impl<'a> TypeLayoutGraph<'a> {
     #[must_use]
     pub const fn new() -> Self {
-        Self { len: 0, tys: [core::ptr::null(); 1024] }
+        Self {
+            len: 0,
+            tys: [core::ptr::null(); 1024],
+        }
     }
 
     pub const fn insert(&mut self, ty: &'a TypeLayoutInfo<'a>) -> bool {
@@ -324,16 +383,12 @@ impl<'a> TypeLayoutGraph<'a> {
 
 impl<'a> fmt::Debug for TypeLayoutGraph<'a> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        let cache = UnsafeCell::new(BTreeSet::new());
-
         write!(fmt, "TypeLayoutGraph(")?;
 
         let mut debug = fmt.debug_list();
 
         for i in 0..self.len {
-            debug.entry(&TypeLayoutWrapper {
-                ty: TypeLayoutTypes::Info(unsafe { &**self.tys.as_ptr().add(i) }), cache: &cache,
-            });
+            debug.entry(unsafe { &**self.tys.as_ptr().add(i) });
         }
 
         debug.finish()?;
@@ -342,232 +397,29 @@ impl<'a> fmt::Debug for TypeLayoutGraph<'a> {
     }
 }
 
-trait TypeGraph {
+pub unsafe trait TypeGraph: TypeLayout {
     fn populate_graph(graph: &mut TypeLayoutGraph<'static>);
 }
 
-impl const TypeGraph for u8 {
-    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-        graph.insert(&u8::TYPE_LAYOUT);
+pub trait TypeGraphLayout: TypeGraph {
+    //const TYPE_GRAPH: TypeLayoutGraph<'static>;
+    fn type_graph() -> TypeLayoutGraph<'static>;
+}
+
+impl<T: TypeGraph> TypeGraphLayout for T {
+    /*const TYPE_GRAPH: TypeLayoutGraph<'static> = {
+        let mut graph = TypeLayoutGraph::new();
+
+        <T as TypeGraph>::populate_graph(&mut graph);
+
+        graph
+    };*/
+
+    fn type_graph() -> TypeLayoutGraph<'static> {
+        let mut graph = TypeLayoutGraph::new();
+
+        <T as TypeGraph>::populate_graph(&mut graph);
+
+        graph
     }
-}
-
-pub const TEST: TypeLayoutGraph<'static> = {
-    let mut graph = TypeLayoutGraph::new();
-
-    u8::populate_graph(&mut graph);
-
-    graph
-};
-
-enum TypeLayoutTypes<'a> {
-    Info(&'a TypeLayoutInfo<'a>),
-    Structure(&'a TypeStructure<'a>),
-    Variant(&'a Variant<'a>),
-    Field(&'a Field<'a>),
-    Variants(&'a [Variant<'a>]),
-    Fields(&'a [Field<'a>]),
-}
-
-struct RecursiveTypeLayout;
-
-impl fmt::Debug for RecursiveTypeLayout {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt.debug_struct("RECURSIVE").finish()
-    }
-}
-
-impl fmt::Display for RecursiveTypeLayout {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Debug::fmt(self, fmt)
-    }
-}
-
-struct TypeLayoutWrapper<'a, 'b> {
-    ty: TypeLayoutTypes<'a>,
-    cache: &'b UnsafeCell<BTreeSet<*const TypeLayoutInfo<'a>>>,
-}
-
-#[allow(clippy::too_many_lines)]
-impl<'a, 'b> fmt::Debug for TypeLayoutWrapper<'a, 'b> {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        match &self.ty {
-            TypeLayoutTypes::Info(info) => {
-                let mut debug = fmt.debug_struct("TypeLayoutInfo");
-
-                debug
-                    .field("name", &info.name)
-                    .field("size", &info.size)
-                    .field("alignment", &info.alignment);
-
-                if unsafe { &mut *self.cache.get() }.insert(*info as *const TypeLayoutInfo<'a>) {
-                    debug.field(
-                        "structure",
-                        &TypeLayoutWrapper {
-                            ty: TypeLayoutTypes::Structure(&info.structure),
-                            cache: self.cache,
-                        },
-                    )
-                } else {
-                    debug.field("structure", &RecursiveTypeLayout)
-                };
-
-                debug.finish()
-            }
-            TypeLayoutTypes::Structure(structure) => match structure {
-                TypeStructure::Primitive => fmt.debug_struct("Primitive").finish(),
-                TypeStructure::Struct { fields } => fmt
-                    .debug_struct("Struct")
-                    .field(
-                        "fields",
-                        &TypeLayoutWrapper {
-                            ty: TypeLayoutTypes::Fields(fields),
-                            cache: self.cache,
-                        },
-                    )
-                    .finish(),
-                TypeStructure::Union { fields } => fmt
-                    .debug_struct("Union")
-                    .field(
-                        "fields",
-                        &TypeLayoutWrapper {
-                            ty: TypeLayoutTypes::Fields(fields),
-                            cache: self.cache,
-                        },
-                    )
-                    .finish(),
-                TypeStructure::Enum { variants } => fmt
-                    .debug_struct("Enum")
-                    .field(
-                        "fields",
-                        &TypeLayoutWrapper {
-                            ty: TypeLayoutTypes::Variants(variants),
-                            cache: self.cache,
-                        },
-                    )
-                    .finish(),
-                TypeStructure::Array { len, item } => fmt
-                    .debug_struct("Array")
-                    .field("len", len)
-                    .field(
-                        "item",
-                        &TypeLayoutWrapper {
-                            ty: TypeLayoutTypes::Info(item),
-                            cache: self.cache,
-                        },
-                    )
-                    .finish(),
-                TypeStructure::Reference { mutability, inner } => fmt
-                    .debug_struct("Reference")
-                    .field("mutability", mutability)
-                    .field(
-                        "item",
-                        &TypeLayoutWrapper {
-                            ty: TypeLayoutTypes::Info(inner),
-                            cache: self.cache,
-                        },
-                    )
-                    .finish(),
-                TypeStructure::Pointer { mutability, inner } => fmt
-                    .debug_struct("Pointer")
-                    .field("mutability", mutability)
-                    .field(
-                        "item",
-                        &TypeLayoutWrapper {
-                            ty: TypeLayoutTypes::Info(inner),
-                            cache: self.cache,
-                        },
-                    )
-                    .finish(),
-            },
-            TypeLayoutTypes::Variant(variant) => fmt
-                .debug_struct("Variant")
-                .field("name", &variant.name)
-                .field("discriminant", &variant.discriminant)
-                .field(
-                    "fields",
-                    &TypeLayoutWrapper {
-                        ty: TypeLayoutTypes::Fields(variant.fields),
-                        cache: self.cache,
-                    },
-                )
-                .finish(),
-            TypeLayoutTypes::Field(field) => fmt
-                .debug_struct("Field")
-                .field("name", &field.name)
-                .field("offset", &field.offset)
-                .field(
-                    "ty",
-                    &TypeLayoutWrapper {
-                        ty: TypeLayoutTypes::Info(field.ty),
-                        cache: self.cache,
-                    },
-                )
-                .finish(),
-            TypeLayoutTypes::Variants(variants) => {
-                let mut debug = fmt.debug_list();
-
-                for variant in variants.iter() {
-                    debug.entry(&TypeLayoutWrapper {
-                        ty: TypeLayoutTypes::Variant(variant),
-                        cache: self.cache,
-                    });
-                }
-
-                debug.finish()
-            }
-            TypeLayoutTypes::Fields(fields) => {
-                let mut debug = fmt.debug_list();
-
-                for field in fields.iter() {
-                    debug.entry(&TypeLayoutWrapper {
-                        ty: TypeLayoutTypes::Field(field),
-                        cache: self.cache,
-                    });
-                }
-
-                debug.finish()
-            }
-        }
-    }
-}
-
-impl<'a, 'b> fmt::Display for TypeLayoutWrapper<'a, 'b> {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        fmt::Debug::fmt(self, fmt)
-    }
-}
-
-macro_rules! impl_debug_display_for_layout_types {
-    (impl $ty:ident => $var:ident) => {
-        impl<'a> fmt::Debug for $ty<'a> {
-            fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-                let cache = UnsafeCell::new(BTreeSet::new());
-
-                fmt::Debug::fmt(&TypeLayoutWrapper {
-                    ty: TypeLayoutTypes::$var(self), cache: &cache,
-                }, fmt)
-            }
-        }
-
-        impl<'a> fmt::Display for $ty<'a> {
-            fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-                let cache = UnsafeCell::new(BTreeSet::new());
-
-                fmt::Display::fmt(&TypeLayoutWrapper {
-                    ty: TypeLayoutTypes::$var(self), cache: &cache,
-                }, fmt)
-            }
-        }
-    };
-    ($($ty:ident => $var:ident),*) => {
-        $(impl_debug_display_for_layout_types!{impl $ty => $var})*
-    };
-}
-
-impl_debug_display_for_layout_types! {
-    TypeLayoutInfo => Info,
-    TypeStructure => Structure,
-    Variant => Variant,
-    Field => Field
 }

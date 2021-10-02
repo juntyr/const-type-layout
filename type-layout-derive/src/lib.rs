@@ -6,10 +6,16 @@ use proc_macro2::Literal;
 use quote::{quote, quote_spanned};
 use syn::{parse_macro_input, spanned::Spanned};
 
+// TODO: Could do an extraneous, two pass system instead:
+// - pass 1: derive type layout as right now, i.e. flat
+// - pass 2: derive type layout again, but use pass 1 results for recursion
+// - final: wrap everything in a type that does all printing and comparing etc.
+//          and hides the extraneous details
+
 #[proc_macro_derive(TypeLayout)]
 pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     // Parse the input tokens into a syntax tree
-    let mut input = parse_macro_input!(input as syn::DeriveInput);
+    let input = parse_macro_input!(input as syn::DeriveInput);
 
     // Used in the quasi-quotation below as `#ty_name`.
     let ty_name = input.ident;
@@ -19,15 +25,51 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     let ty_generics = input.generics.split_for_impl().1;
     let layout = layout_of_type(&ty_name, &ty_generics, &input.data, &mut consts);
 
-    for param in input.generics.type_params_mut() {
-        param.bounds.push(syn::parse_quote!(::type_layout::TypeLayout));
+    let mut input_generics_a = input.generics.clone();
+    for param in input_generics_a.type_params_mut() {
+        param
+            .bounds
+            .push(syn::parse_quote!(::type_layout::TypeLayout));
     }
 
-    let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
+    let mut input_generics_b = input.generics.clone();
+    for param in input_generics_b.type_params_mut() {
+        param
+            .bounds
+            .push(syn::parse_quote!(::type_layout::TypeGraph));
+    }
+
+    let mut inner_types = Vec::new();
+
+    match &input.data {
+        syn::Data::Struct(syn::DataStruct { fields, .. }) => {
+            for field in fields {
+                inner_types.push(&field.ty);
+            }
+        }
+        syn::Data::Union(syn::DataUnion {
+            fields: syn::FieldsNamed { named: fields, .. },
+            ..
+        }) => {
+            for field in fields {
+                inner_types.push(&field.ty);
+            }
+        }
+        syn::Data::Enum(syn::DataEnum { variants, .. }) => {
+            for variant in variants {
+                for field in &variant.fields {
+                    inner_types.push(&field.ty);
+                }
+            }
+        }
+    }
+
+    let (impl_generics_a, ty_generics_a, where_clause_a) = input_generics_a.split_for_impl();
+    let (impl_generics_b, ty_generics_b, where_clause_b) = input_generics_b.split_for_impl();
 
     // Build the output, possibly using quasi-quotation
     let expanded = quote! {
-        unsafe impl #impl_generics ::type_layout::TypeLayout for #ty_name #ty_generics #where_clause {
+        unsafe impl #impl_generics_a ::type_layout::TypeLayout for #ty_name #ty_generics_a #where_clause_a {
             const TYPE_LAYOUT: ::type_layout::TypeLayoutInfo<'static> = {
                 ::type_layout::TypeLayoutInfo {
                     name: ::core::any::type_name::<Self>(),
@@ -38,9 +80,17 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
             };
         }
 
-        #(impl #impl_generics #ty_name #ty_generics #where_clause {
+        #(impl #impl_generics_a #ty_name #ty_generics_a #where_clause_a {
             #consts
         })*
+
+        unsafe impl #impl_generics_b /*const*/ ::type_layout::TypeGraph for #ty_name #ty_generics_b #where_clause_b {
+            fn populate_graph(graph: &mut ::type_layout::TypeLayoutGraph<'static>) {
+                if graph.insert(&Self::TYPE_LAYOUT) {
+                    #(<#inner_types as ::type_layout::TypeGraph>::populate_graph(graph);)*
+                }
+            }
+        }
     };
 
     // Hand the output tokens back to the compiler
@@ -137,7 +187,7 @@ fn layout_of_type(
                                                 _ => unreachable!(),
                                             }
                                         },
-                                        ty: &<#field_ty as ::type_layout::TypeLayout>::TYPE_LAYOUT,
+                                        ty: ::core::any::type_name::<#field_ty>(),
                                     }
                                 }
                             }).collect()
@@ -162,7 +212,7 @@ fn layout_of_type(
                                                 _ => unreachable!(),
                                             }
                                         },
-                                        ty: &<#field_ty as ::type_layout::TypeLayout>::TYPE_LAYOUT,
+                                        ty: ::core::any::type_name::<#field_ty>(),
                                     }
                                 }
                             }).collect()
@@ -219,7 +269,7 @@ fn layout_of_type(
                     ::type_layout::Field {
                         name: #field_name_str,
                         offset: ::type_layout::memoffset::offset_of_union!(#ty_name #ty_generics, #field_name),
-                        ty: &<#field_ty as ::type_layout::TypeLayout>::TYPE_LAYOUT,
+                        ty: ::core::any::type_name::<#field_ty>(),
                     }
                 }
             }).collect();
@@ -249,7 +299,7 @@ fn quote_field_values(
                     ::type_layout::Field {
                         name: #field_name_str,
                         offset: ::type_layout::memoffset::offset_of!(#ty_name #ty_generics, #field_name),
-                        ty: &<#field_ty as ::type_layout::TypeLayout>::TYPE_LAYOUT,
+                        ty: ::core::any::type_name::<#field_ty>(),
                     }
                 }
             }).collect()
@@ -264,7 +314,7 @@ fn quote_field_values(
                     ::type_layout::Field {
                         name: #field_name_str,
                         offset: ::type_layout::memoffset::offset_of!(#ty_name #ty_generics, #field_name),
-                        ty: &<#field_ty as ::type_layout::TypeLayout>::TYPE_LAYOUT,
+                        ty: ::core::any::type_name::<#field_ty>(),
                     }
                 }
             }).collect()
