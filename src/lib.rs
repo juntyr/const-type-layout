@@ -80,7 +80,6 @@ will only require minor version bumps, but will need significant justification.
 pub extern crate alloc;
 
 use alloc::fmt;
-use alloc::str;
 
 pub use type_layout_derive::TypeLayout;
 
@@ -300,8 +299,36 @@ pub enum TypeStructure<'a> {
 #[cfg_attr(feature = "serde1", derive(serde::Serialize, /*serde::Deserialize*/))]
 pub struct Variant<'a> {
     pub name: &'a str,
-    pub discriminant: u128,
+    pub discriminant: Discriminant<'a>,
     pub fields: &'a [Field<'a>],
+}
+
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[cfg_attr(feature = "serde1", derive(serde::Serialize, /*serde::Deserialize*/))]
+pub struct Discriminant<'a> {
+    pub big_endian_bytes: &'a [u8],
+}
+
+impl<'a> fmt::Debug for Discriminant<'a> {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        write!(fmt, "0x")?;
+
+        let mut is_zero = true;
+
+        for byte in self.big_endian_bytes.iter().copied() {
+            if byte != 0_u8 {
+                is_zero = false;
+
+                write!(fmt, "{:x}", byte)?;
+            }
+        }
+
+        if is_zero {
+            write!(fmt, "0")?;
+        }
+
+        Ok(())
+    }
 }
 
 impl<'a> Ord for Variant<'a> {

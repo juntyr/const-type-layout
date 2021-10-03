@@ -6,11 +6,10 @@ use proc_macro2::Literal;
 use quote::{quote, quote_spanned};
 use syn::{parse_macro_input, spanned::Spanned};
 
-// TODO: Could do an extraneous, two pass system instead:
-// - pass 1: derive type layout as right now, i.e. flat
-// - pass 2: derive type layout again, but use pass 1 results for recursion
-// - final: wrap everything in a type that does all printing and comparing etc.
-//          and hides the extraneous details
+// TODO:
+// - include repr info, maybe even enforce it?
+// - can and should it work for unsized types as well?
+// - find work around for type graph capacity
 
 #[proc_macro_derive(TypeLayout)]
 pub fn derive_type_layout(input: TokenStream) -> TokenStream {
@@ -26,13 +25,29 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     let layout = layout_of_type(&ty_name, &ty_generics, &input.data, &mut consts);
 
     let mut input_generics_a = input.generics.clone();
+
+    input_generics_a
+        .make_where_clause()
+        .predicates
+        .push(syn::parse_quote! {
+            [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()]:
+        });
+
     for param in input_generics_a.type_params_mut() {
         param
             .bounds
             .push(syn::parse_quote!(::type_layout::TypeLayout));
     }
 
-    let input_generics_b = input.generics.clone();
+    let mut input_generics_b = input.generics.clone();
+
+    input_generics_b
+        .make_where_clause()
+        .predicates
+        .push(syn::parse_quote! {
+            [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()]:
+        });
+
     /*for param in input_generics_b.type_params_mut() {
         param
             .bounds
@@ -244,23 +259,40 @@ fn layout_of_type(
                         syn::Fields::Unit => vec![],
                     }, consts);
 
+                    let ident = syn::Ident::new(
+                        &format!("__{}_{}_discriminant", ty_name, variant_name).to_uppercase(),
+                        ty_name.span(),
+                    );
+
+                    consts.push(quote! {
+                        const #ident: [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()] = unsafe {
+                            let variant: ::core::mem::MaybeUninit<#ty_name #ty_generics> = ::core::mem::MaybeUninit::new(#variant_constructor);
+
+                            let system_endian_bytes: [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()] = ::core::mem::transmute(::core::mem::discriminant(variant.assume_init_ref()));
+
+                            let mut big_endian_bytes = [0_u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()];
+
+                            let mut i = 0;
+
+                            while i < system_endian_bytes.len() {
+                                big_endian_bytes[i] = system_endian_bytes[if cfg!(target_endian = "big") {
+                                    i
+                                } else /* cfg!(target_endian = "little") */ {
+                                    system_endian_bytes.len() - i - 1
+                                }];
+
+                                i += 1;
+                            }
+
+                            big_endian_bytes
+                        };
+                    });
+
                     quote! {
                         ::type_layout::Variant {
                             name: #variant_name_str,
-                            discriminant: {
-                                let __variant_base: ::core::mem::MaybeUninit<#ty_name #ty_generics> = ::core::mem::MaybeUninit::new(#variant_constructor);
-
-                                let discriminant = ::core::mem::discriminant(unsafe { __variant_base.assume_init_ref() });
-
-                                match ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>() {
-                                    0 => 0_u128,
-                                    1 => unsafe { ::core::mem::transmute_copy::<_, u8>(&discriminant) as u128 },
-                                    2 => unsafe { ::core::mem::transmute_copy::<_, u16>(&discriminant) as u128 },
-                                    4 => unsafe { ::core::mem::transmute_copy::<_, u32>(&discriminant) as u128 },
-                                    8 => unsafe { ::core::mem::transmute_copy::<_, u64>(&discriminant) as u128 },
-                                    16 => unsafe { ::core::mem::transmute_copy::<_, u128>(&discriminant) as u128 },
-                                    _ => unreachable!(),
-                                }
+                            discriminant: ::type_layout::Discriminant {
+                                big_endian_bytes: &Self::#ident
                             },
                             fields: #fields,
                         }

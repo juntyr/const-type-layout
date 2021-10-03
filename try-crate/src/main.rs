@@ -10,6 +10,9 @@
 #![feature(const_trait_impl)]
 #![feature(const_mut_refs)]
 #![feature(const_fn_trait_bound)]
+#![feature(ptr_metadata)]
+#![allow(incomplete_features)]
+#![feature(generic_const_exprs)]
 
 use type_layout::TypeGraphLayout;
 use type_layout::TypeLayout;
@@ -57,7 +60,7 @@ enum Quo<T> {
 
 #[derive(TypeLayout)]
 enum List<T> {
-    Cons { item: T, next: Box<T> },
+    Cons { item: T, next: Box<List<T>> },
     Tail,
 }
 
