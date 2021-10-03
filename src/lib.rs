@@ -74,6 +74,7 @@ will only require minor version bumps, but will need significant justification.
 #![feature(const_raw_ptr_comparison)]
 #![feature(const_trait_impl)]
 #![feature(const_fn_trait_bound)]
+#![feature(const_panic)]
 
 #[doc(hidden)]
 pub extern crate alloc;
@@ -101,7 +102,7 @@ macro_rules! impl_primitive_type_layout {
             };
         }
 
-        unsafe impl /*const*/ TypeGraph for $ty {
+        unsafe impl const TypeGraph for $ty {
             fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
                 graph.insert(&<$ty>::TYPE_LAYOUT);
             }
@@ -131,7 +132,7 @@ unsafe impl<T: TypeLayout, const N: usize> TypeLayout for [T; N] {
     };
 }
 
-unsafe impl<T: TypeGraph, const N: usize> TypeGraph for [T; N] {
+unsafe impl<T: ~const TypeGraph, const N: usize> const TypeGraph for [T; N] {
     fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
         if graph.insert(&Self::TYPE_LAYOUT) {
             <T as TypeGraph>::populate_graph(graph);
@@ -148,7 +149,7 @@ unsafe impl<T> TypeLayout for core::marker::PhantomData<T> {
     };
 }
 
-unsafe impl<T> TypeGraph for core::marker::PhantomData<T> {
+unsafe impl<T> const TypeGraph for core::marker::PhantomData<T> {
     fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
         graph.insert(&Self::TYPE_LAYOUT);
     }
@@ -166,7 +167,7 @@ unsafe impl<'a, T: TypeLayout + 'static> TypeLayout for &'a T {
     };
 }
 
-unsafe impl<'a, T: TypeGraph + 'static> TypeGraph for &'a T {
+unsafe impl<'a, T: ~const TypeGraph + 'static> const TypeGraph for &'a T {
     fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
         if graph.insert(&Self::TYPE_LAYOUT) {
             <T as TypeGraph>::populate_graph(graph);
@@ -186,7 +187,7 @@ unsafe impl<'a, T: TypeLayout + 'static> TypeLayout for &'a mut T {
     };
 }
 
-unsafe impl<'a, T: TypeGraph + 'static> TypeGraph for &'a mut T {
+unsafe impl<'a, T: ~const TypeGraph + 'static> const TypeGraph for &'a mut T {
     fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
         if graph.insert(&Self::TYPE_LAYOUT) {
             <T as TypeGraph>::populate_graph(graph);
@@ -206,7 +207,7 @@ unsafe impl<T: TypeLayout> TypeLayout for *const T {
     };
 }
 
-unsafe impl<T: TypeGraph> TypeGraph for *const T {
+unsafe impl<T: ~const TypeGraph> const TypeGraph for *const T {
     fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
         if graph.insert(&Self::TYPE_LAYOUT) {
             <T as TypeGraph>::populate_graph(graph);
@@ -226,7 +227,7 @@ unsafe impl<T: TypeLayout> TypeLayout for *mut T {
     };
 }
 
-unsafe impl<T: TypeGraph> TypeGraph for *mut T {
+unsafe impl<T: ~const TypeGraph> const TypeGraph for *mut T {
     fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
         if graph.insert(&Self::TYPE_LAYOUT) {
             <T as TypeGraph>::populate_graph(graph);
@@ -246,7 +247,7 @@ unsafe impl<T: TypeLayout> TypeLayout for alloc::boxed::Box<T> {
     };
 }
 
-unsafe impl<T: TypeGraph> TypeGraph for alloc::boxed::Box<T> {
+unsafe impl<T: ~const TypeGraph> const TypeGraph for alloc::boxed::Box<T> {
     fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
         if graph.insert(&Self::TYPE_LAYOUT) {
             <T as TypeGraph>::populate_graph(graph);
@@ -266,7 +267,7 @@ unsafe impl<T: TypeLayout> TypeLayout for alloc::boxed::Box<[T]> {
     };
 }
 
-unsafe impl<T: TypeGraph> TypeGraph for alloc::boxed::Box<[T]> {
+unsafe impl<T: ~const TypeGraph> const TypeGraph for alloc::boxed::Box<[T]> {
     fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
         if graph.insert(&Self::TYPE_LAYOUT) {
             <T as TypeGraph>::populate_graph(graph);
@@ -349,32 +350,59 @@ impl<'a> PartialOrd for Field<'a> {
 
 pub struct TypeLayoutGraph<'a> {
     len: usize,
-    tys: [*const TypeLayoutInfo<'a>; 1024],
+    tys: [*const TypeLayoutInfo<'a>; TypeLayoutGraph::CAPACITY],
 }
 
 impl<'a> TypeLayoutGraph<'a> {
+    const CAPACITY: usize = 1024;
+
     #[must_use]
     pub const fn new() -> Self {
         Self {
             len: 0,
-            tys: [core::ptr::null(); 1024],
+            tys: [core::ptr::null(); Self::CAPACITY],
         }
     }
 
+    /// # Panics
+    ///
+    /// Panics iff the graph is not large enough to store the extra `ty`.
     pub const fn insert(&mut self, ty: &'a TypeLayoutInfo<'a>) -> bool {
+        let ty_name_bytes = ty.name.as_bytes();
+
         let mut i = 0;
 
         while i < self.len {
-            if unsafe { *self.tys.as_ptr().add(i) }.guaranteed_eq(ty) {
-                return false;
+            let cached_ty_name_bytes = unsafe { &*self.tys[i] }.name.as_bytes();
+
+            // The type names can only be equal if they are the same length
+            if ty_name_bytes.len() == cached_ty_name_bytes.len() {
+                let mut j = 0;
+
+                while j < ty_name_bytes.len() {
+                    // Break early, i.e. j < ty_name_bytes.len(),
+                    //  if the type names do NOT match
+                    if ty_name_bytes[i] != cached_ty_name_bytes[i] {
+                        break;
+                    }
+
+                    j += 1;
+                }
+
+                // j == ty_name_bytes.len() IFF the type names match
+                if j >= ty_name_bytes.len() {
+                    return false;
+                }
             }
 
             i += 1;
         }
 
-        let item = unsafe { &mut *self.tys.as_mut_ptr().add(i) };
-        *item = ty;
+        if i >= self.tys.len() {
+            panic!("TypeLayoutGraph is not large enough for this complex type.");
+        }
 
+        self.tys[i] = ty;
         self.len += 1;
 
         true
@@ -402,24 +430,15 @@ pub unsafe trait TypeGraph: TypeLayout {
 }
 
 pub trait TypeGraphLayout: TypeGraph {
-    //const TYPE_GRAPH: TypeLayoutGraph<'static>;
-    fn type_graph() -> TypeLayoutGraph<'static>;
+    const TYPE_GRAPH: TypeLayoutGraph<'static>;
 }
 
-impl<T: TypeGraph> TypeGraphLayout for T {
-    /*const TYPE_GRAPH: TypeLayoutGraph<'static> = {
+impl<T: ~const TypeGraph> const TypeGraphLayout for T {
+    const TYPE_GRAPH: TypeLayoutGraph<'static> = {
         let mut graph = TypeLayoutGraph::new();
 
         <T as TypeGraph>::populate_graph(&mut graph);
 
         graph
-    };*/
-
-    fn type_graph() -> TypeLayoutGraph<'static> {
-        let mut graph = TypeLayoutGraph::new();
-
-        <T as TypeGraph>::populate_graph(&mut graph);
-
-        graph
-    }
+    };
 }

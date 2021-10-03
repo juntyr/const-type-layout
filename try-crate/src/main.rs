@@ -62,22 +62,37 @@ enum List<T> {
 }
 
 fn main() {
-    println!("{:#?}", Foo1::type_graph());
-    println!("{:#?}", Foo2::type_graph());
-    println!("{:#?}", Foo3::type_graph());
-    println!("{:#?}", Foo4::<u8>::type_graph());
+    println!("{:#?}", Foo1::TYPE_GRAPH);
+    println!("{:#?}", Foo2::TYPE_GRAPH);
+    println!("{:#?}", Foo3::TYPE_GRAPH);
+    println!("{:#?}", Foo4::<u8>::TYPE_GRAPH);
 
-    println!("{:#?}", Bar::type_graph());
+    println!("{:#?}", Bar::TYPE_GRAPH);
 
-    println!("{:#?}", Never::type_graph());
-    println!("{:#?}", Single::type_graph());
-    println!("{:#?}", Quo::<u32>::type_graph());
+    println!("{:#?}", Never::TYPE_GRAPH);
+    println!("{:#?}", Single::TYPE_GRAPH);
+    println!("{:#?}", Quo::<u32>::TYPE_GRAPH);
 
-    println!("{:#?}", <()>::type_graph());
-    println!("{:#?}", <[u32; 3]>::type_graph());
-    println!("{:#?}", <std::marker::PhantomData<String>>::type_graph());
-    println!("{:#?}", <Box<u8>>::type_graph());
-    println!("{:#?}", <Box<[u8]>>::type_graph());
+    println!("{:#?}", <()>::TYPE_GRAPH);
+    println!("{:#?}", <[u32; 3]>::TYPE_GRAPH);
+    println!("{:#?}", <std::marker::PhantomData<String>>::TYPE_GRAPH);
+    println!("{:#?}", <Box<u8>>::TYPE_GRAPH);
+    println!("{:#?}", <Box<[u8]>>::TYPE_GRAPH);
 
-    println!("{:#?}", <List<u8>>::type_graph());
+    println!("{:#?}", <List<u8>>::TYPE_GRAPH);
 }
+
+// NOTE: Unsized coersion test in constants ...
+// struct Test<G: ?Sized> {
+//     x: u64,
+//     y: G,
+// }
+
+// const TEST: &Test<[TypeLayoutInfo<'static>]> = {
+//     const test: Test<[TypeLayoutInfo<'static>; 0]> = Test {
+//         x: 42,
+//         y: [],
+//     };
+
+//     &test
+// };

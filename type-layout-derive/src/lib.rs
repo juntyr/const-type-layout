@@ -32,12 +32,12 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
             .push(syn::parse_quote!(::type_layout::TypeLayout));
     }
 
-    let mut input_generics_b = input.generics.clone();
-    for param in input_generics_b.type_params_mut() {
+    let input_generics_b = input.generics.clone();
+    /*for param in input_generics_b.type_params_mut() {
         param
             .bounds
-            .push(syn::parse_quote!(::type_layout::TypeGraph));
-    }
+            .push(syn::parse_quote!(~const ::type_layout::TypeGraph));
+    }*/
 
     let mut inner_types = Vec::new();
 
@@ -67,6 +67,30 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     let (impl_generics_a, ty_generics_a, where_clause_a) = input_generics_a.split_for_impl();
     let (impl_generics_b, ty_generics_b, where_clause_b) = input_generics_b.split_for_impl();
 
+    let type_bounds = input_generics_b
+        .type_params()
+        .map(|param| &param.ident)
+        .collect::<Vec<_>>();
+
+    let where_clause_b = match where_clause_b {
+        Some(where_clause_b) if !where_clause_b.predicates.is_empty() => {
+            let joiner = if where_clause_b.predicates.trailing_punct() {
+                quote!()
+            } else {
+                quote!(,)
+            };
+
+            quote! {
+                #where_clause_b #joiner #(#type_bounds: ~const ::type_layout::TypeGraph),*
+            }
+        }
+        _ => {
+            quote! {
+                where #(#type_bounds: ~const ::type_layout::TypeGraph),*
+            }
+        }
+    };
+
     // Build the output, possibly using quasi-quotation
     let expanded = quote! {
         unsafe impl #impl_generics_a ::type_layout::TypeLayout for #ty_name #ty_generics_a #where_clause_a {
@@ -84,7 +108,7 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
             #consts
         })*
 
-        unsafe impl #impl_generics_b /*const*/ ::type_layout::TypeGraph for #ty_name #ty_generics_b #where_clause_b {
+        unsafe impl #impl_generics_b const ::type_layout::TypeGraph for #ty_name #ty_generics_b #where_clause_b {
             fn populate_graph(graph: &mut ::type_layout::TypeLayoutGraph<'static>) {
                 if graph.insert(&Self::TYPE_LAYOUT) {
                     #(<#inner_types as ::type_layout::TypeGraph>::populate_graph(graph);)*
