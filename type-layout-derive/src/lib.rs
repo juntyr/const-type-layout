@@ -8,7 +8,6 @@ use syn::{parse_macro_input, spanned::Spanned};
 
 // TODO:
 // - include repr info, maybe even enforce it?
-// - can and should it work for unsized types as well?
 // - find work around for type graph capacity
 
 #[proc_macro_derive(TypeLayout)]

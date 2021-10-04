@@ -83,19 +83,14 @@ fn main() {
     println!("{:#?}", <Box<[u8]>>::TYPE_GRAPH);
 
     println!("{:#?}", <List<u8>>::TYPE_GRAPH);
+
+    const SERIALISED_LIST_U8_LAYOUT: [u8; type_layout::serialised_type_graph_len::<List<u8>>()] =
+        type_layout::serialise_type_graph::<List<u8>>();
+
+    let mut ascii_escaped_layout = String::new();
+    for b in SERIALISED_LIST_U8_LAYOUT {
+        let part: Vec<u8> = std::ascii::escape_default(b).collect();
+        ascii_escaped_layout.push_str(std::str::from_utf8(&part).unwrap());
+    }
+    println!("{}", ascii_escaped_layout);
 }
-
-// NOTE: Unsized coersion test in constants ...
-// struct Test<G: ?Sized> {
-//     x: u64,
-//     y: G,
-// }
-
-// const TEST: &Test<[TypeLayoutInfo<'static>]> = {
-//     const test: Test<[TypeLayoutInfo<'static>; 0]> = Test {
-//         x: 42,
-//         y: [],
-//     };
-
-//     &test
-// };
