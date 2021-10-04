@@ -51,6 +51,8 @@ enum Single {
     Single,
 }
 
+#[repr(C)]
+#[repr(u8)]
 #[derive(TypeLayout)]
 enum Quo<T> {
     Unit,
@@ -58,6 +60,7 @@ enum Quo<T> {
     Struct { a: T, b: u16, c: T },
 }
 
+#[repr(u8, C)]
 #[derive(TypeLayout)]
 enum List<T> {
     Cons { item: T, next: Box<List<T>> },

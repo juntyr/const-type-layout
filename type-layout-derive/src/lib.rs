@@ -7,8 +7,8 @@ use quote::{quote, quote_spanned};
 use syn::{parse_macro_input, spanned::Spanned};
 
 // TODO:
-// - include repr info, maybe even enforce it?
-// - find work around for type graph capacity
+// - wait for `const_heap` feature to be implemented for a workaround the graph
+//   size limitation: https://github.com/rust-lang/rust/issues/79597
 
 #[proc_macro_derive(TypeLayout)]
 pub fn derive_type_layout(input: TokenStream) -> TokenStream {
@@ -18,10 +18,38 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     // Used in the quasi-quotation below as `#ty_name`.
     let ty_name = input.ident;
 
+    let mut reprs = Vec::new();
+
+    for attr in &input.attrs {
+        if let Ok(meta) = attr.parse_meta() {
+            if !meta.path().is_ident("repr") {
+                continue;
+            }
+
+            if let syn::Meta::List(list) = &meta {
+                for nested in &list.nested {
+                    if let syn::NestedMeta::Meta(syn::Meta::Path(path)) = nested {
+                        if let Some(repr) = path.get_ident() {
+                            reprs.push(repr.to_string());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    reprs.sort();
+    reprs.dedup();
+
+    let reprs = reprs
+        .into_iter()
+        .intersperse(String::from(","))
+        .collect::<String>();
+
     let mut consts = Vec::new();
 
     let ty_generics = input.generics.split_for_impl().1;
-    let layout = layout_of_type(&ty_name, &ty_generics, &input.data, &mut consts);
+    let layout = layout_of_type(&ty_name, &ty_generics, &input.data, &reprs, &mut consts);
 
     let mut input_generics_a = input.generics.clone();
 
@@ -139,6 +167,7 @@ fn layout_of_type(
     ty_name: &syn::Ident,
     ty_generics: &syn::TypeGenerics,
     data: &syn::Data,
+    reprs: &str,
     consts: &mut Vec<proc_macro2::TokenStream>,
 ) -> proc_macro2::TokenStream {
     match data {
@@ -151,7 +180,7 @@ fn layout_of_type(
             );
 
             quote! {
-                ::type_layout::TypeStructure::Struct { fields: #fields }
+                ::type_layout::TypeStructure::Struct { repr: #reprs, fields: #fields }
             }
         }
         syn::Data::Enum(r#enum) => {
@@ -311,7 +340,7 @@ fn layout_of_type(
             });
 
             quote! {
-                ::type_layout::TypeStructure::Enum { variants: Self::#ident }
+                ::type_layout::TypeStructure::Enum { repr: #reprs, variants: Self::#ident }
             }
         }
         syn::Data::Union(union) => {
@@ -323,7 +352,20 @@ fn layout_of_type(
                 quote_spanned! { field.span() =>
                     ::type_layout::Field {
                         name: #field_name_str,
-                        offset: ::type_layout::memoffset::offset_of_union!(#ty_name #ty_generics, #field_name),
+                        offset: {
+                            let uninit = ::core::mem::MaybeUninit::<#ty_name #ty_generics>::uninit();
+                            let base_ptr: *const #ty_name #ty_generics = uninit.as_ptr();
+
+                            #[allow(clippy::unneeded_field_pattern)]
+                            let #ty_name { #field_name: _ }: #ty_name #ty_generics;
+
+                            #[allow(unused_unsafe)]
+                            let field_ptr = unsafe {
+                                ::core::ptr::addr_of!((*(base_ptr as *const #ty_name #ty_generics)).#field_name)
+                            };
+
+                            unsafe { (field_ptr as *const u8).offset_from(base_ptr as *const u8) as usize }
+                        },
                         ty: ::core::any::type_name::<#field_ty>(),
                     }
                 }
@@ -332,7 +374,7 @@ fn layout_of_type(
             let fields = quote_fields(ty_name, None, values, consts);
 
             quote! {
-                ::type_layout::TypeStructure::Union { fields: #fields }
+                ::type_layout::TypeStructure::Union { repr: #reprs, fields: #fields }
             }
         }
     }
@@ -353,7 +395,20 @@ fn quote_field_values(
                 quote_spanned! { field.span() =>
                     ::type_layout::Field {
                         name: #field_name_str,
-                        offset: ::type_layout::memoffset::offset_of!(#ty_name #ty_generics, #field_name),
+                        offset: {
+                            let uninit = ::core::mem::MaybeUninit::<#ty_name #ty_generics>::uninit();
+                            let base_ptr: *const #ty_name #ty_generics = uninit.as_ptr();
+
+                            #[allow(clippy::unneeded_field_pattern)]
+                            let #ty_name { #field_name: _, .. }: #ty_name #ty_generics;
+
+                            #[allow(unused_unsafe)]
+                            let field_ptr = unsafe {
+                                ::core::ptr::addr_of!((*(base_ptr as *const #ty_name #ty_generics)).#field_name)
+                            };
+
+                            unsafe { (field_ptr as *const u8).offset_from(base_ptr as *const u8) as usize }
+                        },
                         ty: ::core::any::type_name::<#field_ty>(),
                     }
                 }
@@ -368,7 +423,20 @@ fn quote_field_values(
                 quote_spanned! { field.span() =>
                     ::type_layout::Field {
                         name: #field_name_str,
-                        offset: ::type_layout::memoffset::offset_of!(#ty_name #ty_generics, #field_name),
+                        offset: {
+                            let uninit = ::core::mem::MaybeUninit::<#ty_name #ty_generics>::uninit();
+                            let base_ptr: *const #ty_name #ty_generics = uninit.as_ptr();
+
+                            #[allow(clippy::unneeded_field_pattern)]
+                            let #ty_name { #field_name: _, .. }: #ty_name #ty_generics;
+
+                            #[allow(unused_unsafe)]
+                            let field_ptr = unsafe {
+                                ::core::ptr::addr_of!((*(base_ptr as *const #ty_name #ty_generics)).#field_name)
+                            };
+
+                            unsafe { (field_ptr as *const u8).offset_from(base_ptr as *const u8) as usize }
+                        },
                         ty: ::core::any::type_name::<#field_ty>(),
                     }
                 }

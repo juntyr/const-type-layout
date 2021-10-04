@@ -85,9 +85,6 @@ use alloc::fmt;
 
 pub use type_layout_derive::TypeLayout;
 
-#[doc(hidden)]
-pub use memoffset;
-
 pub unsafe trait TypeLayout: Sized {
     const TYPE_LAYOUT: TypeLayoutInfo<'static>;
 }
@@ -505,16 +502,19 @@ const fn serialise_type_structure<'a>(
     value: &TypeStructure<'a>,
 ) -> usize {
     match value {
-        TypeStructure::Struct { fields } => {
+        TypeStructure::Struct { repr, fields } => {
             let from = serialise_byte(bytes, from, b's');
+            let from = serialise_str(bytes, from, repr);
             serialise_fields(bytes, from, fields)
         }
-        TypeStructure::Union { fields } => {
+        TypeStructure::Union { repr, fields } => {
             let from = serialise_byte(bytes, from, b'u');
+            let from = serialise_str(bytes, from, repr);
             serialise_fields(bytes, from, fields)
         }
-        TypeStructure::Enum { variants } => {
+        TypeStructure::Enum { repr, variants } => {
             let from = serialise_byte(bytes, from, b'e');
+            let from = serialise_str(bytes, from, repr);
             serialise_variants(bytes, from, variants)
         }
         TypeStructure::Primitive => serialise_byte(bytes, from, b'v'),
@@ -538,16 +538,19 @@ const fn serialise_type_structure<'a>(
 
 const fn serialised_type_structure_len(from: usize, value: &TypeStructure) -> usize {
     match value {
-        TypeStructure::Struct { fields } => {
+        TypeStructure::Struct { repr, fields } => {
             let from = serialised_byte_len(from, b's');
+            let from = serialised_str_len(from, repr);
             serialised_fields_len(from, fields)
         }
-        TypeStructure::Union { fields } => {
+        TypeStructure::Union { repr, fields } => {
             let from = serialised_byte_len(from, b'u');
+            let from = serialised_str_len(from, repr);
             serialised_fields_len(from, fields)
         }
-        TypeStructure::Enum { variants } => {
+        TypeStructure::Enum { repr, variants } => {
             let from = serialised_byte_len(from, b'e');
+            let from = serialised_str_len(from, repr);
             serialised_variants_len(from, variants)
         }
         TypeStructure::Primitive => serialised_byte_len(from, b'v'),
@@ -587,11 +590,20 @@ const fn serialised_type_layout_info_len(from: usize, value: &TypeLayoutInfo) ->
     serialised_type_structure_len(from, &value.structure)
 }
 
+const GIT_VERSION: &str = git_version::git_version!(
+    args = ["--always", "--dirty=:d"],
+    prefix = "g:",
+    cargo_prefix = "c:"
+);
+
 const fn serialise_type_layout_graph<'a>(
     bytes: &mut [u8],
     from: usize,
     value: &TypeLayoutGraph<'a>,
 ) -> usize {
+    // Include the git version of `type_layout` for cross-version comparison
+    let from = serialise_str(bytes, from, GIT_VERSION);
+
     let from = serialise_str(bytes, from, value.ty);
 
     let mut from = serialise_usize(bytes, from, value.len);
@@ -608,6 +620,9 @@ const fn serialise_type_layout_graph<'a>(
 }
 
 const fn serialised_type_layout_graph_len(from: usize, value: &TypeLayoutGraph) -> usize {
+    // Include the git version of `type_layout` for cross-version comparison
+    let from = serialised_str_len(from, GIT_VERSION);
+
     let from = serialised_str_len(from, value.ty);
 
     let mut from = serialised_usize_len(from, value.len);
@@ -635,13 +650,31 @@ pub struct TypeLayoutInfo<'a> {
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde1", derive(serde::Serialize, /*serde::Deserialize*/))]
 pub enum TypeStructure<'a> {
-    Struct { fields: &'a [Field<'a>] },
-    Union { fields: &'a [Field<'a>] },
-    Enum { variants: &'a [Variant<'a>] },
+    Struct {
+        repr: &'a str,
+        fields: &'a [Field<'a>],
+    },
+    Union {
+        repr: &'a str,
+        fields: &'a [Field<'a>],
+    },
+    Enum {
+        repr: &'a str,
+        variants: &'a [Variant<'a>],
+    },
     Primitive,
-    Array { item: &'a str, len: usize },
-    Reference { inner: &'a str, mutability: bool },
-    Pointer { inner: &'a str, mutability: bool },
+    Array {
+        item: &'a str,
+        len: usize,
+    },
+    Reference {
+        inner: &'a str,
+        mutability: bool,
+    },
+    Pointer {
+        inner: &'a str,
+        mutability: bool,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
