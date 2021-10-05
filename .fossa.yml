@@ -1,0 +1,13 @@
+version: 2
+
+cli:
+  server: https://app.fossa.com
+  fetcher: git
+  project: https://github.com/MomoLangenstein/const-type-layout.git
+
+analyze:
+  modules:
+  - name: Cargo.lock
+    type: cargo
+    target: .
+    path: .

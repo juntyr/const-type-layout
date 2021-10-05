@@ -1,0 +1,45 @@
+name: Code Coverage
+
+on: [push]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout the Repository
+        uses: actions/checkout@v2
+
+      - name: Install the Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+
+      - name: Install the code coverage components
+        run: |
+          cargo install grcov -f
+          rustup component add llvm-tools-preview
+
+      - name: Generate the code coverage
+        run: |
+          RUSTFLAGS="-Zinstrument-coverage" \
+          LLVM_PROFILE_FILE="codecov-%p-%m.profraw" \
+          cargo test --workspace
+
+          grcov . -s . --binary-path ./target/debug/ \
+            -t cobertura -o cobertura.xml --branch \
+            --ignore-not-existing \
+            --excl-line GRCOV_EXCL_LINE \
+            --excl-start GRCOV_EXCL_START \
+            --excl-stop GRCOV_EXCL_STOP
+
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true

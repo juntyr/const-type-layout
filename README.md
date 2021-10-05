@@ -1,19 +1,17 @@
-# type-layout
+# const-type-layout
 
-[![GitHub CI Status](https://github.com/LPGhatguy/type-layout/workflows/CI/badge.svg)](https://github.com/LPGhatguy/type-layout/actions)
-[![type-layout on crates.io](https://img.shields.io/crates/v/type-layout.svg)](https://crates.io/crates/type-layout)
-[![type-layout docs](https://img.shields.io/badge/docs-docs.rs-orange.svg)](https://docs.rs/type-layout)
-
-type-layout is a type layout debugging aid, providing a `#[derive]`able trait
+`const-type-layout` is a type layout comparison aid, providing a `#[derive]`able `TypeLayout` trait
 that reports:
 - The type's name, size, and minimum alignment
-- Each field's name, type, offset, and size
-- Padding due to alignment requirements
+- The type's structure, i.e. struct vs. union vs. enum
+- Each field's name and offset
+- Each variant's name and discriminant
 
-**type-layout currently only functions on structs with named fields.** This is a
-temporary limitation.
+Through the auto-implemented `TypeGraphLayout` trait, the deep type layout is also reported as a graph.
 
-### Examples
+This crate heavily builds on the original runtime [type-layout](https://github.com/LPGhatguy/type-layout) crate by Lucien Greathouse.
+
+## Examples
 
 The layout of types is only defined if they're `#[repr(C)]`. This crate works on
 non-`#[repr(C)]` types, but their layout is unpredictable.
@@ -28,14 +26,29 @@ struct Foo {
     b: u32,
 }
 
-println!("{}", Foo::type_layout());
+println!("{:#?}", Foo::TYPE_LAYOUT);
 // prints:
-// Foo (size 8, alignment 4)
-// | Offset | Name      | Size |
-// | ------ | --------- | ---- |
-// | 0      | a         | 1    |
-// | 1      | [padding] | 3    |
-// | 4      | b         | 4    |
+//
+// TypeLayoutInfo {
+//     name: "Foo",
+//     size: 8,
+//     alignment: 4,
+//     structure: Struct {
+//         repr: "C",
+//         fields: [
+//             Field {
+//                 name: "a",
+//                 offset: 0,
+//                 ty: "u8",
+//             },
+//             Field {
+//                 name: "b",
+//                 offset: 4,
+//                 ty: "u32",
+//             },
+//         ],
+//     },
+// }
 ```
 
 Over-aligned types have trailing padding, which can be a source of bugs in some
@@ -50,20 +63,25 @@ struct OverAligned {
     value: u8,
 }
 
-println!("{}", OverAligned::type_layout());
+println!("{:#?}", OverAligned::TYPE_LAYOUT);
 // prints:
-// OverAligned (size 128, alignment 128)
-// | Offset | Name      | Size |
-// | ------ | --------- | ---- |
-// | 0      | value     | 1    |
-// | 1      | [padding] | 127  |
+//
+// TypeLayoutInfo {
+//     name: "OverAligned",
+//     size: 128,
+//     alignment: 128,
+//     structure: Struct {
+//         repr: "C",
+//         fields: [
+//             Field {
+//                 name: "value",
+//                 offset: 0,
+//                 ty: "u8",
+//             },
+//         ],
+//     },
+// }
 ```
-
-### Minimum Supported Rust Version (MSRV)
-
-type-layout supports Rust 1.34.1 and newer. Until type-layout reaches 1.0,
-changes to the MSRV will require major version bumps. After 1.0, MSRV changes
-will only require minor version bumps, but will need significant justification.
 
 ## License
 
