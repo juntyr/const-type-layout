@@ -1,0 +1,18 @@
+[package]
+name = "const-type-layout-derive"
+description = "Derive macro implementation for const-type-layout crate"
+version = "0.1.0"
+edition = "2018"
+authors = ["Momo Langenstein <momo.langenstein@helsinki.fi>", "Lucien Greathouse <me@lpghatguy.com>"]
+homepage = "https://github.com/MomoLangenstein/const-type-layout"
+license = "MIT OR Apache-2.0"
+
+[lib]
+proc-macro = true
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+syn = "1.0"
+quote = "1.0"
+proc-macro2 = "1.0"

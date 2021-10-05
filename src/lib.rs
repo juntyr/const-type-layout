@@ -5,7 +5,7 @@
 [workflow]: https://github.com/MomoLangenstein/const-type-layout/actions/workflows/ci.yml?query=branch%3Amain
 
 [Rust Doc]: https://img.shields.io/badge/docs-main-blue
-[docs]: https://momolangenstein.github.io/const-type-layout/
+[docs]: https://momolangenstein.github.io/const-type-layout/const_type_layout
 
 [License Status]: https://app.fossa.com/api/projects/git%2Bgithub.com%2FMomoLangenstein%2Fconst-type-layout.svg?type=shield
 [fossa]: https://app.fossa.com/projects/git%2Bgithub.com%2FMomoLangenstein%2Fconst-type-layout?ref=badge_shield
@@ -48,7 +48,7 @@ non-`#[repr(C)]` types, but their layout is unpredictable.
 # #![allow(incomplete_features)]
 # #![feature(generic_const_exprs)]
 
-use type_layout::TypeLayout;
+use const_type_layout::TypeLayout;
 
 #[derive(TypeLayout)]
 #[repr(C)]
@@ -101,7 +101,7 @@ FFI scenarios:
 # #![allow(incomplete_features)]
 # #![feature(generic_const_exprs)]
 
-use type_layout::TypeLayout;
+use const_type_layout::TypeLayout;
 
 #[derive(TypeLayout)]
 #[repr(C, align(128))]
@@ -149,7 +149,7 @@ pub extern crate alloc;
 
 use alloc::fmt;
 
-pub use type_layout_derive::TypeLayout;
+pub use const_type_layout_derive::TypeLayout;
 
 pub unsafe trait TypeLayout: Sized {
     const TYPE_LAYOUT: TypeLayoutInfo<'static>;

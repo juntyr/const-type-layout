@@ -63,7 +63,7 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     for param in input_generics_a.type_params_mut() {
         param
             .bounds
-            .push(syn::parse_quote!(::type_layout::TypeLayout));
+            .push(syn::parse_quote!(::const_type_layout::TypeLayout));
     }
 
     let mut input_generics_b = input.generics.clone();
@@ -78,7 +78,7 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     /*for param in input_generics_b.type_params_mut() {
         param
             .bounds
-            .push(syn::parse_quote!(~const ::type_layout::TypeGraph));
+            .push(syn::parse_quote!(~const ::const_type_layout::TypeGraph));
     }*/
 
     let mut inner_types = Vec::new();
@@ -123,21 +123,21 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
             };
 
             quote! {
-                #where_clause_b #joiner #(#type_bounds: ~const ::type_layout::TypeGraph),*
+                #where_clause_b #joiner #(#type_bounds: ~const ::const_type_layout::TypeGraph),*
             }
         }
         _ => {
             quote! {
-                where #(#type_bounds: ~const ::type_layout::TypeGraph),*
+                where #(#type_bounds: ~const ::const_type_layout::TypeGraph),*
             }
         }
     };
 
     // Build the output, possibly using quasi-quotation
     let expanded = quote! {
-        unsafe impl #impl_generics_a ::type_layout::TypeLayout for #ty_name #ty_generics_a #where_clause_a {
-            const TYPE_LAYOUT: ::type_layout::TypeLayoutInfo<'static> = {
-                ::type_layout::TypeLayoutInfo {
+        unsafe impl #impl_generics_a ::const_type_layout::TypeLayout for #ty_name #ty_generics_a #where_clause_a {
+            const TYPE_LAYOUT: ::const_type_layout::TypeLayoutInfo<'static> = {
+                ::const_type_layout::TypeLayoutInfo {
                     name: ::core::any::type_name::<Self>(),
                     size: ::core::mem::size_of::<Self>(),
                     alignment: ::core::mem::align_of::<Self>(),
@@ -150,10 +150,10 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
             #consts
         })*
 
-        unsafe impl #impl_generics_b const ::type_layout::TypeGraph for #ty_name #ty_generics_b #where_clause_b {
-            fn populate_graph(graph: &mut ::type_layout::TypeLayoutGraph<'static>) {
+        unsafe impl #impl_generics_b const ::const_type_layout::TypeGraph for #ty_name #ty_generics_b #where_clause_b {
+            fn populate_graph(graph: &mut ::const_type_layout::TypeLayoutGraph<'static>) {
                 if graph.insert(&Self::TYPE_LAYOUT) {
-                    #(<#inner_types as ::type_layout::TypeGraph>::populate_graph(graph);)*
+                    #(<#inner_types as ::const_type_layout::TypeGraph>::populate_graph(graph);)*
                 }
             }
         }
@@ -180,7 +180,7 @@ fn layout_of_type(
             );
 
             quote! {
-                ::type_layout::TypeStructure::Struct { repr: #reprs, fields: #fields }
+                ::const_type_layout::TypeStructure::Struct { repr: #reprs, fields: #fields }
             }
         }
         syn::Data::Enum(r#enum) => {
@@ -241,7 +241,7 @@ fn layout_of_type(
                                 let field_ty = &field.ty;
 
                                 quote_spanned! { field.span() =>
-                                    ::type_layout::Field {
+                                    ::const_type_layout::Field {
                                         name: #field_name_str,
                                         offset: {
                                             let __variant_base: ::core::mem::MaybeUninit<#ty_name #ty_generics> = ::core::mem::MaybeUninit::new(#variant_constructor);
@@ -269,7 +269,7 @@ fn layout_of_type(
                                 let field_ty = &field.ty;
 
                                 quote_spanned! { field.span() =>
-                                    ::type_layout::Field {
+                                    ::const_type_layout::Field {
                                         name: #field_name_str,
                                         offset: {
                                             let __variant_base: ::core::mem::MaybeUninit<#ty_name #ty_generics> = ::core::mem::MaybeUninit::new(#variant_constructor);
@@ -323,9 +323,9 @@ fn layout_of_type(
                     });
 
                     quote! {
-                        ::type_layout::Variant {
+                        ::const_type_layout::Variant {
                             name: #variant_name_str,
-                            discriminant: ::type_layout::Discriminant {
+                            discriminant: ::const_type_layout::Discriminant {
                                 big_endian_bytes: &Self::#ident
                             },
                             fields: #fields,
@@ -342,11 +342,11 @@ fn layout_of_type(
             );
 
             consts.push(quote! {
-                const #ident: &'static [::type_layout::Variant<'static>; #variants_len] = &[#(#variants),*];
+                const #ident: &'static [::const_type_layout::Variant<'static>; #variants_len] = &[#(#variants),*];
             });
 
             quote! {
-                ::type_layout::TypeStructure::Enum { repr: #reprs, variants: Self::#ident }
+                ::const_type_layout::TypeStructure::Enum { repr: #reprs, variants: Self::#ident }
             }
         }
         syn::Data::Union(union) => {
@@ -356,7 +356,7 @@ fn layout_of_type(
                 let field_ty = &field.ty;
 
                 quote_spanned! { field.span() =>
-                    ::type_layout::Field {
+                    ::const_type_layout::Field {
                         name: #field_name_str,
                         offset: {
                             let uninit = ::core::mem::MaybeUninit::<#ty_name #ty_generics>::uninit();
@@ -381,7 +381,7 @@ fn layout_of_type(
             let fields = quote_fields(ty_name, None, values, consts);
 
             quote! {
-                ::type_layout::TypeStructure::Union { repr: #reprs, fields: #fields }
+                ::const_type_layout::TypeStructure::Union { repr: #reprs, fields: #fields }
             }
         }
     }
@@ -400,7 +400,7 @@ fn quote_field_values(
                 let field_ty = &field.ty;
 
                 quote_spanned! { field.span() =>
-                    ::type_layout::Field {
+                    ::const_type_layout::Field {
                         name: #field_name_str,
                         offset: {
                             let uninit = ::core::mem::MaybeUninit::<#ty_name #ty_generics>::uninit();
@@ -429,7 +429,7 @@ fn quote_field_values(
                 let field_ty = &field.ty;
 
                 quote_spanned! { field.span() =>
-                    ::type_layout::Field {
+                    ::const_type_layout::Field {
                         name: #field_name_str,
                         offset: {
                             let uninit = ::core::mem::MaybeUninit::<#ty_name #ty_generics>::uninit();
@@ -474,7 +474,7 @@ fn quote_fields(
     );
 
     consts.push(quote! {
-        const #ident: &'static [::type_layout::Field<'static>; #fields_len] = &[#(#values),*];
+        const #ident: &'static [::const_type_layout::Field<'static>; #fields_len] = &[#(#values),*];
     });
 
     quote! { Self :: #ident }

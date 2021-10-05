@@ -14,8 +14,8 @@
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 
-use type_layout::TypeGraphLayout;
-use type_layout::TypeLayout;
+use const_type_layout::TypeGraphLayout;
+use const_type_layout::TypeLayout;
 
 #[repr(C)]
 #[derive(TypeLayout)]
@@ -95,5 +95,5 @@ fn main() {
     println!("{}", ascii_escaped_layout);
 }
 
-const SERIALISED_LIST_U8_LAYOUT: [u8; type_layout::serialised_type_graph_len::<List<u8>>()] =
-    type_layout::serialise_type_graph::<List<u8>>();
+const SERIALISED_LIST_U8_LAYOUT: [u8; const_type_layout::serialised_type_graph_len::<List<u8>>()] =
+    const_type_layout::serialise_type_graph::<List<u8>>();
