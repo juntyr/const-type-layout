@@ -879,19 +879,65 @@
 <span id="879">879</span>
 <span id="880">880</span>
 <span id="881">881</span>
+<span id="882">882</span>
+<span id="883">883</span>
+<span id="884">884</span>
+<span id="885">885</span>
+<span id="886">886</span>
+<span id="887">887</span>
+<span id="888">888</span>
+<span id="889">889</span>
+<span id="890">890</span>
+<span id="891">891</span>
+<span id="892">892</span>
+<span id="893">893</span>
+<span id="894">894</span>
+<span id="895">895</span>
+<span id="896">896</span>
+<span id="897">897</span>
+<span id="898">898</span>
+<span id="899">899</span>
+<span id="900">900</span>
+<span id="901">901</span>
+<span id="902">902</span>
+<span id="903">903</span>
+<span id="904">904</span>
+<span id="905">905</span>
+<span id="906">906</span>
+<span id="907">907</span>
+<span id="908">908</span>
+<span id="909">909</span>
+<span id="910">910</span>
+<span id="911">911</span>
+<span id="912">912</span>
+<span id="913">913</span>
+<span id="914">914</span>
+<span id="915">915</span>
+<span id="916">916</span>
+<span id="917">917</span>
+<span id="918">918</span>
+<span id="919">919</span>
+<span id="920">920</span>
+<span id="921">921</span>
+<span id="922">922</span>
+<span id="923">923</span>
+<span id="924">924</span>
+<span id="925">925</span>
+<span id="926">926</span>
+<span id="927">927</span>
+<span id="928">928</span>
+<span id="929">929</span>
 </pre><pre class="rust"><code><span class="doccomment">/*!
-[![GitHub CI Status](https://github.com/LPGhatguy/type-layout/workflows/CI/badge.svg)](https://github.com/LPGhatguy/type-layout/actions)
-[![type-layout on crates.io](https://img.shields.io/crates/v/type-layout.svg)](https://crates.io/crates/type-layout)
-[![type-layout docs](https://img.shields.io/badge/docs-docs.rs-orange.svg)](https://docs.rs/type-layout)
-
-type-layout is a type layout debugging aid, providing a `#[derive]`able trait
+`const-type-layout` is a type layout comparison aid, providing a `#[derive]`able `TypeLayout` trait
 that reports:
 - The type&#39;s name, size, and minimum alignment
-- Each field&#39;s name, type, offset, and size
-- Padding due to alignment requirements
+- The type&#39;s structure, i.e. struct vs. union vs. enum
+- Each field&#39;s name and offset
+- Each variant&#39;s name and discriminant
 
-**type-layout currently only functions on structs with named fields.** This is a
-temporary limitation.
+Through the auto-implemented `TypeGraphLayout` trait, the deep type layout is also reported as a graph.
+
+This crate heavily builds on the original runtime [type-layout](https://github.com/LPGhatguy/type-layout) crate by Lucien Greathouse.
 
 ## Examples
 
@@ -899,6 +945,21 @@ The layout of types is only defined if they&#39;re `#[repr(C)]`. This crate work
 non-`#[repr(C)]` types, but their layout is unpredictable.
 
 ```rust
+# #![feature(cfg_version)]
+# #![feature(const_type_name)]
+# #![feature(const_raw_ptr_deref)]
+# #![feature(const_maybe_uninit_as_ptr)]
+# #![feature(const_ptr_offset_from)]
+# #![cfg_attr(not(version(&quot;1.57.0&quot;)), feature(const_panic))]
+# #![feature(const_refs_to_cell)]
+# #![feature(const_maybe_uninit_assume_init)]
+# #![feature(const_discriminant)]
+# #![feature(const_trait_impl)]
+# #![feature(const_mut_refs)]
+# #![feature(const_fn_trait_bound)]
+# #![allow(incomplete_features)]
+# #![feature(generic_const_exprs)]
+
 use type_layout::TypeLayout;
 
 #[derive(TypeLayout)]
@@ -908,20 +969,50 @@ struct Foo {
     b: u32,
 }
 
-println!(&quot;{}&quot;, Foo::type_layout());
+println!(&quot;{:#?}&quot;, Foo::TYPE_LAYOUT);
 // prints:
-// Foo (size 8, alignment 4)
-// | Offset | Name      | Size |
-// | ------ | --------- | ---- |
-// | 0      | a         | 1    |
-// | 1      | [padding] | 3    |
-// | 4      | b         | 4    |
+//
+// TypeLayoutInfo {
+//     name: &quot;Foo&quot;,
+//     size: 8,
+//     alignment: 4,
+//     structure: Struct {
+//         repr: &quot;C&quot;,
+//         fields: [
+//             Field {
+//                 name: &quot;a&quot;,
+//                 offset: 0,
+//                 ty: &quot;u8&quot;,
+//             },
+//             Field {
+//                 name: &quot;b&quot;,
+//                 offset: 4,
+//                 ty: &quot;u32&quot;,
+//             },
+//         ],
+//     },
+// }
 ```
 
 Over-aligned types have trailing padding, which can be a source of bugs in some
 FFI scenarios:
 
 ```rust
+# #![feature(cfg_version)]
+# #![feature(const_type_name)]
+# #![feature(const_raw_ptr_deref)]
+# #![feature(const_maybe_uninit_as_ptr)]
+# #![feature(const_ptr_offset_from)]
+# #![cfg_attr(not(version(&quot;1.57.0&quot;)), feature(const_panic))]
+# #![feature(const_refs_to_cell)]
+# #![feature(const_maybe_uninit_assume_init)]
+# #![feature(const_discriminant)]
+# #![feature(const_trait_impl)]
+# #![feature(const_mut_refs)]
+# #![feature(const_fn_trait_bound)]
+# #![allow(incomplete_features)]
+# #![feature(generic_const_exprs)]
+
 use type_layout::TypeLayout;
 
 #[derive(TypeLayout)]
@@ -930,20 +1021,25 @@ struct OverAligned {
     value: u8,
 }
 
-println!(&quot;{}&quot;, OverAligned::type_layout());
+println!(&quot;{:#?}&quot;, OverAligned::TYPE_LAYOUT);
 // prints:
-// OverAligned (size 128, alignment 128)
-// | Offset | Name      | Size |
-// | ------ | --------- | ---- |
-// | 0      | value     | 1    |
-// | 1      | [padding] | 127  |
+//
+// TypeLayoutInfo {
+//     name: &quot;OverAligned&quot;,
+//     size: 128,
+//     alignment: 128,
+//     structure: Struct {
+//         repr: &quot;C&quot;,
+//         fields: [
+//             Field {
+//                 name: &quot;value&quot;,
+//                 offset: 0,
+//                 ty: &quot;u8&quot;,
+//             },
+//         ],
+//     },
+// }
 ```
-
-## Minimum Supported Rust Version (MSRV)
-
-type-layout supports Rust 1.34.1 and newer. Until type-layout reaches 1.0,
-changes to the MSRV will require major version bumps. After 1.0, MSRV changes
-will only require minor version bumps, but will need significant justification.
 */</span>
 
 <span class="attribute">#![<span class="ident">deny</span>(<span class="ident">clippy::pedantic</span>)]</span>
