@@ -1,0 +1,1 @@
+initSidebarItems({"derive":[["TypeLayout",""]],"enum":[["TypeStructure",""]],"fn":[["serialise_type_graph",""],["serialised_type_graph_len",""]],"struct":[["Discriminant",""],["Field",""],["TypeLayoutGraph",""],["TypeLayoutInfo",""],["Variant",""]],"trait":[["TypeGraph",""],["TypeGraphLayout",""],["TypeLayout",""]]});
