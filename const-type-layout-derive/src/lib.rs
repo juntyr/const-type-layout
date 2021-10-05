@@ -152,7 +152,7 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
 
         unsafe impl #impl_generics_b const ::const_type_layout::TypeGraph for #ty_name #ty_generics_b #where_clause_b {
             fn populate_graph(graph: &mut ::const_type_layout::TypeLayoutGraph<'static>) {
-                if graph.insert(&Self::TYPE_LAYOUT) {
+                if graph.insert(&<Self as ::const_type_layout::TypeLayout>::TYPE_LAYOUT) {
                     #(<#inner_types as ::const_type_layout::TypeGraph>::populate_graph(graph);)*
                 }
             }

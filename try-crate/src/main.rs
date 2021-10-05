@@ -67,6 +67,13 @@ enum List<T> {
     Tail,
 }
 
+#[repr(transparent)]
+#[derive(TypeLayout)]
+pub struct Reference<'r, T: 'r> {
+    pointer: *const T,
+    reference: std::marker::PhantomData<&'r T>,
+}
+
 fn main() {
     println!("{:#?}", Foo1::TYPE_GRAPH);
     println!("{:#?}", Foo2::TYPE_GRAPH);
@@ -84,6 +91,8 @@ fn main() {
     println!("{:#?}", <std::marker::PhantomData<String>>::TYPE_GRAPH);
     println!("{:#?}", <Box<u8>>::TYPE_GRAPH);
     println!("{:#?}", <Box<[u8]>>::TYPE_GRAPH);
+
+    println!("{:#?}", <Reference<i32>>::TYPE_GRAPH);
 
     println!("{:#?}", <List<u8>>::TYPE_GRAPH);
 
