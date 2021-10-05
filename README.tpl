@@ -1,4 +1,4 @@
-# type-layout
+# const-type-layout
 
 {{readme}}
 
