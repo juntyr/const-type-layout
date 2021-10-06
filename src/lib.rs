@@ -219,6 +219,38 @@ unsafe impl<T> const TypeGraph for core::marker::PhantomData<T> {
     }
 }
 
+unsafe impl<T: TypeLayout> TypeLayout for core::mem::MaybeUninit<T> {
+    const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
+        name: ::core::any::type_name::<core::mem::MaybeUninit<T>>(),
+        size: ::core::mem::size_of::<core::mem::MaybeUninit<T>>(),
+        alignment: ::core::mem::align_of::<core::mem::MaybeUninit<T>>(),
+        structure: TypeStructure::Union {
+            repr: "transparent",
+            fields: &[
+                Field {
+                    name: "uninit",
+                    offset: 0,
+                    ty: ::core::any::type_name::<()>(),
+                },
+                Field {
+                    name: "value",
+                    offset: 0,
+                    ty: ::core::any::type_name::<T>(),
+                },
+            ],
+        },
+    };
+}
+
+unsafe impl<T: ~const TypeGraph> const TypeGraph for core::mem::MaybeUninit<T> {
+    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
+        if graph.insert(&Self::TYPE_LAYOUT) {
+            <() as TypeGraph>::populate_graph(graph);
+            <T as TypeGraph>::populate_graph(graph);
+        }
+    }
+}
+
 unsafe impl<'a, T: TypeLayout + 'static> TypeLayout for &'a T {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<&'a T>(),

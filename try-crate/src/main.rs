@@ -89,6 +89,7 @@ fn main() {
     println!("{:#?}", <()>::TYPE_GRAPH);
     println!("{:#?}", <[u32; 3]>::TYPE_GRAPH);
     println!("{:#?}", <std::marker::PhantomData<String>>::TYPE_GRAPH);
+    println!("{:#?}", <std::mem::MaybeUninit<Box<i8>>>::TYPE_GRAPH);
     println!("{:#?}", <Box<u8>>::TYPE_GRAPH);
     println!("{:#?}", <Box<[u8]>>::TYPE_GRAPH);
 
