@@ -12,31 +12,58 @@ use syn::{parse_macro_input, spanned::Spanned};
 // - wait for `const_heap` feature to be implemented for a workaround the graph
 //   size limitation: https://github.com/rust-lang/rust/issues/79597
 
-#[proc_macro_derive(TypeLayout)]
+#[proc_macro_derive(TypeLayout, attributes(layout))]
 pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     // Parse the input tokens into a syntax tree
     let input = parse_macro_input!(input as syn::DeriveInput);
 
     // Used in the quasi-quotation below as `#ty_name`.
     let ty_name = input.ident;
+    let ty_generics = input.generics.split_for_impl().1;
 
     let mut reprs = Vec::new();
 
+    let mut add_bounds: Vec<syn::WherePredicate> = Vec::new();
+    let mut sub_bounds: Vec<String> = vec![quote!(#ty_name #ty_generics).to_string()];
+
     for attr in &input.attrs {
         if let Ok(meta) = attr.parse_meta() {
-            if !meta.path().is_ident("repr") {
-                continue;
-            }
-
-            if let syn::Meta::List(list) = &meta {
-                for nested in &list.nested {
-                    if let syn::NestedMeta::Meta(syn::Meta::Path(path)) = nested {
-                        if let Some(repr) = path.get_ident() {
-                            reprs.push(repr.to_string());
+            if meta.path().is_ident("repr") {
+                if let syn::Meta::List(list) = &meta {
+                    for nested in &list.nested {
+                        if let syn::NestedMeta::Meta(syn::Meta::Path(path)) = nested {
+                            if let Some(repr) = path.get_ident() {
+                                reprs.push(repr.to_string());
+                            }
                         }
                     }
                 }
             }
+        }
+
+        if attr.path.is_ident("layout") {
+            if let Ok(syn::Meta::List(list)) = attr.parse_meta() {
+                for meta in &list.nested {
+                    if let syn::NestedMeta::Meta(syn::Meta::NameValue(syn::MetaNameValue {
+                        path,
+                        lit: syn::Lit::Str(s),
+                        ..
+                    })) = &meta
+                    {
+                        if path.is_ident("free") {
+                            if let Ok(ty) = syn::parse_str::<syn::Type>(&s.value()) {
+                                sub_bounds.push(quote!(#ty).to_string());
+                            }
+                        } else if path.is_ident("bound") {
+                            if let Ok(bound) = syn::parse_str(&s.value()) {
+                                add_bounds.push(bound);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // TODO: nice error handling
         }
     }
 
@@ -50,42 +77,7 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
 
     let mut consts = Vec::new();
 
-    let ty_generics = input.generics.split_for_impl().1;
     let layout = layout_of_type(&ty_name, &ty_generics, &input.data, &reprs, &mut consts);
-
-    let mut input_generics_a = input.generics.clone();
-
-    if matches!(input.data, syn::Data::Enum(_)) {
-        input_generics_a
-            .make_where_clause()
-            .predicates
-            .push(syn::parse_quote! {
-                [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()]:
-            });
-    }
-
-    for param in input_generics_a.type_params_mut() {
-        param
-            .bounds
-            .push(syn::parse_quote!(::const_type_layout::TypeLayout));
-    }
-
-    let mut input_generics_b = input.generics.clone();
-
-    if matches!(input.data, syn::Data::Enum(_)) {
-        input_generics_b
-            .make_where_clause()
-            .predicates
-            .push(syn::parse_quote! {
-                [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()]:
-            });
-    }
-
-    for param in input_generics_b.type_params_mut() {
-        param
-            .bounds
-            .push(syn::parse_quote!(~const ::const_type_layout::TypeGraph));
-    }
 
     let mut inner_types = Vec::new();
 
@@ -110,6 +102,54 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
                 }
             }
         }
+    }
+
+    let mut input_generics_a = input.generics.clone();
+
+    if matches!(input.data, syn::Data::Enum(_)) {
+        input_generics_a
+            .make_where_clause()
+            .predicates
+            .push(syn::parse_quote! {
+                [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()]:
+            });
+    }
+
+    let mut input_generics_b = input.generics.clone();
+
+    if matches!(input.data, syn::Data::Enum(_)) {
+        input_generics_b
+            .make_where_clause()
+            .predicates
+            .push(syn::parse_quote! {
+                [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()]:
+            });
+    }
+
+    for ty in &inner_types {
+        if !sub_bounds.contains(&quote!(#ty).to_string()) {
+            input_generics_a
+                .make_where_clause()
+                .predicates
+                .push(syn::parse_quote! {
+                    #ty: ::const_type_layout::TypeLayout
+                });
+
+            input_generics_b
+                .make_where_clause()
+                .predicates
+                .push(syn::parse_quote! {
+                    #ty: ~const ::const_type_layout::TypeGraph
+                });
+        }
+    }
+
+    for bound in add_bounds {
+        input_generics_a
+            .make_where_clause()
+            .predicates
+            .push(bound.clone());
+        input_generics_b.make_where_clause().predicates.push(bound);
     }
 
     let (impl_generics_a, ty_generics_a, where_clause_a) = input_generics_a.split_for_impl();

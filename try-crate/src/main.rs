@@ -62,6 +62,8 @@ enum Quo<T> {
 
 #[repr(u8, C)]
 #[derive(TypeLayout)]
+#[layout(free = "Box<List<T>>")]
+#[layout(bound = "T: ::const_type_layout::TypeLayout")]
 enum List<T> {
     Cons { item: T, next: Box<List<T>> },
     Tail,
