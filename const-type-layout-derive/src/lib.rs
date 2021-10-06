@@ -7,6 +7,8 @@ use quote::{quote, quote_spanned};
 use syn::{parse_macro_input, spanned::Spanned};
 
 // TODO:
+// - can the derive bounds be more lenient so as to not push upwards the
+//   impl-specific bounds, e.g. for discriminants?
 // - wait for `const_heap` feature to be implemented for a workaround the graph
 //   size limitation: https://github.com/rust-lang/rust/issues/79597
 
@@ -53,12 +55,14 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
 
     let mut input_generics_a = input.generics.clone();
 
-    input_generics_a
-        .make_where_clause()
-        .predicates
-        .push(syn::parse_quote! {
-            [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()]:
-        });
+    if matches!(input.data, syn::Data::Enum(_)) {
+        input_generics_a
+            .make_where_clause()
+            .predicates
+            .push(syn::parse_quote! {
+                [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()]:
+            });
+    }
 
     for param in input_generics_a.type_params_mut() {
         param
@@ -68,18 +72,20 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
 
     let mut input_generics_b = input.generics.clone();
 
-    input_generics_b
-        .make_where_clause()
-        .predicates
-        .push(syn::parse_quote! {
-            [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()]:
-        });
+    if matches!(input.data, syn::Data::Enum(_)) {
+        input_generics_b
+            .make_where_clause()
+            .predicates
+            .push(syn::parse_quote! {
+                [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()]:
+            });
+    }
 
-    /*for param in input_generics_b.type_params_mut() {
+    for param in input_generics_b.type_params_mut() {
         param
             .bounds
             .push(syn::parse_quote!(~const ::const_type_layout::TypeGraph));
-    }*/
+    }
 
     let mut inner_types = Vec::new();
 
@@ -108,30 +114,6 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
 
     let (impl_generics_a, ty_generics_a, where_clause_a) = input_generics_a.split_for_impl();
     let (impl_generics_b, ty_generics_b, where_clause_b) = input_generics_b.split_for_impl();
-
-    let type_bounds = input_generics_b
-        .type_params()
-        .map(|param| &param.ident)
-        .collect::<Vec<_>>();
-
-    let where_clause_b = match where_clause_b {
-        Some(where_clause_b) if !where_clause_b.predicates.is_empty() => {
-            let joiner = if where_clause_b.predicates.trailing_punct() {
-                quote!()
-            } else {
-                quote!(,)
-            };
-
-            quote! {
-                #where_clause_b #joiner #(#type_bounds: ~const ::const_type_layout::TypeGraph),*
-            }
-        }
-        _ => {
-            quote! {
-                where #(#type_bounds: ~const ::const_type_layout::TypeGraph),*
-            }
-        }
-    };
 
     // Build the output, possibly using quasi-quotation
     let expanded = quote! {

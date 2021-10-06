@@ -656,19 +656,15 @@ const fn serialised_type_layout_info_len(from: usize, value: &TypeLayoutInfo) ->
     serialised_type_structure_len(from, &value.structure)
 }
 
-const GIT_VERSION: &str = git_version::git_version!(
-    args = ["--always", "--dirty=:d"],
-    prefix = "g:",
-    cargo_prefix = "c:"
-);
+const LAYOUT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const fn serialise_type_layout_graph<'a>(
     bytes: &mut [u8],
     from: usize,
     value: &TypeLayoutGraph<'a>,
 ) -> usize {
-    // Include the git version of `type_layout` for cross-version comparison
-    let from = serialise_str(bytes, from, GIT_VERSION);
+    // Include the crate version of `type_layout` for cross-version comparison
+    let from = serialise_str(bytes, from, LAYOUT_VERSION);
 
     let from = serialise_str(bytes, from, value.ty);
 
@@ -686,8 +682,8 @@ const fn serialise_type_layout_graph<'a>(
 }
 
 const fn serialised_type_layout_graph_len(from: usize, value: &TypeLayoutGraph) -> usize {
-    // Include the git version of `type_layout` for cross-version comparison
-    let from = serialised_str_len(from, GIT_VERSION);
+    // Include the crate version of `type_layout` for cross-version comparison
+    let from = serialised_str_len(from, LAYOUT_VERSION);
 
     let from = serialised_str_len(from, value.ty);
 
