@@ -7,8 +7,6 @@ use quote::{quote, quote_spanned};
 use syn::{parse_macro_input, spanned::Spanned};
 
 // TODO:
-// - can the derive bounds be more lenient so as to not push upwards the
-//   impl-specific bounds, e.g. for discriminants?
 // - wait for `const_heap` feature to be implemented for a workaround the graph
 //   size limitation: https://github.com/rust-lang/rust/issues/79597
 
@@ -216,8 +214,20 @@ fn layout_of_type(
                     let variant_constructor = match &variant.fields {
                         syn::Fields::Unit => quote! { #ty_name::#variant_name },
                         syn::Fields::Unnamed(fields) => {
-                            let initialisers = fields.unnamed.iter().map(|_| {
-                                quote! { unsafe { ::core::mem::MaybeUninit::uninit().assume_init() } }
+                            let initialisers = fields.unnamed.iter().map(|field| {
+                                let field_ty = &field.ty;
+
+                                quote! { unsafe {
+                                    let mut value: ::core::mem::MaybeUninit<#field_ty> = ::core::mem::MaybeUninit::uninit();
+
+                                    let mut i = 0;
+                                    while i < core::mem::size_of::<#field_ty>() {
+                                        *value.as_mut_ptr().cast::<u8>().add(i) = 0xFF_u8;
+                                        i += 1;
+                                    }
+
+                                    value.assume_init()
+                                } }
                             }).collect::<Vec<_>>();
 
                             quote! { #ty_name::#variant_name(#(#initialisers),*) }
@@ -225,8 +235,19 @@ fn layout_of_type(
                         syn::Fields::Named(fields) => {
                             let initialisers = fields.named.iter().map(|field| {
                                 let field_name = field.ident.as_ref().unwrap();
+                                let field_ty = &field.ty;
 
-                                quote! { #field_name: unsafe { ::core::mem::MaybeUninit::uninit().assume_init() } }
+                                quote! { #field_name: unsafe {
+                                    let mut value: ::core::mem::MaybeUninit<#field_ty> = ::core::mem::MaybeUninit::uninit();
+
+                                    let mut i = 0;
+                                    while i < core::mem::size_of::<#field_ty>() {
+                                        *value.as_mut_ptr().cast::<u8>().add(i) = 0xFF_u8;
+                                        i += 1;
+                                    }
+
+                                    value.assume_init()
+                                } }
                             }).collect::<Vec<_>>();
 
                             quote! { #ty_name::#variant_name { #(#initialisers),* } }
@@ -324,7 +345,9 @@ fn layout_of_type(
                         const #ident: [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()] = unsafe {
                             let variant: ::core::mem::MaybeUninit<#ty_name #ty_generics> = ::core::mem::MaybeUninit::new(#variant_constructor);
 
-                            let system_endian_bytes: [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()] = ::core::mem::transmute(::core::mem::discriminant(variant.assume_init_ref()));
+                            let system_endian_bytes: [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()] = ::core::mem::transmute(
+                                ::core::mem::discriminant(variant.assume_init_ref())
+                            );
 
                             let mut big_endian_bytes = [0_u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()];
 

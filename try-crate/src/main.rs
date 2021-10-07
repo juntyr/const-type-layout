@@ -11,6 +11,7 @@
 #![feature(const_trait_impl)]
 #![feature(const_mut_refs)]
 #![feature(const_fn_trait_bound)]
+#![feature(const_ptr_offset)]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 
@@ -94,6 +95,9 @@ fn main() {
     println!("{:#?}", <std::mem::MaybeUninit<Box<i8>>>::TYPE_GRAPH);
     println!("{:#?}", <Box<u8>>::TYPE_GRAPH);
     println!("{:#?}", <Box<[u8]>>::TYPE_GRAPH);
+
+    println!("{:#?}", <Option<std::num::NonZeroU64>>::TYPE_GRAPH);
+    println!("{:#?}", <Result<bool, u8>>::TYPE_GRAPH);
 
     println!("{:#?}", <Reference<i32>>::TYPE_GRAPH);
 

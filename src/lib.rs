@@ -141,6 +141,12 @@ println!("{:#?}", OverAligned::TYPE_LAYOUT);
 #![feature(const_trait_impl)]
 #![feature(const_fn_trait_bound)]
 #![cfg_attr(not(version("1.57.0")), feature(const_panic))]
+#![feature(cfg_target_has_atomic)]
+#![feature(const_discriminant)]
+#![feature(const_maybe_uninit_assume_init)]
+#![feature(const_ptr_offset_from)]
+#![feature(const_refs_to_cell)]
+#![feature(const_maybe_uninit_as_ptr)]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 
@@ -190,12 +196,6 @@ pub const fn serialise_type_graph<T: ~const TypeGraphLayout>(
 
     bytes
 }
-
-// TODO:
-// - core::num::{NonZero*, Wrapping}
-// - core::option::Option [?]
-// - core::result::Result [?]
-// - core::sync::atomic::{Atomic*}
 
 pub struct TypeLayoutGraph<'a> {
     ty: &'a str,
