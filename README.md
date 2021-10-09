@@ -86,7 +86,7 @@ println!("{:#?}", OverAligned::TYPE_LAYOUT);
 //     size: 128,
 //     alignment: 128,
 //     structure: Struct {
-//         repr: "C",
+//         repr: "C,align(128)",
 //         fields: [
 //             Field {
 //                 name: "value",

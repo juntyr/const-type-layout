@@ -37,7 +37,6 @@ where
 
         big_endian_bytes
     };
-
     const SOME_DISCRIMINANT_BYTES: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = unsafe {
         let mut value: core::mem::MaybeUninit<T> = core::mem::MaybeUninit::uninit();
 

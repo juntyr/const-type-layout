@@ -1,134 +1,134 @@
-/*!
-[![CI Status]][workflow] [![Rust Doc]][docs] [![License Status]][fossa] [![Code Coverage]][codecov] [![Gitpod Ready-to-Code]][gitpod]
-
-[CI Status]: https://img.shields.io/github/workflow/status/MomoLangenstein/const-type-layout/CI/main?label=CI
-[workflow]: https://github.com/MomoLangenstein/const-type-layout/actions/workflows/ci.yml?query=branch%3Amain
-
-[Rust Doc]: https://img.shields.io/badge/docs-main-blue
-[docs]: https://momolangenstein.github.io/const-type-layout/const_type_layout
-
-[License Status]: https://app.fossa.com/api/projects/git%2Bgithub.com%2FMomoLangenstein%2Fconst-type-layout.svg?type=shield
-[fossa]: https://app.fossa.com/projects/git%2Bgithub.com%2FMomoLangenstein%2Fconst-type-layout?ref=badge_shield
-
-[Code Coverage]: https://img.shields.io/codecov/c/github/MomoLangenstein/const-type-layout?token=J39WVBIMZX
-[codecov]: https://codecov.io/gh/MomoLangenstein/const-type-layout
-
-[Gitpod Ready-to-Code]: https://img.shields.io/badge/Gitpod-ready-blue?logo=gitpod
-[gitpod]: https://gitpod.io/#https://github.com/MomoLangenstein/const-type-layout
-
-`const-type-layout` is a type layout comparison aid, providing a `#[derive]`able `TypeLayout` trait
-that reports:
-- The type's name, size, and minimum alignment
-- The type's structure, i.e. struct vs. union vs. enum
-- Each field's name and offset
-- Each variant's name and discriminant
-
-Through the auto-implemented `TypeGraphLayout` trait, the deep type layout is also reported as a graph.
-
-This crate heavily builds on the original runtime [type-layout](https://github.com/LPGhatguy/type-layout) crate by Lucien Greathouse.
-
-## Examples
-
-The layout of types is only defined if they're `#[repr(C)]`. This crate works on
-non-`#[repr(C)]` types, but their layout is unpredictable.
-
-```rust
-# #![feature(cfg_version)]
-# #![feature(const_type_name)]
-# #![feature(const_raw_ptr_deref)]
-# #![feature(const_maybe_uninit_as_ptr)]
-# #![feature(const_ptr_offset_from)]
-# #![cfg_attr(not(version("1.57.0")), feature(const_panic))]
-# #![feature(const_refs_to_cell)]
-# #![feature(const_maybe_uninit_assume_init)]
-# #![feature(const_discriminant)]
-# #![feature(const_trait_impl)]
-# #![feature(const_mut_refs)]
-# #![feature(const_fn_trait_bound)]
-# #![allow(incomplete_features)]
-# #![feature(generic_const_exprs)]
-
-use const_type_layout::TypeLayout;
-
-#[derive(TypeLayout)]
-#[repr(C)]
-struct Foo {
-    a: u8,
-    b: u32,
-}
-
-println!("{:#?}", Foo::TYPE_LAYOUT);
-// prints:
-//
-// TypeLayoutInfo {
-//     name: "Foo",
-//     size: 8,
-//     alignment: 4,
-//     structure: Struct {
-//         repr: "C",
-//         fields: [
-//             Field {
-//                 name: "a",
-//                 offset: 0,
-//                 ty: "u8",
-//             },
-//             Field {
-//                 name: "b",
-//                 offset: 4,
-//                 ty: "u32",
-//             },
-//         ],
-//     },
-// }
-```
-
-Over-aligned types have trailing padding, which can be a source of bugs in some
-FFI scenarios:
-
-```rust
-# #![feature(cfg_version)]
-# #![feature(const_type_name)]
-# #![feature(const_raw_ptr_deref)]
-# #![feature(const_maybe_uninit_as_ptr)]
-# #![feature(const_ptr_offset_from)]
-# #![cfg_attr(not(version("1.57.0")), feature(const_panic))]
-# #![feature(const_refs_to_cell)]
-# #![feature(const_maybe_uninit_assume_init)]
-# #![feature(const_discriminant)]
-# #![feature(const_trait_impl)]
-# #![feature(const_mut_refs)]
-# #![feature(const_fn_trait_bound)]
-# #![allow(incomplete_features)]
-# #![feature(generic_const_exprs)]
-
-use const_type_layout::TypeLayout;
-
-#[derive(TypeLayout)]
-#[repr(C, align(128))]
-struct OverAligned {
-    value: u8,
-}
-
-println!("{:#?}", OverAligned::TYPE_LAYOUT);
-// prints:
-//
-// TypeLayoutInfo {
-//     name: "OverAligned",
-//     size: 128,
-//     alignment: 128,
-//     structure: Struct {
-//         repr: "C",
-//         fields: [
-//             Field {
-//                 name: "value",
-//                 offset: 0,
-//                 ty: "u8",
-//             },
-//         ],
-//     },
-// }
-```
-*/
+//! [![CI Status]][workflow] [![Rust Doc]][docs] [![License Status]][fossa]
+//! [![Code Coverage]][codecov] [![Gitpod Ready-to-Code]][gitpod]
+//!
+//! [CI Status]: https://img.shields.io/github/workflow/status/MomoLangenstein/const-type-layout/CI/main?label=CI
+//! [workflow]: https://github.com/MomoLangenstein/const-type-layout/actions/workflows/ci.yml?query=branch%3Amain
+//!
+//! [Rust Doc]: https://img.shields.io/badge/docs-main-blue
+//! [docs]: https://momolangenstein.github.io/const-type-layout/const_type_layout
+//!
+//! [License Status]: https://app.fossa.com/api/projects/git%2Bgithub.com%2FMomoLangenstein%2Fconst-type-layout.svg?type=shield
+//! [fossa]: https://app.fossa.com/projects/git%2Bgithub.com%2FMomoLangenstein%2Fconst-type-layout?ref=badge_shield
+//!
+//! [Code Coverage]: https://img.shields.io/codecov/c/github/MomoLangenstein/const-type-layout?token=J39WVBIMZX
+//! [codecov]: https://codecov.io/gh/MomoLangenstein/const-type-layout
+//!
+//! [Gitpod Ready-to-Code]: https://img.shields.io/badge/Gitpod-ready-blue?logo=gitpod
+//! [gitpod]: https://gitpod.io/#https://github.com/MomoLangenstein/const-type-layout
+//!
+//! `const-type-layout` is a type layout comparison aid, providing a
+//! `#[derive]`able `TypeLayout` trait that reports:
+//! - The type's name, size, and minimum alignment
+//! - The type's structure, i.e. struct vs. union vs. enum
+//! - Each field's name and offset
+//! - Each variant's name and discriminant
+//!
+//! Through the auto-implemented `TypeGraphLayout` trait, the deep type layout
+//! is also reported as a graph.
+//!
+//! This crate heavily builds on the original runtime [type-layout](https://github.com/LPGhatguy/type-layout) crate by Lucien Greathouse.
+//!
+//! ## Examples
+//!
+//! The layout of types is only defined if they're `#[repr(C)]`. This crate
+//! works on non-`#[repr(C)]` types, but their layout is unpredictable.
+//!
+//! ```rust
+//! # #![feature(cfg_version)]
+//! # #![feature(const_type_name)]
+//! # #![feature(const_raw_ptr_deref)]
+//! # #![feature(const_maybe_uninit_as_ptr)]
+//! # #![feature(const_ptr_offset_from)]
+//! # #![cfg_attr(not(version("1.57.0")), feature(const_panic))]
+//! # #![feature(const_refs_to_cell)]
+//! # #![feature(const_maybe_uninit_assume_init)]
+//! # #![feature(const_discriminant)]
+//! # #![feature(const_trait_impl)]
+//! # #![feature(const_mut_refs)]
+//! # #![feature(const_fn_trait_bound)]
+//! # #![allow(incomplete_features)]
+//! # #![feature(generic_const_exprs)]
+//!
+//! use const_type_layout::TypeLayout;
+//!
+//! #[derive(TypeLayout)]
+//! #[repr(C)]
+//! struct Foo {
+//! a: u8,
+//! b: u32,
+//! }
+//!
+//! println!("{:#?}", Foo::TYPE_LAYOUT);
+//! // prints:
+//!
+//! // TypeLayoutInfo {
+//! //     name: "Foo",
+//! //     size: 8,
+//! //     alignment: 4,
+//! //     structure: Struct {
+//! //         repr: "C",
+//! //         fields: [
+//! //             Field {
+//! //                 name: "a",
+//! //                 offset: 0,
+//! //                 ty: "u8",
+//! //             },
+//! //             Field {
+//! //                 name: "b",
+//! //                 offset: 4,
+//! //                 ty: "u32",
+//! //             },
+//! //         ],
+//! //     },
+//! // }
+//! ```
+//!
+//! Over-aligned types have trailing padding, which can be a source of bugs in
+//! some FFI scenarios:
+//!
+//! ```rust
+//! # #![feature(cfg_version)]
+//! # #![feature(const_type_name)]
+//! # #![feature(const_raw_ptr_deref)]
+//! # #![feature(const_maybe_uninit_as_ptr)]
+//! # #![feature(const_ptr_offset_from)]
+//! # #![cfg_attr(not(version("1.57.0")), feature(const_panic))]
+//! # #![feature(const_refs_to_cell)]
+//! # #![feature(const_maybe_uninit_assume_init)]
+//! # #![feature(const_discriminant)]
+//! # #![feature(const_trait_impl)]
+//! # #![feature(const_mut_refs)]
+//! # #![feature(const_fn_trait_bound)]
+//! # #![allow(incomplete_features)]
+//! # #![feature(generic_const_exprs)]
+//!
+//! use const_type_layout::TypeLayout;
+//!
+//! #[derive(TypeLayout)]
+//! #[repr(C, align(128))]
+//! struct OverAligned {
+//! value: u8,
+//! }
+//!
+//! println!("{:#?}", OverAligned::TYPE_LAYOUT);
+//! // prints:
+//!
+//! // TypeLayoutInfo {
+//! //     name: "OverAligned",
+//! //     size: 128,
+//! //     alignment: 128,
+//! //     structure: Struct {
+//! //         repr: "C,align(128)",
+//! //         fields: [
+//! //             Field {
+//! //                 name: "value",
+//! //                 offset: 0,
+//! //                 ty: "u8",
+//! //             },
+//! //         ],
+//! //     },
+//! // }
+//! ```
 
 #![deny(clippy::pedantic)]
 #![no_std]
@@ -160,10 +160,18 @@ pub use const_type_layout_derive::TypeLayout;
 mod impls;
 mod ser;
 
+/// # Safety
+///
+/// It is only safe to implement this trait if it accurately describes the
+///  type's layout. Use `#[derive(TypeLayout)]` instead.
 pub unsafe trait TypeLayout: Sized {
     const TYPE_LAYOUT: TypeLayoutInfo<'static>;
 }
 
+/// # Safety
+///
+/// It is only safe to implement this trait if it accurately populates the
+///  type's layout graph. Use `#[derive(TypeLayout)]` instead.
 pub unsafe trait TypeGraph: TypeLayout {
     fn populate_graph(graph: &mut TypeLayoutGraph<'static>);
 }

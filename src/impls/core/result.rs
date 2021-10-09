@@ -15,19 +15,20 @@ impl<T, E> ResultDiscriminant for Result<T, E>
 where
     [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]: ,
 {
-    const OK_DISCRIMINANT_BYTES: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = unsafe {
-        let mut value: core::mem::MaybeUninit<T> = core::mem::MaybeUninit::uninit();
+    const ERR_DISCRIMINANT_BYTES: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = unsafe {
+        let mut value: core::mem::MaybeUninit<E> = core::mem::MaybeUninit::uninit();
 
         let mut i = 0;
-        while i < core::mem::size_of::<T>() {
+        while i < core::mem::size_of::<E>() {
             *value.as_mut_ptr().cast::<u8>().add(i) = 0xFF_u8;
             i += 1;
         }
 
-        let ok: core::mem::MaybeUninit<Self> = core::mem::MaybeUninit::new(Ok(value.assume_init()));
+        let err: core::mem::MaybeUninit<Self> =
+            core::mem::MaybeUninit::new(Err(value.assume_init()));
 
         let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] =
-            core::mem::transmute(core::mem::discriminant(ok.assume_init_ref()));
+            core::mem::transmute(core::mem::discriminant(err.assume_init_ref()));
 
         let mut big_endian_bytes = [0_u8; core::mem::size_of::<core::mem::Discriminant<Self>>()];
 
@@ -45,21 +46,19 @@ where
 
         big_endian_bytes
     };
-
-    const ERR_DISCRIMINANT_BYTES: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = unsafe {
-        let mut value: core::mem::MaybeUninit<E> = core::mem::MaybeUninit::uninit();
+    const OK_DISCRIMINANT_BYTES: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = unsafe {
+        let mut value: core::mem::MaybeUninit<T> = core::mem::MaybeUninit::uninit();
 
         let mut i = 0;
-        while i < core::mem::size_of::<E>() {
+        while i < core::mem::size_of::<T>() {
             *value.as_mut_ptr().cast::<u8>().add(i) = 0xFF_u8;
             i += 1;
         }
 
-        let err: core::mem::MaybeUninit<Self> =
-            core::mem::MaybeUninit::new(Err(value.assume_init()));
+        let ok: core::mem::MaybeUninit<Self> = core::mem::MaybeUninit::new(Ok(value.assume_init()));
 
         let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] =
-            core::mem::transmute(core::mem::discriminant(err.assume_init_ref()));
+            core::mem::transmute(core::mem::discriminant(ok.assume_init_ref()));
 
         let mut big_endian_bytes = [0_u8; core::mem::size_of::<core::mem::Discriminant<Self>>()];
 

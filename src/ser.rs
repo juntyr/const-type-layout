@@ -233,33 +233,33 @@ pub const fn serialise_type_structure<'a>(
             let from = serialise_byte(bytes, from, b's');
             let from = serialise_str(bytes, from, repr);
             serialise_fields(bytes, from, fields)
-        }
+        },
         TypeStructure::Union { repr, fields } => {
             let from = serialise_byte(bytes, from, b'u');
             let from = serialise_str(bytes, from, repr);
             serialise_fields(bytes, from, fields)
-        }
+        },
         TypeStructure::Enum { repr, variants } => {
             let from = serialise_byte(bytes, from, b'e');
             let from = serialise_str(bytes, from, repr);
             serialise_variants(bytes, from, variants)
-        }
+        },
         TypeStructure::Primitive => serialise_byte(bytes, from, b'v'),
         TypeStructure::Array { item, len } => {
             let from = serialise_byte(bytes, from, b'a');
             let from = serialise_str(bytes, from, item);
             serialise_usize(bytes, from, *len)
-        }
+        },
         TypeStructure::Reference { inner, mutability } => {
             let from = serialise_byte(bytes, from, b'r');
             let from = serialise_str(bytes, from, inner);
             serialise_bool(bytes, from, *mutability)
-        }
+        },
         TypeStructure::Pointer { inner, mutability } => {
             let from = serialise_byte(bytes, from, b'p');
             let from = serialise_str(bytes, from, inner);
             serialise_bool(bytes, from, *mutability)
-        }
+        },
     }
 }
 
@@ -269,33 +269,33 @@ pub const fn serialised_type_structure_len(from: usize, value: &TypeStructure) -
             let from = serialised_byte_len(from, b's');
             let from = serialised_str_len(from, repr);
             serialised_fields_len(from, fields)
-        }
+        },
         TypeStructure::Union { repr, fields } => {
             let from = serialised_byte_len(from, b'u');
             let from = serialised_str_len(from, repr);
             serialised_fields_len(from, fields)
-        }
+        },
         TypeStructure::Enum { repr, variants } => {
             let from = serialised_byte_len(from, b'e');
             let from = serialised_str_len(from, repr);
             serialised_variants_len(from, variants)
-        }
+        },
         TypeStructure::Primitive => serialised_byte_len(from, b'v'),
         TypeStructure::Array { item, len } => {
             let from = serialised_byte_len(from, b'a');
             let from = serialised_str_len(from, item);
             serialised_usize_len(from, *len)
-        }
+        },
         TypeStructure::Reference { inner, mutability } => {
             let from = serialised_byte_len(from, b'r');
             let from = serialised_str_len(from, inner);
             serialised_bool_len(from, *mutability)
-        }
+        },
         TypeStructure::Pointer { inner, mutability } => {
             let from = serialised_byte_len(from, b'p');
             let from = serialised_str_len(from, inner);
             serialised_bool_len(from, *mutability)
-        }
+        },
     }
 }
 

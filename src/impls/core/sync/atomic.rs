@@ -9,7 +9,7 @@ macro_rules! impl_atomic_int_layout {
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
                 structure: TypeStructure::Struct {
-                    repr: concat!("align(", $align, "),C"),
+                    repr: concat!("C,align(", $align, ")"),
                     fields: &[
                         Field {
                             name: "v",
@@ -54,7 +54,7 @@ macro_rules! impl_atomic_ptr_layout {
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
                 structure: TypeStructure::Struct {
-                    repr: concat!("align(", $align, "),C"),
+                    repr: concat!("C,align(", $align, ")"),
                     fields: &[
                         Field {
                             name: "v",

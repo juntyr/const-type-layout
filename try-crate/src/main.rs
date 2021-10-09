@@ -15,8 +15,7 @@
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 
-use const_type_layout::TypeGraphLayout;
-use const_type_layout::TypeLayout;
+use const_type_layout::{TypeGraphLayout, TypeLayout};
 
 #[repr(C)]
 #[derive(TypeLayout)]
