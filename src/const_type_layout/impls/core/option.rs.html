@@ -135,7 +135,6 @@
 <span id="135">135</span>
 <span id="136">136</span>
 <span id="137">137</span>
-<span id="138">138</span>
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="kw">crate</span>::{
     <span class="ident">Discriminant</span>, <span class="ident">Field</span>, <span class="ident">TypeGraph</span>, <span class="ident">TypeLayout</span>, <span class="ident">TypeLayoutGraph</span>, <span class="ident">TypeLayoutInfo</span>, <span class="ident">TypeStructure</span>,
     <span class="ident">Variant</span>,
@@ -175,7 +174,6 @@
 
         <span class="ident">big_endian_bytes</span>
     };
-
     <span class="kw">const</span> <span class="ident">SOME_DISCRIMINANT_BYTES</span>: [<span class="ident">u8</span>; <span class="ident">core::mem::size_of</span>::<span class="op">&lt;</span><span class="ident">core::mem::Discriminant</span><span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span><span class="op">&gt;</span>()] <span class="op">=</span> <span class="kw">unsafe</span> {
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">value</span>: <span class="ident">core::mem::MaybeUninit</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">core::mem::MaybeUninit::uninit</span>();
 

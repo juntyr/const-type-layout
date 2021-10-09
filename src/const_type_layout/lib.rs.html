@@ -415,137 +415,145 @@
 <span id="415">415</span>
 <span id="416">416</span>
 <span id="417">417</span>
-</pre><pre class="rust"><code><span class="doccomment">/*!
-[![CI Status]][workflow] [![Rust Doc]][docs] [![License Status]][fossa] [![Code Coverage]][codecov] [![Gitpod Ready-to-Code]][gitpod]
-
-[CI Status]: https://img.shields.io/github/workflow/status/MomoLangenstein/const-type-layout/CI/main?label=CI
-[workflow]: https://github.com/MomoLangenstein/const-type-layout/actions/workflows/ci.yml?query=branch%3Amain
-
-[Rust Doc]: https://img.shields.io/badge/docs-main-blue
-[docs]: https://momolangenstein.github.io/const-type-layout/const_type_layout
-
-[License Status]: https://app.fossa.com/api/projects/git%2Bgithub.com%2FMomoLangenstein%2Fconst-type-layout.svg?type=shield
-[fossa]: https://app.fossa.com/projects/git%2Bgithub.com%2FMomoLangenstein%2Fconst-type-layout?ref=badge_shield
-
-[Code Coverage]: https://img.shields.io/codecov/c/github/MomoLangenstein/const-type-layout?token=J39WVBIMZX
-[codecov]: https://codecov.io/gh/MomoLangenstein/const-type-layout
-
-[Gitpod Ready-to-Code]: https://img.shields.io/badge/Gitpod-ready-blue?logo=gitpod
-[gitpod]: https://gitpod.io/#https://github.com/MomoLangenstein/const-type-layout
-
-`const-type-layout` is a type layout comparison aid, providing a `#[derive]`able `TypeLayout` trait
-that reports:
-- The type&#39;s name, size, and minimum alignment
-- The type&#39;s structure, i.e. struct vs. union vs. enum
-- Each field&#39;s name and offset
-- Each variant&#39;s name and discriminant
-
-Through the auto-implemented `TypeGraphLayout` trait, the deep type layout is also reported as a graph.
-
-This crate heavily builds on the original runtime [type-layout](https://github.com/LPGhatguy/type-layout) crate by Lucien Greathouse.
-
-## Examples
-
-The layout of types is only defined if they&#39;re `#[repr(C)]`. This crate works on
-non-`#[repr(C)]` types, but their layout is unpredictable.
-
-```rust
-# #![feature(cfg_version)]
-# #![feature(const_type_name)]
-# #![feature(const_raw_ptr_deref)]
-# #![feature(const_maybe_uninit_as_ptr)]
-# #![feature(const_ptr_offset_from)]
-# #![cfg_attr(not(version(&quot;1.57.0&quot;)), feature(const_panic))]
-# #![feature(const_refs_to_cell)]
-# #![feature(const_maybe_uninit_assume_init)]
-# #![feature(const_discriminant)]
-# #![feature(const_trait_impl)]
-# #![feature(const_mut_refs)]
-# #![feature(const_fn_trait_bound)]
-# #![allow(incomplete_features)]
-# #![feature(generic_const_exprs)]
-
-use const_type_layout::TypeLayout;
-
-#[derive(TypeLayout)]
-#[repr(C)]
-struct Foo {
-    a: u8,
-    b: u32,
-}
-
-println!(&quot;{:#?}&quot;, Foo::TYPE_LAYOUT);
-// prints:
-//
-// TypeLayoutInfo {
-//     name: &quot;Foo&quot;,
-//     size: 8,
-//     alignment: 4,
-//     structure: Struct {
-//         repr: &quot;C&quot;,
-//         fields: [
-//             Field {
-//                 name: &quot;a&quot;,
-//                 offset: 0,
-//                 ty: &quot;u8&quot;,
-//             },
-//             Field {
-//                 name: &quot;b&quot;,
-//                 offset: 4,
-//                 ty: &quot;u32&quot;,
-//             },
-//         ],
-//     },
-// }
-```
-
-Over-aligned types have trailing padding, which can be a source of bugs in some
-FFI scenarios:
-
-```rust
-# #![feature(cfg_version)]
-# #![feature(const_type_name)]
-# #![feature(const_raw_ptr_deref)]
-# #![feature(const_maybe_uninit_as_ptr)]
-# #![feature(const_ptr_offset_from)]
-# #![cfg_attr(not(version(&quot;1.57.0&quot;)), feature(const_panic))]
-# #![feature(const_refs_to_cell)]
-# #![feature(const_maybe_uninit_assume_init)]
-# #![feature(const_discriminant)]
-# #![feature(const_trait_impl)]
-# #![feature(const_mut_refs)]
-# #![feature(const_fn_trait_bound)]
-# #![allow(incomplete_features)]
-# #![feature(generic_const_exprs)]
-
-use const_type_layout::TypeLayout;
-
-#[derive(TypeLayout)]
-#[repr(C, align(128))]
-struct OverAligned {
-    value: u8,
-}
-
-println!(&quot;{:#?}&quot;, OverAligned::TYPE_LAYOUT);
-// prints:
-//
-// TypeLayoutInfo {
-//     name: &quot;OverAligned&quot;,
-//     size: 128,
-//     alignment: 128,
-//     structure: Struct {
-//         repr: &quot;C&quot;,
-//         fields: [
-//             Field {
-//                 name: &quot;value&quot;,
-//                 offset: 0,
-//                 ty: &quot;u8&quot;,
-//             },
-//         ],
-//     },
-// }
-```
-*/</span>
+<span id="418">418</span>
+<span id="419">419</span>
+<span id="420">420</span>
+<span id="421">421</span>
+<span id="422">422</span>
+<span id="423">423</span>
+<span id="424">424</span>
+<span id="425">425</span>
+</pre><pre class="rust"><code><span class="doccomment">//! [![CI Status]][workflow] [![Rust Doc]][docs] [![License Status]][fossa]</span>
+<span class="doccomment">//! [![Code Coverage]][codecov] [![Gitpod Ready-to-Code]][gitpod]</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! [CI Status]: https://img.shields.io/github/workflow/status/MomoLangenstein/const-type-layout/CI/main?label=CI</span>
+<span class="doccomment">//! [workflow]: https://github.com/MomoLangenstein/const-type-layout/actions/workflows/ci.yml?query=branch%3Amain</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! [Rust Doc]: https://img.shields.io/badge/docs-main-blue</span>
+<span class="doccomment">//! [docs]: https://momolangenstein.github.io/const-type-layout/const_type_layout</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! [License Status]: https://app.fossa.com/api/projects/git%2Bgithub.com%2FMomoLangenstein%2Fconst-type-layout.svg?type=shield</span>
+<span class="doccomment">//! [fossa]: https://app.fossa.com/projects/git%2Bgithub.com%2FMomoLangenstein%2Fconst-type-layout?ref=badge_shield</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! [Code Coverage]: https://img.shields.io/codecov/c/github/MomoLangenstein/const-type-layout?token=J39WVBIMZX</span>
+<span class="doccomment">//! [codecov]: https://codecov.io/gh/MomoLangenstein/const-type-layout</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! [Gitpod Ready-to-Code]: https://img.shields.io/badge/Gitpod-ready-blue?logo=gitpod</span>
+<span class="doccomment">//! [gitpod]: https://gitpod.io/#https://github.com/MomoLangenstein/const-type-layout</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! `const-type-layout` is a type layout comparison aid, providing a</span>
+<span class="doccomment">//! `#[derive]`able `TypeLayout` trait that reports:</span>
+<span class="doccomment">//! - The type&#39;s name, size, and minimum alignment</span>
+<span class="doccomment">//! - The type&#39;s structure, i.e. struct vs. union vs. enum</span>
+<span class="doccomment">//! - Each field&#39;s name and offset</span>
+<span class="doccomment">//! - Each variant&#39;s name and discriminant</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! Through the auto-implemented `TypeGraphLayout` trait, the deep type layout</span>
+<span class="doccomment">//! is also reported as a graph.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! This crate heavily builds on the original runtime [type-layout](https://github.com/LPGhatguy/type-layout) crate by Lucien Greathouse.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! ## Examples</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! The layout of types is only defined if they&#39;re `#[repr(C)]`. This crate</span>
+<span class="doccomment">//! works on non-`#[repr(C)]` types, but their layout is unpredictable.</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! ```rust</span>
+<span class="doccomment">//! # #![feature(cfg_version)]</span>
+<span class="doccomment">//! # #![feature(const_type_name)]</span>
+<span class="doccomment">//! # #![feature(const_raw_ptr_deref)]</span>
+<span class="doccomment">//! # #![feature(const_maybe_uninit_as_ptr)]</span>
+<span class="doccomment">//! # #![feature(const_ptr_offset_from)]</span>
+<span class="doccomment">//! # #![cfg_attr(not(version(&quot;1.57.0&quot;)), feature(const_panic))]</span>
+<span class="doccomment">//! # #![feature(const_refs_to_cell)]</span>
+<span class="doccomment">//! # #![feature(const_maybe_uninit_assume_init)]</span>
+<span class="doccomment">//! # #![feature(const_discriminant)]</span>
+<span class="doccomment">//! # #![feature(const_trait_impl)]</span>
+<span class="doccomment">//! # #![feature(const_mut_refs)]</span>
+<span class="doccomment">//! # #![feature(const_fn_trait_bound)]</span>
+<span class="doccomment">//! # #![allow(incomplete_features)]</span>
+<span class="doccomment">//! # #![feature(generic_const_exprs)]</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! use const_type_layout::TypeLayout;</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! #[derive(TypeLayout)]</span>
+<span class="doccomment">//! #[repr(C)]</span>
+<span class="doccomment">//! struct Foo {</span>
+<span class="doccomment">//! a: u8,</span>
+<span class="doccomment">//! b: u32,</span>
+<span class="doccomment">//! }</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! println!(&quot;{:#?}&quot;, Foo::TYPE_LAYOUT);</span>
+<span class="doccomment">//! // prints:</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! // TypeLayoutInfo {</span>
+<span class="doccomment">//! //     name: &quot;Foo&quot;,</span>
+<span class="doccomment">//! //     size: 8,</span>
+<span class="doccomment">//! //     alignment: 4,</span>
+<span class="doccomment">//! //     structure: Struct {</span>
+<span class="doccomment">//! //         repr: &quot;C&quot;,</span>
+<span class="doccomment">//! //         fields: [</span>
+<span class="doccomment">//! //             Field {</span>
+<span class="doccomment">//! //                 name: &quot;a&quot;,</span>
+<span class="doccomment">//! //                 offset: 0,</span>
+<span class="doccomment">//! //                 ty: &quot;u8&quot;,</span>
+<span class="doccomment">//! //             },</span>
+<span class="doccomment">//! //             Field {</span>
+<span class="doccomment">//! //                 name: &quot;b&quot;,</span>
+<span class="doccomment">//! //                 offset: 4,</span>
+<span class="doccomment">//! //                 ty: &quot;u32&quot;,</span>
+<span class="doccomment">//! //             },</span>
+<span class="doccomment">//! //         ],</span>
+<span class="doccomment">//! //     },</span>
+<span class="doccomment">//! // }</span>
+<span class="doccomment">//! ```</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! Over-aligned types have trailing padding, which can be a source of bugs in</span>
+<span class="doccomment">//! some FFI scenarios:</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! ```rust</span>
+<span class="doccomment">//! # #![feature(cfg_version)]</span>
+<span class="doccomment">//! # #![feature(const_type_name)]</span>
+<span class="doccomment">//! # #![feature(const_raw_ptr_deref)]</span>
+<span class="doccomment">//! # #![feature(const_maybe_uninit_as_ptr)]</span>
+<span class="doccomment">//! # #![feature(const_ptr_offset_from)]</span>
+<span class="doccomment">//! # #![cfg_attr(not(version(&quot;1.57.0&quot;)), feature(const_panic))]</span>
+<span class="doccomment">//! # #![feature(const_refs_to_cell)]</span>
+<span class="doccomment">//! # #![feature(const_maybe_uninit_assume_init)]</span>
+<span class="doccomment">//! # #![feature(const_discriminant)]</span>
+<span class="doccomment">//! # #![feature(const_trait_impl)]</span>
+<span class="doccomment">//! # #![feature(const_mut_refs)]</span>
+<span class="doccomment">//! # #![feature(const_fn_trait_bound)]</span>
+<span class="doccomment">//! # #![allow(incomplete_features)]</span>
+<span class="doccomment">//! # #![feature(generic_const_exprs)]</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! use const_type_layout::TypeLayout;</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! #[derive(TypeLayout)]</span>
+<span class="doccomment">//! #[repr(C, align(128))]</span>
+<span class="doccomment">//! struct OverAligned {</span>
+<span class="doccomment">//! value: u8,</span>
+<span class="doccomment">//! }</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! println!(&quot;{:#?}&quot;, OverAligned::TYPE_LAYOUT);</span>
+<span class="doccomment">//! // prints:</span>
+<span class="doccomment">//!</span>
+<span class="doccomment">//! // TypeLayoutInfo {</span>
+<span class="doccomment">//! //     name: &quot;OverAligned&quot;,</span>
+<span class="doccomment">//! //     size: 128,</span>
+<span class="doccomment">//! //     alignment: 128,</span>
+<span class="doccomment">//! //     structure: Struct {</span>
+<span class="doccomment">//! //         repr: &quot;C,align(128)&quot;,</span>
+<span class="doccomment">//! //         fields: [</span>
+<span class="doccomment">//! //             Field {</span>
+<span class="doccomment">//! //                 name: &quot;value&quot;,</span>
+<span class="doccomment">//! //                 offset: 0,</span>
+<span class="doccomment">//! //                 ty: &quot;u8&quot;,</span>
+<span class="doccomment">//! //             },</span>
+<span class="doccomment">//! //         ],</span>
+<span class="doccomment">//! //     },</span>
+<span class="doccomment">//! // }</span>
+<span class="doccomment">//! ```</span>
 
 <span class="attribute">#![<span class="ident">deny</span>(<span class="ident">clippy::pedantic</span>)]</span>
 <span class="attribute">#![<span class="ident">no_std</span>]</span>
@@ -577,10 +585,18 @@ println!(&quot;{:#?}&quot;, OverAligned::TYPE_LAYOUT);
 <span class="kw">mod</span> <span class="ident">impls</span>;
 <span class="kw">mod</span> <span class="ident">ser</span>;
 
+<span class="doccomment">/// # Safety</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// It is only safe to implement this trait if it accurately describes the</span>
+<span class="doccomment">///  type&#39;s layout. Use `#[derive(TypeLayout)]` instead.</span>
 <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">trait</span> <span class="ident">TypeLayout</span>: <span class="ident">Sized</span> {
     <span class="kw">const</span> <span class="ident">TYPE_LAYOUT</span>: <span class="ident">TypeLayoutInfo</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;</span>;
 }
 
+<span class="doccomment">/// # Safety</span>
+<span class="doccomment">///</span>
+<span class="doccomment">/// It is only safe to implement this trait if it accurately populates the</span>
+<span class="doccomment">///  type&#39;s layout graph. Use `#[derive(TypeLayout)]` instead.</span>
 <span class="kw">pub</span> <span class="kw">unsafe</span> <span class="kw">trait</span> <span class="ident">TypeGraph</span>: <span class="ident">TypeLayout</span> {
     <span class="kw">fn</span> <span class="ident">populate_graph</span>(<span class="ident">graph</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">TypeLayoutGraph</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;</span>);
 }
