@@ -421,8 +421,6 @@
 <span id="421">421</span>
 <span id="422">422</span>
 <span id="423">423</span>
-<span id="424">424</span>
-<span id="425">425</span>
 </pre><pre class="rust"><code><span class="doccomment">//! [![CI Status]][workflow] [![Rust Doc]][docs] [![License Status]][fossa]</span>
 <span class="doccomment">//! [![Code Coverage]][codecov] [![Gitpod Ready-to-Code]][gitpod]</span>
 <span class="doccomment">//!</span>
@@ -473,7 +471,6 @@
 <span class="doccomment">//! # #![feature(const_fn_trait_bound)]</span>
 <span class="doccomment">//! # #![allow(incomplete_features)]</span>
 <span class="doccomment">//! # #![feature(generic_const_exprs)]</span>
-<span class="doccomment">//!</span>
 <span class="doccomment">//! use const_type_layout::TypeLayout;</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! #[derive(TypeLayout)]</span>
@@ -526,7 +523,6 @@
 <span class="doccomment">//! # #![feature(const_fn_trait_bound)]</span>
 <span class="doccomment">//! # #![allow(incomplete_features)]</span>
 <span class="doccomment">//! # #![feature(generic_const_exprs)]</span>
-<span class="doccomment">//!</span>
 <span class="doccomment">//! use const_type_layout::TypeLayout;</span>
 <span class="doccomment">//!</span>
 <span class="doccomment">//! #[derive(TypeLayout)]</span>
@@ -616,13 +612,13 @@
 }
 
 <span class="attribute">#[<span class="ident">must_use</span>]</span>
-<span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">serialised_type_graph_len</span><span class="op">&lt;</span><span class="ident">T</span>: ~<span class="kw">const</span> <span class="ident">TypeGraphLayout</span><span class="op">&gt;</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+<span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">serialised_type_graph_len</span><span class="op">&lt;</span><span class="ident">T</span>: ~<span class="kw">const</span> <span class="ident">TypeGraphLayout</span><span class="op">&gt;</span>() -&gt; <span class="ident">usize</span> {
     <span class="ident">T::TYPE_GRAPH</span>.<span class="ident">serialised_len</span>()
 }
 
 <span class="attribute">#[<span class="ident">must_use</span>]</span>
 <span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">serialise_type_graph</span><span class="op">&lt;</span><span class="ident">T</span>: ~<span class="kw">const</span> <span class="ident">TypeGraphLayout</span><span class="op">&gt;</span>(
-) <span class="op">-</span><span class="op">&gt;</span> [<span class="ident">u8</span>; <span class="ident">serialised_type_graph_len</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>()] {
+) -&gt; [<span class="ident">u8</span>; <span class="ident">serialised_type_graph_len</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>()] {
     <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">bytes</span> <span class="op">=</span> [<span class="number">0_u8</span>; <span class="ident">serialised_type_graph_len</span>::<span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span>()];
 
     <span class="ident">T::TYPE_GRAPH</span>.<span class="ident">serialise</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">bytes</span>);
@@ -701,7 +697,7 @@
     <span class="kw">const</span> <span class="ident">CAPACITY</span>: <span class="ident">usize</span> <span class="op">=</span> <span class="number">1024</span>;
 
     <span class="attribute">#[<span class="ident">must_use</span>]</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">TypeLayout</span><span class="op">&gt;</span>() <span class="op">-</span><span class="op">&gt;</span> <span class="self">Self</span> {
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">new</span><span class="op">&lt;</span><span class="ident">T</span>: <span class="ident">TypeLayout</span><span class="op">&gt;</span>() -&gt; <span class="self">Self</span> {
         <span class="self">Self</span> {
             <span class="ident">ty</span>: <span class="op">&lt;</span><span class="ident">T</span> <span class="kw">as</span> <span class="ident">TypeLayout</span><span class="op">&gt;</span><span class="ident">::TYPE_LAYOUT</span>.<span class="ident">name</span>,
             <span class="ident">len</span>: <span class="number">0</span>,
@@ -712,7 +708,7 @@
     <span class="doccomment">/// # Panics</span>
     <span class="doccomment">///</span>
     <span class="doccomment">/// Panics iff the graph is not large enough to store the extra `ty`.</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">TypeLayoutInfo</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">insert</span>(<span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="self">self</span>, <span class="ident">ty</span>: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a</span> <span class="ident">TypeLayoutInfo</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span>) -&gt; <span class="ident">bool</span> {
         <span class="kw">let</span> <span class="ident">ty_name_bytes</span> <span class="op">=</span> <span class="ident">ty</span>.<span class="ident">name</span>.<span class="ident">as_bytes</span>();
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">i</span> <span class="op">=</span> <span class="number">0</span>;
@@ -721,13 +717,13 @@
             <span class="kw">let</span> <span class="ident">cached_ty_name_bytes</span> <span class="op">=</span> <span class="kw">unsafe</span> { <span class="kw-2">&amp;</span><span class="kw-2">*</span><span class="self">self</span>.<span class="ident">tys</span>[<span class="ident">i</span>] }.<span class="ident">name</span>.<span class="ident">as_bytes</span>();
 
             <span class="comment">// The type names can only be equal if they are the same length</span>
-            <span class="kw">if</span> <span class="ident">ty_name_bytes</span>.<span class="ident">len</span>() <span class="op">=</span><span class="op">=</span> <span class="ident">cached_ty_name_bytes</span>.<span class="ident">len</span>() {
+            <span class="kw">if</span> <span class="ident">ty_name_bytes</span>.<span class="ident">len</span>() <span class="op">==</span> <span class="ident">cached_ty_name_bytes</span>.<span class="ident">len</span>() {
                 <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">j</span> <span class="op">=</span> <span class="number">0</span>;
 
                 <span class="kw">while</span> <span class="ident">j</span> <span class="op">&lt;</span> <span class="ident">ty_name_bytes</span>.<span class="ident">len</span>() {
                     <span class="comment">// Break early, i.e. j &lt; ty_name_bytes.len(),</span>
                     <span class="comment">//  if the type names do NOT match</span>
-                    <span class="kw">if</span> <span class="ident">ty_name_bytes</span>[<span class="ident">i</span>] <span class="op">!</span><span class="op">=</span> <span class="ident">cached_ty_name_bytes</span>[<span class="ident">i</span>] {
+                    <span class="kw">if</span> <span class="ident">ty_name_bytes</span>[<span class="ident">j</span>] <span class="op">!</span><span class="op">=</span> <span class="ident">cached_ty_name_bytes</span>[<span class="ident">j</span>] {
                         <span class="kw">break</span>;
                     }
 
@@ -754,7 +750,7 @@
     }
 
     <span class="attribute">#[<span class="ident">must_use</span>]</span>
-    <span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">serialised_len</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">usize</span> {
+    <span class="kw">pub</span> <span class="kw">const</span> <span class="kw">fn</span> <span class="ident">serialised_len</span>(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="ident">usize</span> {
         <span class="kw">let</span> <span class="ident">len</span> <span class="op">=</span> <span class="ident">ser::serialised_type_layout_graph_len</span>(<span class="number">0</span>, <span class="self">self</span>);
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">last_full_len</span> <span class="op">=</span> <span class="ident">len</span>;
@@ -776,7 +772,7 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">fmt::Debug</span> <span class="kw">for</span> <span class="ident">TypeLayoutGraph</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">fmt</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt::Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt::Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">fmt</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt::Formatter</span>) -&gt; <span class="ident">fmt::Result</span> {
         <span class="macro">write!</span>(<span class="ident">fmt</span>, <span class="string">&quot;TypeLayoutGraph&lt;{}&gt;(&quot;</span>, <span class="self">self</span>.<span class="ident">ty</span>)<span class="question-mark">?</span>;
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">debug</span> <span class="op">=</span> <span class="ident">fmt</span>.<span class="ident">debug_list</span>();
@@ -792,7 +788,7 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Ord</span> <span class="kw">for</span> <span class="ident">Variant</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">cmp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">core::cmp::Ordering</span> {
+    <span class="kw">fn</span> <span class="ident">cmp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <span class="ident">core::cmp::Ordering</span> {
         (<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">discriminant</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">name</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">fields</span>).<span class="ident">cmp</span>(<span class="kw-2">&amp;</span>(
             <span class="kw-2">&amp;</span><span class="ident">other</span>.<span class="ident">discriminant</span>,
             <span class="kw-2">&amp;</span><span class="ident">other</span>.<span class="ident">name</span>,
@@ -802,13 +798,13 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">PartialOrd</span> <span class="kw">for</span> <span class="ident">Variant</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">partial_cmp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">core::cmp::Ordering</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">partial_cmp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">core::cmp::Ordering</span><span class="op">&gt;</span> {
         <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">cmp</span>(<span class="ident">other</span>))
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">fmt::Debug</span> <span class="kw">for</span> <span class="ident">Discriminant</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">fmt</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt::Formatter</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">fmt::Result</span> {
+    <span class="kw">fn</span> <span class="ident">fmt</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">fmt</span>: <span class="kw-2">&amp;</span><span class="kw-2">mut</span> <span class="ident">fmt::Formatter</span>) -&gt; <span class="ident">fmt::Result</span> {
         <span class="macro">write!</span>(<span class="ident">fmt</span>, <span class="string">&quot;0x&quot;</span>)<span class="question-mark">?</span>;
 
         <span class="kw">let</span> <span class="kw-2">mut</span> <span class="ident">is_zero</span> <span class="op">=</span> <span class="bool-val">true</span>;
@@ -830,21 +826,21 @@
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">PartialEq</span> <span class="kw">for</span> <span class="ident">Field</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">bool</span> {
-        <span class="self">self</span>.<span class="ident">name</span> <span class="op">=</span><span class="op">=</span> <span class="ident">other</span>.<span class="ident">name</span> <span class="op">&amp;&amp;</span> <span class="self">self</span>.<span class="ident">offset</span> <span class="op">=</span><span class="op">=</span> <span class="ident">other</span>.<span class="ident">offset</span> <span class="op">&amp;&amp;</span> <span class="ident">core::ptr::eq</span>(<span class="self">self</span>.<span class="ident">ty</span>, <span class="ident">other</span>.<span class="ident">ty</span>)
+    <span class="kw">fn</span> <span class="ident">eq</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <span class="ident">bool</span> {
+        <span class="self">self</span>.<span class="ident">name</span> <span class="op">==</span> <span class="ident">other</span>.<span class="ident">name</span> <span class="op">&amp;&amp;</span> <span class="self">self</span>.<span class="ident">offset</span> <span class="op">==</span> <span class="ident">other</span>.<span class="ident">offset</span> <span class="op">&amp;&amp;</span> <span class="ident">core::ptr::eq</span>(<span class="self">self</span>.<span class="ident">ty</span>, <span class="ident">other</span>.<span class="ident">ty</span>)
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Eq</span> <span class="kw">for</span> <span class="ident">Field</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {}
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">Ord</span> <span class="kw">for</span> <span class="ident">Field</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">cmp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="ident">core::cmp::Ordering</span> {
+    <span class="kw">fn</span> <span class="ident">cmp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <span class="ident">core::cmp::Ordering</span> {
         (<span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">offset</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">name</span>, <span class="kw-2">&amp;</span><span class="self">self</span>.<span class="ident">ty</span>).<span class="ident">cmp</span>(<span class="kw-2">&amp;</span>(<span class="kw-2">&amp;</span><span class="ident">other</span>.<span class="ident">offset</span>, <span class="kw-2">&amp;</span><span class="ident">other</span>.<span class="ident">name</span>, <span class="kw-2">&amp;</span><span class="ident">other</span>.<span class="ident">ty</span>))
     }
 }
 
 <span class="kw">impl</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> <span class="ident">PartialOrd</span> <span class="kw">for</span> <span class="ident">Field</span><span class="op">&lt;</span><span class="lifetime">&#39;a</span><span class="op">&gt;</span> {
-    <span class="kw">fn</span> <span class="ident">partial_cmp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) <span class="op">-</span><span class="op">&gt;</span> <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">core::cmp::Ordering</span><span class="op">&gt;</span> {
+    <span class="kw">fn</span> <span class="ident">partial_cmp</span>(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="ident">other</span>: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <span class="prelude-ty">Option</span><span class="op">&lt;</span><span class="ident">core::cmp::Ordering</span><span class="op">&gt;</span> {
         <span class="prelude-val">Some</span>(<span class="self">self</span>.<span class="ident">cmp</span>(<span class="ident">other</span>))
     }
 }

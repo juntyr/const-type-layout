@@ -31,7 +31,7 @@
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">TypeGraph</span>, <span class="ident">TypeLayout</span>, <span class="ident">TypeLayoutGraph</span>, <span class="ident">TypeLayoutInfo</span>, <span class="ident">TypeStructure</span>};
 
 <span class="macro">macro_rules!</span> <span class="ident">impl_primitive_type_layout</span> {
-    (<span class="kw">impl</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span>:<span class="ident">ty</span>) <span class="op">=</span><span class="op">&gt;</span> {
+    (<span class="kw">impl</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span>:<span class="ident">ty</span>) =&gt; {
         <span class="kw">unsafe</span> <span class="kw">impl</span> <span class="ident">TypeLayout</span> <span class="kw">for</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span> {
             <span class="kw">const</span> <span class="ident">TYPE_LAYOUT</span>: <span class="ident">TypeLayoutInfo</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">TypeLayoutInfo</span> {
                 <span class="ident">name</span>: <span class="ident">::core::any::type_name</span>::<span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>(),
@@ -47,7 +47,7 @@
             }
         }
     };
-    ($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span>:<span class="ident">ty</span>),<span class="kw-2">*</span>) <span class="op">=</span><span class="op">&gt;</span> {
+    ($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span>:<span class="ident">ty</span>),<span class="kw-2">*</span>) =&gt; {
         $(<span class="macro">impl_primitive_type_layout!</span>{<span class="kw">impl</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span>})<span class="op">*</span>
     };
 }

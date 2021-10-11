@@ -66,7 +66,7 @@
 </pre><pre class="rust"><code><span class="kw">use</span> <span class="kw">crate</span>::{<span class="ident">Field</span>, <span class="ident">TypeGraph</span>, <span class="ident">TypeLayout</span>, <span class="ident">TypeLayoutGraph</span>, <span class="ident">TypeLayoutInfo</span>, <span class="ident">TypeStructure</span>};
 
 <span class="macro">macro_rules!</span> <span class="ident">impl_nonzero_type_layout</span> {
-    (<span class="kw">impl</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">nz</span>:<span class="ident">ident</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span>:<span class="ident">ty</span>) <span class="op">=</span><span class="op">&gt;</span> {
+    (<span class="kw">impl</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">nz</span>:<span class="ident">ident</span> =&gt; <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span>:<span class="ident">ty</span>) =&gt; {
         <span class="kw">unsafe</span> <span class="kw">impl</span> <span class="ident">TypeLayout</span> <span class="kw">for</span> <span class="ident">core::num</span>::<span class="macro-nonterminal">$</span><span class="macro-nonterminal">nz</span> {
             <span class="kw">const</span> <span class="ident">TYPE_LAYOUT</span>: <span class="ident">TypeLayoutInfo</span><span class="op">&lt;</span><span class="lifetime">&#39;static</span><span class="op">&gt;</span> <span class="op">=</span> <span class="ident">TypeLayoutInfo</span> {
                 <span class="ident">name</span>: <span class="ident">::core::any::type_name</span>::<span class="op">&lt;</span><span class="self">Self</span><span class="op">&gt;</span>(),
@@ -93,16 +93,16 @@
             }
         }
     };
-    ($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">nz</span>:<span class="ident">ident</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span>:<span class="ident">ty</span>),<span class="kw-2">*</span>) <span class="op">=</span><span class="op">&gt;</span> {
-        $(<span class="macro">impl_nonzero_type_layout!</span>{<span class="kw">impl</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">nz</span> <span class="op">=</span><span class="op">&gt;</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span>})<span class="op">*</span>
+    ($(<span class="macro-nonterminal">$</span><span class="macro-nonterminal">nz</span>:<span class="ident">ident</span> =&gt; <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span>:<span class="ident">ty</span>),<span class="kw-2">*</span>) =&gt; {
+        $(<span class="macro">impl_nonzero_type_layout!</span>{<span class="kw">impl</span> <span class="macro-nonterminal">$</span><span class="macro-nonterminal">nz</span> =&gt; <span class="macro-nonterminal">$</span><span class="macro-nonterminal">ty</span>})<span class="op">*</span>
     };
 }
 
 <span class="macro">impl_nonzero_type_layout!</span> {
-    <span class="ident">NonZeroI8</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">i8</span>, <span class="ident">NonZeroI16</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">i16</span>, <span class="ident">NonZeroI32</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">i32</span>, <span class="ident">NonZeroI64</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">i64</span>,
-    <span class="ident">NonZeroI128</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">i128</span>, <span class="ident">NonZeroIsize</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">isize</span>,
-    <span class="ident">NonZeroU8</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">u8</span>, <span class="ident">NonZeroU16</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">u16</span>, <span class="ident">NonZeroU32</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">u32</span>, <span class="ident">NonZeroU64</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">u64</span>,
-    <span class="ident">NonZeroU128</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">u128</span>, <span class="ident">NonZeroUsize</span> <span class="op">=</span><span class="op">&gt;</span> <span class="ident">usize</span>
+    <span class="ident">NonZeroI8</span> =&gt; <span class="ident">i8</span>, <span class="ident">NonZeroI16</span> =&gt; <span class="ident">i16</span>, <span class="ident">NonZeroI32</span> =&gt; <span class="ident">i32</span>, <span class="ident">NonZeroI64</span> =&gt; <span class="ident">i64</span>,
+    <span class="ident">NonZeroI128</span> =&gt; <span class="ident">i128</span>, <span class="ident">NonZeroIsize</span> =&gt; <span class="ident">isize</span>,
+    <span class="ident">NonZeroU8</span> =&gt; <span class="ident">u8</span>, <span class="ident">NonZeroU16</span> =&gt; <span class="ident">u16</span>, <span class="ident">NonZeroU32</span> =&gt; <span class="ident">u32</span>, <span class="ident">NonZeroU64</span> =&gt; <span class="ident">u64</span>,
+    <span class="ident">NonZeroU128</span> =&gt; <span class="ident">u128</span>, <span class="ident">NonZeroUsize</span> =&gt; <span class="ident">usize</span>
 }
 
 <span class="kw">unsafe</span> <span class="kw">impl</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> <span class="ident">TypeLayout</span> <span class="kw">for</span> <span class="ident">core::num::Wrapping</span><span class="op">&lt;</span><span class="ident">T</span><span class="op">&gt;</span> {
