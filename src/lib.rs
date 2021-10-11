@@ -48,7 +48,6 @@
 //! # #![feature(const_fn_trait_bound)]
 //! # #![allow(incomplete_features)]
 //! # #![feature(generic_const_exprs)]
-//!
 //! use const_type_layout::TypeLayout;
 //!
 //! #[derive(TypeLayout)]
@@ -101,7 +100,6 @@
 //! # #![feature(const_fn_trait_bound)]
 //! # #![allow(incomplete_features)]
 //! # #![feature(generic_const_exprs)]
-//!
 //! use const_type_layout::TypeLayout;
 //!
 //! #[derive(TypeLayout)]
@@ -302,7 +300,7 @@ impl<'a> TypeLayoutGraph<'a> {
                 while j < ty_name_bytes.len() {
                     // Break early, i.e. j < ty_name_bytes.len(),
                     //  if the type names do NOT match
-                    if ty_name_bytes[i] != cached_ty_name_bytes[i] {
+                    if ty_name_bytes[j] != cached_ty_name_bytes[j] {
                         break;
                     }
 
