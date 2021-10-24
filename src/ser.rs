@@ -3,10 +3,6 @@ use crate::{Discriminant, Field, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
 pub const fn serialise_str(bytes: &mut [u8], from: usize, value: &str) -> usize {
     let value_bytes = value.as_bytes();
 
-    if value_bytes.len() > (u16::MAX as usize) {
-        panic!("str is too long to be serialised.");
-    }
-
     let from = serialise_usize(bytes, from, value_bytes.len());
 
     if (from + value_bytes.len()) > bytes.len() {
@@ -32,31 +28,37 @@ pub const fn serialised_str_len(from: usize, value: &str) -> usize {
     from + value_bytes.len()
 }
 
+#[allow(clippy::cast_possible_truncation)]
 pub const fn serialise_usize(bytes: &mut [u8], from: usize, value: usize) -> usize {
-    if value > (u16::MAX as usize) {
-        panic!("usize is too large to be serialised.");
-    }
-
-    #[allow(clippy::cast_possible_truncation)]
-    let value_bytes = (value as u16).to_be_bytes();
-
-    if (from + value_bytes.len()) > bytes.len() {
+    if serialised_usize_len(from, value) > bytes.len() {
         panic!("bytes is not large enough to contain the serialised usize.");
     }
 
+    let mut rem = value;
     let mut i = 0;
 
-    while i < value_bytes.len() {
-        bytes[from + i] = value_bytes[i];
+    while rem > 0b0111_1111_usize {
+        bytes[from + i] = ((rem & 0b0111_1111_usize) as u8) | 0b1000_0000_u8;
 
         i += 1;
+        rem >>= 7;
     }
 
-    from + i
+    bytes[from + i] = (rem & 0b0111_1111_usize) as u8;
+
+    from + i + 1
 }
 
-pub const fn serialised_usize_len(from: usize, _value: usize) -> usize {
-    from + core::mem::size_of::<u16>()
+pub const fn serialised_usize_len(from: usize, value: usize) -> usize {
+    let mut rem = value;
+    let mut i = 0;
+
+    while rem > 127 {
+        i += 1;
+        rem >>= 7;
+    }
+
+    from + i + 1
 }
 
 pub const fn serialise_byte(bytes: &mut [u8], from: usize, value: u8) -> usize {
@@ -102,10 +104,6 @@ pub const fn serialise_discriminant<'a>(
         }
 
         leading_zeroes += 1;
-    }
-
-    if (value_bytes.len() - leading_zeroes) > (u16::MAX as usize) {
-        panic!("discriminant is too long to be serialised.");
     }
 
     let from = serialise_usize(bytes, from, value_bytes.len() - leading_zeroes);
