@@ -198,14 +198,14 @@ fn meta_to_string(meta: &syn::Meta) -> String {
 
             format!(
                 "{}({})",
-                quote!(#path).to_string(),
+                quote!(#path),
                 list.into_iter()
                     .intersperse(String::from(","))
                     .collect::<String>()
             )
         },
         syn::Meta::NameValue(syn::MetaNameValue { path, lit, .. }) => {
-            format!("{}={}", quote!(#path).to_string(), lit_to_string(lit))
+            format!("{}={}", quote!(#path), lit_to_string(lit))
         },
         syn::Meta::Path(path) => quote!(#path).to_string(),
     }
