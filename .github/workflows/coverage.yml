@@ -22,7 +22,7 @@ jobs:
 
       - name: Install the code coverage components
         run: |
-          cargo install grcov -f
+          cargo install grcov --force --locked
           rustup component add llvm-tools-preview
 
       - name: Generate the code coverage
