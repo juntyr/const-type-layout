@@ -421,6 +421,7 @@
 <span id="421">421</span>
 <span id="422">422</span>
 <span id="423">423</span>
+<span id="424">424</span>
 </pre><pre class="rust"><code><span class="doccomment">//! [![CI Status]][workflow] [![Rust Doc]][docs] [![License Status]][fossa]</span>
 <span class="doccomment">//! [![Code Coverage]][codecov] [![Gitpod Ready-to-Code]][gitpod]</span>
 <span class="doccomment">//!</span>
@@ -739,9 +740,10 @@
             <span class="ident">i</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
         }
 
-        <span class="kw">if</span> <span class="ident">i</span> <span class="op">&gt;</span><span class="op">=</span> <span class="self">self</span>.<span class="ident">tys</span>.<span class="ident">len</span>() {
-            <span class="macro">panic!</span>(<span class="string">&quot;TypeLayoutGraph is not large enough for this complex type.&quot;</span>);
-        }
+        <span class="macro">assert!</span>(
+            <span class="ident">i</span> <span class="op">&lt;</span> <span class="self">self</span>.<span class="ident">tys</span>.<span class="ident">len</span>(),
+            <span class="string">&quot;TypeLayoutGraph is not large enough for this complex type.&quot;</span>
+        );
 
         <span class="self">self</span>.<span class="ident">tys</span>[<span class="ident">i</span>] <span class="op">=</span> <span class="ident">ty</span>;
         <span class="self">self</span>.<span class="ident">len</span> <span class="op">+</span><span class="op">=</span> <span class="number">1</span>;
