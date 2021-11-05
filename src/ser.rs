@@ -5,9 +5,10 @@ pub const fn serialise_str(bytes: &mut [u8], from: usize, value: &str) -> usize 
 
     let from = serialise_usize(bytes, from, value_bytes.len());
 
-    if (from + value_bytes.len()) > bytes.len() {
-        panic!("bytes is not large enough to contain the serialised str.");
-    }
+    assert!(
+        (from + value_bytes.len()) <= bytes.len(),
+        "bytes is not large enough to contain the serialised str."
+    );
 
     let mut i = 0;
 
@@ -30,9 +31,10 @@ pub const fn serialised_str_len(from: usize, value: &str) -> usize {
 
 #[allow(clippy::cast_possible_truncation)]
 pub const fn serialise_usize(bytes: &mut [u8], from: usize, value: usize) -> usize {
-    if serialised_usize_len(from, value) > bytes.len() {
-        panic!("bytes is not large enough to contain the serialised usize.");
-    }
+    assert!(
+        serialised_usize_len(from, value) <= bytes.len(),
+        "bytes is not large enough to contain the serialised usize."
+    );
 
     let mut rem = value;
     let mut i = 0;
@@ -62,9 +64,10 @@ pub const fn serialised_usize_len(from: usize, value: usize) -> usize {
 }
 
 pub const fn serialise_byte(bytes: &mut [u8], from: usize, value: u8) -> usize {
-    if from >= bytes.len() {
-        panic!("bytes is not large enough to contain the serialised byte.");
-    }
+    assert!(
+        from < bytes.len(),
+        "bytes is not large enough to contain the serialised byte."
+    );
 
     bytes[from] = value;
 
@@ -76,9 +79,10 @@ pub const fn serialised_byte_len(from: usize, _value: u8) -> usize {
 }
 
 pub const fn serialise_bool(bytes: &mut [u8], from: usize, value: bool) -> usize {
-    if from >= bytes.len() {
-        panic!("bytes is not large enough to contain the serialised bool.");
-    }
+    assert!(
+        from < bytes.len(),
+        "bytes is not large enough to contain the serialised bool."
+    );
 
     bytes[from] = if value { b'T' } else { b'F' };
 
@@ -108,9 +112,10 @@ pub const fn serialise_discriminant<'a>(
 
     let from = serialise_usize(bytes, from, value_bytes.len() - leading_zeroes);
 
-    if (from + value_bytes.len() - leading_zeroes) > bytes.len() {
-        panic!("bytes is not large enough to contain the serialised discriminant.");
-    }
+    assert!(
+        (from + value_bytes.len() - leading_zeroes) <= bytes.len(),
+        "bytes is not large enough to contain the serialised discriminant."
+    );
 
     let mut i = leading_zeroes;
 

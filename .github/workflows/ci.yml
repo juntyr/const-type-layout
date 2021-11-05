@@ -121,8 +121,3 @@ jobs:
           cargo clippy --all \
             --all-features \
             -- -D warnings
-
-      - name: Check the code style without features on CPU
-        run: |
-          cargo clippy --all \
-            -- -D warnings

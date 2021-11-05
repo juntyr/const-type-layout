@@ -316,9 +316,10 @@ impl<'a> TypeLayoutGraph<'a> {
             i += 1;
         }
 
-        if i >= self.tys.len() {
-            panic!("TypeLayoutGraph is not large enough for this complex type.");
-        }
+        assert!(
+            i < self.tys.len(),
+            "TypeLayoutGraph is not large enough for this complex type."
+        );
 
         self.tys[i] = ty;
         self.len += 1;
