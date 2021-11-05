@@ -2,7 +2,7 @@
 name = "const-type-layout"
 description = "Derivable trait to view the layout of a struct, useful for debugging."
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 authors = ["Momo Langenstein <momo.langenstein@helsinki.fi>", "Lucien Greathouse <me@lpghatguy.com>"]
 documentation = "https://momolangenstein.github.io/const-type-layout/const_type_layout/"
 homepage = "https://github.com/MomoLangenstein/const-type-layout"

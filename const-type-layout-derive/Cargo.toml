@@ -2,7 +2,7 @@
 name = "const-type-layout-derive"
 description = "Derive macro implementation for const-type-layout crate"
 version = "0.1.0"
-edition = "2018"
+edition = "2021"
 authors = ["Momo Langenstein <momo.langenstein@helsinki.fi>", "Lucien Greathouse <me@lpghatguy.com>"]
 homepage = "https://github.com/MomoLangenstein/const-type-layout"
 license = "MIT OR Apache-2.0"

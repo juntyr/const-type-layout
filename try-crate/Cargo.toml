@@ -3,7 +3,7 @@ name = "try-crate"
 publish = false
 version = "0.1.0"
 authors = ["Momo Langenstein <momo.langenstein@helsinki.fi>", "Lucien Greathouse <me@lpghatguy.com>"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
