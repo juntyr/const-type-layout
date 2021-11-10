@@ -5,7 +5,7 @@ use crate::{
 
 trait OptionDiscriminant: Sized
 where
-    [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]: ,
+    [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
 {
     const NONE_DISCRIMINANT_BYTES: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()];
     const SOME_DISCRIMINANT_BYTES: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()];
@@ -13,7 +13,7 @@ where
 
 impl<T> OptionDiscriminant for Option<T>
 where
-    [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]: ,
+    [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
 {
     const NONE_DISCRIMINANT_BYTES: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = unsafe {
         let none: core::mem::MaybeUninit<Self> = core::mem::MaybeUninit::new(None);
@@ -72,7 +72,7 @@ where
 
 unsafe impl<T> TypeLayout for core::option::Option<T>
 where
-    [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]: ,
+    [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
 {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -127,7 +127,7 @@ where
 
 unsafe impl<T: ~const TypeGraph> const TypeGraph for core::option::Option<T>
 where
-    [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]: ,
+    [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
 {
     fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
         if graph.insert(&Self::TYPE_LAYOUT) {
