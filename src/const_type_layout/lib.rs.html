@@ -460,7 +460,7 @@
 <span class="doccomment">//! ```rust</span>
 <span class="doccomment">//! # #![feature(cfg_version)]</span>
 <span class="doccomment">//! # #![feature(const_type_name)]</span>
-<span class="doccomment">//! # #![feature(const_raw_ptr_deref)]</span>
+<span class="doccomment">//! # #![cfg_attr(not(version(&quot;1.58.0&quot;)), feature(const_raw_ptr_deref))]</span>
 <span class="doccomment">//! # #![feature(const_maybe_uninit_as_ptr)]</span>
 <span class="doccomment">//! # #![feature(const_ptr_offset_from)]</span>
 <span class="doccomment">//! # #![cfg_attr(not(version(&quot;1.57.0&quot;)), feature(const_panic))]</span>
@@ -512,7 +512,7 @@
 <span class="doccomment">//! ```rust</span>
 <span class="doccomment">//! # #![feature(cfg_version)]</span>
 <span class="doccomment">//! # #![feature(const_type_name)]</span>
-<span class="doccomment">//! # #![feature(const_raw_ptr_deref)]</span>
+<span class="doccomment">//! # #![cfg_attr(not(version(&quot;1.58.0&quot;)), feature(const_raw_ptr_deref))]</span>
 <span class="doccomment">//! # #![feature(const_maybe_uninit_as_ptr)]</span>
 <span class="doccomment">//! # #![feature(const_ptr_offset_from)]</span>
 <span class="doccomment">//! # #![cfg_attr(not(version(&quot;1.57.0&quot;)), feature(const_panic))]</span>
