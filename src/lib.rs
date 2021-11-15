@@ -36,7 +36,7 @@
 //! ```rust
 //! # #![feature(cfg_version)]
 //! # #![feature(const_type_name)]
-//! # #![feature(const_raw_ptr_deref)]
+//! # #![cfg_attr(not(version("1.58.0")), feature(const_raw_ptr_deref))]
 //! # #![feature(const_maybe_uninit_as_ptr)]
 //! # #![feature(const_ptr_offset_from)]
 //! # #![cfg_attr(not(version("1.57.0")), feature(const_panic))]
@@ -88,7 +88,7 @@
 //! ```rust
 //! # #![feature(cfg_version)]
 //! # #![feature(const_type_name)]
-//! # #![feature(const_raw_ptr_deref)]
+//! # #![cfg_attr(not(version("1.58.0")), feature(const_raw_ptr_deref))]
 //! # #![feature(const_maybe_uninit_as_ptr)]
 //! # #![feature(const_ptr_offset_from)]
 //! # #![cfg_attr(not(version("1.57.0")), feature(const_panic))]
@@ -132,7 +132,7 @@
 #![no_std]
 #![feature(cfg_version)]
 #![feature(const_type_name)]
-#![feature(const_raw_ptr_deref)]
+#![cfg_attr(not(version("1.58.0")), feature(const_raw_ptr_deref))]
 #![feature(const_ptr_offset)]
 #![feature(const_mut_refs)]
 #![feature(const_raw_ptr_comparison)]
