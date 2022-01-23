@@ -95,6 +95,7 @@ fn parse_attributes(
     ty_generics: &syn::TypeGenerics,
     attrs: &[syn::Attribute],
 ) -> Attributes {
+    // Could parse based on https://github.com/rust-lang/rust/blob/d13e8dd41d44a73664943169d5b7fe39b22c449f/compiler/rustc_attr/src/builtin.rs#L772-L781 instead
     let mut reprs = Vec::new();
 
     let mut add_bounds: Vec<syn::WherePredicate> = Vec::new();
