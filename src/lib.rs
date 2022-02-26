@@ -152,7 +152,7 @@
 #![feature(let_else)]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
-#![doc(html_root_url = "https://momolangenstein.github.io/const-type-layout/const_type_layout")]
+#![doc(html_root_url = "https://momolangenstein.github.io/const-type-layout")]
 
 #[doc(hidden)]
 pub extern crate alloc;
