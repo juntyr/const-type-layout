@@ -1,3 +1,5 @@
+use core::ops::Deref;
+
 use crate::{Discriminant, Field, TypeLayoutGraph, TypeLayoutInfo, TypeStructure, Variant};
 
 pub const fn serialise_str(bytes: &mut [u8], from: usize, value: &str) -> usize {
@@ -186,19 +188,30 @@ pub const fn serialised_fields_len(from: usize, value: &[Field]) -> usize {
     from
 }
 
-pub const fn serialise_variant<'a>(bytes: &mut [u8], from: usize, value: &Variant<'a>) -> usize {
+pub const fn serialise_variant<'a, F: ~const Deref<Target = [Field<'a>]>>(
+    bytes: &mut [u8],
+    from: usize,
+    value: &Variant<'a, F>,
+) -> usize {
     let from = serialise_str(bytes, from, value.name);
     let from = serialise_discriminant(bytes, from, &value.discriminant);
-    serialise_fields(bytes, from, value.fields)
+    serialise_fields(bytes, from, &value.fields)
 }
 
-pub const fn serialised_variant_len(from: usize, value: &Variant) -> usize {
+pub const fn serialised_variant_len<'a, F: ~const Deref<Target = [Field<'a>]>>(
+    from: usize,
+    value: &Variant<'a, F>,
+) -> usize {
     let from = serialised_str_len(from, value.name);
     let from = serialised_discriminant_len(from, &value.discriminant);
-    serialised_fields_len(from, value.fields)
+    serialised_fields_len(from, &value.fields)
 }
 
-pub const fn serialise_variants<'a>(bytes: &mut [u8], from: usize, value: &[Variant<'a>]) -> usize {
+pub const fn serialise_variants<'a, F: ~const Deref<Target = [Field<'a>]>>(
+    bytes: &mut [u8],
+    from: usize,
+    value: &[Variant<'a, F>],
+) -> usize {
     let mut from = serialise_usize(bytes, from, value.len());
 
     let mut i = 0;
@@ -212,7 +225,10 @@ pub const fn serialise_variants<'a>(bytes: &mut [u8], from: usize, value: &[Vari
     from
 }
 
-pub const fn serialised_variants_len(from: usize, value: &[Variant]) -> usize {
+pub const fn serialised_variants_len<'a, F: ~const Deref<Target = [Field<'a>]>>(
+    from: usize,
+    value: &[Variant<'a, F>],
+) -> usize {
     let mut from = serialised_usize_len(from, value.len());
 
     let mut i = 0;
@@ -226,10 +242,14 @@ pub const fn serialised_variants_len(from: usize, value: &[Variant]) -> usize {
     from
 }
 
-pub const fn serialise_type_structure<'a>(
+pub const fn serialise_type_structure<
+    'a,
+    F: ~const Deref<Target = [Field<'a>]>,
+    V: ~const Deref<Target = [Variant<'a, F>]>,
+>(
     bytes: &mut [u8],
     from: usize,
-    value: &TypeStructure<'a>,
+    value: &TypeStructure<'a, F, V>,
 ) -> usize {
     match value {
         TypeStructure::Struct { repr, fields } => {
@@ -266,7 +286,14 @@ pub const fn serialise_type_structure<'a>(
     }
 }
 
-pub const fn serialised_type_structure_len(from: usize, value: &TypeStructure) -> usize {
+pub const fn serialised_type_structure_len<
+    'a,
+    F: ~const Deref<Target = [Field<'a>]>,
+    V: ~const Deref<Target = [Variant<'a, F>]>,
+>(
+    from: usize,
+    value: &TypeStructure<'a, F, V>,
+) -> usize {
     match value {
         TypeStructure::Struct { repr, fields } => {
             let from = serialised_byte_len(from, b's');
@@ -302,10 +329,14 @@ pub const fn serialised_type_structure_len(from: usize, value: &TypeStructure) -
     }
 }
 
-pub const fn serialise_type_layout_info<'a>(
+pub const fn serialise_type_layout_info<
+    'a,
+    F: ~const Deref<Target = [Field<'a>]>,
+    V: ~const Deref<Target = [Variant<'a, F>]>,
+>(
     bytes: &mut [u8],
     from: usize,
-    value: &TypeLayoutInfo<'a>,
+    value: &TypeLayoutInfo<'a, F, V>,
 ) -> usize {
     let from = serialise_str(bytes, from, value.name);
     let from = serialise_usize(bytes, from, value.size);
@@ -313,7 +344,14 @@ pub const fn serialise_type_layout_info<'a>(
     serialise_type_structure(bytes, from, &value.structure)
 }
 
-pub const fn serialised_type_layout_info_len(from: usize, value: &TypeLayoutInfo) -> usize {
+pub const fn serialised_type_layout_info_len<
+    'a,
+    F: ~const Deref<Target = [Field<'a>]>,
+    V: ~const Deref<Target = [Variant<'a, F>]>,
+>(
+    from: usize,
+    value: &TypeLayoutInfo<'a, F, V>,
+) -> usize {
     let from = serialised_str_len(from, value.name);
     let from = serialised_usize_len(from, value.size);
     let from = serialised_usize_len(from, value.alignment);
@@ -322,22 +360,35 @@ pub const fn serialised_type_layout_info_len(from: usize, value: &TypeLayoutInfo
 
 const LAYOUT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub const fn serialise_type_layout_graph<'a>(
+pub const fn serialise_type_layout_graph<
+    'a,
+    F: ~const Deref<Target = [Field<'a>]>,
+    V: ~const Deref<Target = [Variant<'a, F>]>,
+    I: ~const Deref<Target = TypeLayoutInfo<'a, F, V>>,
+>(
     bytes: &mut [u8],
     from: usize,
-    value: &TypeLayoutGraph<'a>,
+    value: &TypeLayoutGraph<'a, F, V, I>,
 ) -> usize {
     // Include the crate version of `type_layout` for cross-version comparison
     let from = serialise_str(bytes, from, LAYOUT_VERSION);
 
     let from = serialise_str(bytes, from, value.ty);
 
-    let mut from = serialise_usize(bytes, from, value.len);
+    let mut len = 0;
+
+    while len < value.tys.len() && value.tys[len].is_some() {
+        len += 1;
+    }
+
+    let mut from = serialise_usize(bytes, from, len);
 
     let mut i = 0;
 
-    while i < value.len {
-        from = serialise_type_layout_info(bytes, from, unsafe { &*value.tys[i] });
+    while i < len {
+        if let Some(ty) = &value.tys[i] {
+            from = serialise_type_layout_info(bytes, from, ty);
+        }
 
         i += 1;
     }
@@ -345,18 +396,34 @@ pub const fn serialise_type_layout_graph<'a>(
     from
 }
 
-pub const fn serialised_type_layout_graph_len(from: usize, value: &TypeLayoutGraph) -> usize {
+pub const fn serialised_type_layout_graph_len<
+    'a,
+    F: ~const Deref<Target = [Field<'a>]>,
+    V: ~const Deref<Target = [Variant<'a, F>]>,
+    I: ~const Deref<Target = TypeLayoutInfo<'a, F, V>>,
+>(
+    from: usize,
+    value: &TypeLayoutGraph<'a, F, V, I>,
+) -> usize {
     // Include the crate version of `type_layout` for cross-version comparison
     let from = serialised_str_len(from, LAYOUT_VERSION);
 
     let from = serialised_str_len(from, value.ty);
 
-    let mut from = serialised_usize_len(from, value.len);
+    let mut len = 0;
+
+    while len < value.tys.len() && value.tys[len].is_some() {
+        len += 1;
+    }
+
+    let mut from = serialised_usize_len(from, len);
 
     let mut i = 0;
 
-    while i < value.len {
-        from = serialised_type_layout_info_len(from, unsafe { &*value.tys[i] });
+    while i < len {
+        if let Some(ty) = &value.tys[i] {
+            from = serialised_type_layout_info_len(from, ty);
+        }
 
         i += 1;
     }

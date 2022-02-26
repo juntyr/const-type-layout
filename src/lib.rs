@@ -148,11 +148,16 @@
 #![feature(const_refs_to_cell)]
 #![cfg_attr(not(version("1.59.0")), feature(const_maybe_uninit_as_ptr))]
 #![cfg_attr(version("1.59.0"), feature(const_maybe_uninit_as_mut_ptr))]
+#![feature(const_option)]
+#![feature(let_else)]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
+#![doc(html_root_url = "https://momolangenstein.github.io/const-type-layout/const_type_layout")]
 
 #[doc(hidden)]
 pub extern crate alloc;
+
+use core::ops::Deref;
 
 use alloc::fmt;
 
@@ -160,6 +165,8 @@ pub use const_type_layout_derive::TypeLayout;
 
 mod impls;
 mod ser;
+#[cfg(feature = "serde")]
+mod serde;
 
 /// # Safety
 ///
@@ -206,67 +213,75 @@ pub const fn serialise_type_graph<T: ~const TypeGraphLayout>(
     bytes
 }
 
-pub struct TypeLayoutGraph<'a> {
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound(
+        serialize = "F: ::serde::Serialize, V: ::serde::Serialize, I: ::serde::Serialize"
+    ))
+)]
+#[cfg_attr(
+    feature = "serde",
+    serde(bound(deserialize = "'a: 'de, F: ::serde::Deserialize<'a>, V: \
+                               ::serde::Deserialize<'a>, I: ::serde::Deserialize<'a>"))
+)]
+pub struct TypeLayoutGraph<
+    'a,
+    F: Deref<Target = [Field<'a>]> = &'a [Field<'a>],
+    V: Deref<Target = [Variant<'a, F>]> = &'a [Variant<'a, F>],
+    I: Deref<Target = TypeLayoutInfo<'a, F, V>> = &'a TypeLayoutInfo<'a, F, V>,
+> {
     ty: &'a str,
-    len: usize,
-    tys: [*const TypeLayoutInfo<'a>; TypeLayoutGraph::CAPACITY],
+    #[cfg_attr(feature = "serde", serde(with = "serde"))]
+    tys: [Option<I>; TypeLayoutGraph::CAPACITY],
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "serde1", derive(serde::Serialize, /*serde::Deserialize*/))]
-pub struct TypeLayoutInfo<'a> {
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
+pub struct TypeLayoutInfo<
+    'a,
+    F: Deref<Target = [Field<'a>]> = &'a [Field<'a>],
+    V: Deref<Target = [Variant<'a, F>]> = &'a [Variant<'a, F>],
+> {
     pub name: &'a str,
     pub size: usize,
     pub alignment: usize,
-    pub structure: TypeStructure<'a>,
+    pub structure: TypeStructure<'a, F, V>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "serde1", derive(serde::Serialize, /*serde::Deserialize*/))]
-pub enum TypeStructure<'a> {
-    Struct {
-        repr: &'a str,
-        fields: &'a [Field<'a>],
-    },
-    Union {
-        repr: &'a str,
-        fields: &'a [Field<'a>],
-    },
-    Enum {
-        repr: &'a str,
-        variants: &'a [Variant<'a>],
-    },
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
+pub enum TypeStructure<
+    'a,
+    F: Deref<Target = [Field<'a>]> = &'a [Field<'a>],
+    V: Deref<Target = [Variant<'a, F>]> = &'a [Variant<'a, F>],
+> {
+    Struct { repr: &'a str, fields: F },
+    Union { repr: &'a str, fields: F },
+    Enum { repr: &'a str, variants: V },
     Primitive,
-    Array {
-        item: &'a str,
-        len: usize,
-    },
-    Reference {
-        inner: &'a str,
-        mutability: bool,
-    },
-    Pointer {
-        inner: &'a str,
-        mutability: bool,
-    },
+    Array { item: &'a str, len: usize },
+    Reference { inner: &'a str, mutability: bool },
+    Pointer { inner: &'a str, mutability: bool },
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "serde1", derive(serde::Serialize, /*serde::Deserialize*/))]
-pub struct Variant<'a> {
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
+pub struct Variant<'a, F: Deref<Target = [Field<'a>]> = &'a [Field<'a>]> {
     pub name: &'a str,
     pub discriminant: Discriminant<'a>,
-    pub fields: &'a [Field<'a>],
+    pub fields: F,
 }
 
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
-#[cfg_attr(feature = "serde1", derive(serde::Serialize, /*serde::Deserialize*/))]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub struct Discriminant<'a> {
     pub big_endian_bytes: &'a [u8],
 }
 
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde1", derive(serde::Serialize, /*serde::Deserialize*/))]
+#[derive(Clone, Debug, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub struct Field<'a> {
     pub name: &'a str,
     pub offset: usize,
@@ -277,24 +292,29 @@ impl<'a> TypeLayoutGraph<'a> {
     const CAPACITY: usize = 1024;
 
     #[must_use]
+    #[doc(hidden)]
     pub const fn new<T: TypeLayout>() -> Self {
         Self {
             ty: <T as TypeLayout>::TYPE_LAYOUT.name,
-            len: 0,
-            tys: [core::ptr::null(); Self::CAPACITY],
+            tys: [None; Self::CAPACITY],
         }
     }
 
-    /// # Panics
-    ///
-    /// Panics iff the graph is not large enough to store the extra `ty`.
+    #[doc(hidden)]
     pub const fn insert(&mut self, ty: &'a TypeLayoutInfo<'a>) -> bool {
         let ty_name_bytes = ty.name.as_bytes();
 
         let mut i = 0;
 
-        while i < self.len {
-            let cached_ty_name_bytes = unsafe { &*self.tys[i] }.name.as_bytes();
+        while i < self.tys.len() {
+            // The first free slot can be used to insert the ty
+            let Some(cached_ty) = self.tys[i] else {
+                self.tys[i] = Some(ty);
+
+                return true;
+            };
+
+            let cached_ty_name_bytes = cached_ty.name.as_bytes();
 
             // The type names can only be equal if they are the same length
             if ty_name_bytes.len() == cached_ty_name_bytes.len() {
@@ -319,19 +339,24 @@ impl<'a> TypeLayoutGraph<'a> {
             i += 1;
         }
 
-        assert!(
-            i < self.tys.len(),
-            "TypeLayoutGraph is not large enough for this complex type."
-        );
-
-        self.tys[i] = ty;
-        self.len += 1;
-
-        true
+        panic!("TypeLayoutGraph is not large enough for this complex type.")
     }
+}
 
+impl<
+        'a,
+        F: Deref<Target = [Field<'a>]>,
+        V: Deref<Target = [Variant<'a, F>]>,
+        I: Deref<Target = TypeLayoutInfo<'a, F, V>>,
+    > TypeLayoutGraph<'a, F, V, I>
+{
     #[must_use]
-    pub const fn serialised_len(&self) -> usize {
+    pub const fn serialised_len(&self) -> usize
+    where
+        F: ~const Deref<Target = [Field<'a>]>,
+        V: ~const Deref<Target = [Variant<'a, F>]>,
+        I: ~const Deref<Target = TypeLayoutInfo<'a, F, V>>,
+    {
         let len = ser::serialised_type_layout_graph_len(0, self);
 
         let mut last_full_len = len;
@@ -345,21 +370,35 @@ impl<'a> TypeLayoutGraph<'a> {
         full_len
     }
 
-    pub const fn serialise(&self, bytes: &mut [u8]) {
+    pub const fn serialise(&self, bytes: &mut [u8])
+    where
+        F: ~const Deref<Target = [Field<'a>]>,
+        V: ~const Deref<Target = [Variant<'a, F>]>,
+        I: ~const Deref<Target = TypeLayoutInfo<'a, F, V>>,
+    {
         let from = ser::serialise_usize(bytes, 0, self.serialised_len());
 
         ser::serialise_type_layout_graph(bytes, from, self);
     }
 }
 
-impl<'a> fmt::Debug for TypeLayoutGraph<'a> {
+impl<
+        'a,
+        F: Deref<Target = [Field<'a>]> + fmt::Debug,
+        V: Deref<Target = [Variant<'a, F>]> + fmt::Debug,
+        I: Deref<Target = TypeLayoutInfo<'a, F, V>> + fmt::Debug,
+    > fmt::Debug for TypeLayoutGraph<'a, F, V, I>
+{
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "TypeLayoutGraph<{}>(", self.ty)?;
 
         let mut debug = fmt.debug_list();
 
-        for i in 0..self.len {
-            debug.entry(unsafe { &**self.tys.as_ptr().add(i) });
+        for ty in &self.tys {
+            match ty {
+                Some(ty) => debug.entry(&ty),
+                None => break,
+            };
         }
 
         debug.finish()?;
@@ -368,7 +407,7 @@ impl<'a> fmt::Debug for TypeLayoutGraph<'a> {
     }
 }
 
-impl<'a> Ord for Variant<'a> {
+impl<'a, F: Deref<Target = [Field<'a>]> + Ord> Ord for Variant<'a, F> {
     fn cmp(&self, other: &Self) -> core::cmp::Ordering {
         (&self.discriminant, &self.name, &self.fields).cmp(&(
             &other.discriminant,
@@ -378,9 +417,13 @@ impl<'a> Ord for Variant<'a> {
     }
 }
 
-impl<'a> PartialOrd for Variant<'a> {
+impl<'a, F: Deref<Target = [Field<'a>]> + PartialOrd> PartialOrd for Variant<'a, F> {
     fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
-        Some(self.cmp(other))
+        (&self.discriminant, &self.name, &self.fields).partial_cmp(&(
+            &other.discriminant,
+            &other.name,
+            &other.fields,
+        ))
     }
 }
 

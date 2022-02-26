@@ -16,6 +16,8 @@
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 
+use std::{borrow::Cow, ops::Deref};
+
 use const_type_layout::{TypeGraphLayout, TypeLayout};
 
 #[repr(C)]
@@ -109,7 +111,24 @@ fn main() {
         ascii_escaped_layout.push_str(std::str::from_utf8(&part).unwrap());
     }
     println!("{}", ascii_escaped_layout);
+
+    let ron_layout = ron::to_string(&<List<u8>>::TYPE_GRAPH).unwrap();
+    println!("{}", ron_layout);
 }
 
 const SERIALISED_LIST_U8_LAYOUT: [u8; const_type_layout::serialised_type_graph_len::<List<u8>>()] =
     const_type_layout::serialise_type_graph::<List<u8>>();
+
+#[derive(
+    Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
+#[repr(transparent)]
+struct DerefCow<'a, T: Clone + Deref>(Cow<'a, T>);
+
+impl<'a, T: Clone + Deref> Deref for DerefCow<'a, T> {
+    type Target = T::Target;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}

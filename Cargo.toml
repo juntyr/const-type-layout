@@ -13,9 +13,6 @@ license = "MIT OR Apache-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-[features]
-serde1 = ["serde"]
-
 [workspace]
 members = ["const-type-layout-derive", "try-crate"]
 
