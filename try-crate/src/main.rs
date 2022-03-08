@@ -11,7 +11,7 @@
 #![feature(const_discriminant)]
 #![feature(const_trait_impl)]
 #![feature(const_mut_refs)]
-#![feature(const_fn_trait_bound)]
+#![cfg_attr(not(version("1.61.0")), feature(const_fn_trait_bound))]
 #![feature(const_ptr_offset)]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
