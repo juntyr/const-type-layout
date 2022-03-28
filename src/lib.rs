@@ -135,7 +135,7 @@
 #![feature(cfg_version)]
 #![feature(const_type_name)]
 #![cfg_attr(not(version("1.58.0")), feature(const_raw_ptr_deref))]
-#![feature(const_ptr_offset)]
+#![cfg_attr(not(version("1.61.0")), feature(const_ptr_offset))]
 #![feature(const_mut_refs)]
 #![feature(const_raw_ptr_comparison)]
 #![feature(const_trait_impl)]
