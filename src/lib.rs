@@ -153,6 +153,7 @@
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 #![doc(html_root_url = "https://momolangenstein.github.io/const-type-layout")]
+#![cfg_attr(feature = "serde", allow(clippy::type_repetition_in_bounds))]
 
 #[doc(hidden)]
 pub extern crate alloc;
