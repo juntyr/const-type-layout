@@ -2,7 +2,9 @@ use alloc::alloc::Global;
 
 use crate::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
-unsafe impl<T: TypeLayout> TypeLayout for alloc::boxed::Box<T> {
+unsafe impl<T: TypeLayout + 'static> TypeLayout for alloc::boxed::Box<T> {
+    type Static = alloc::boxed::Box<T::Static>;
+
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -12,20 +14,15 @@ unsafe impl<T: TypeLayout> TypeLayout for alloc::boxed::Box<T> {
             mutability: true,
         },
     };
-    // TODO: Box cannot trigger undefined behaviour
-    // if dangling we're not allowed to use it
-    // if uninit we're not allowed to use it
-    // if init we can get an infinite dependency
-    #[allow(clippy::borrow_as_ptr)]
     const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new(unsafe {
         alloc::boxed::Box::from_raw_in(
-            &<T as TypeLayout>::UNINIT as *const _ as *mut _,
+            <Self as BoxElem<T>>::ELEM as *const T as *mut T,
             alloc::alloc::Global,
         )
     });
 }
 
-unsafe impl<T: ~const TypeGraph> const TypeGraph for alloc::boxed::Box<T> {
+unsafe impl<T: ~const TypeGraph + 'static> const TypeGraph for alloc::boxed::Box<T> {
     fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
         if graph.insert(&Self::TYPE_LAYOUT) {
             <T as TypeGraph>::populate_graph(graph);
@@ -33,7 +30,28 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for alloc::boxed::Box<T> {
     }
 }
 
+trait BoxElem<T: TypeLayout + 'static> {
+    const ELEM: &'static T;
+}
+
+impl<T: TypeLayout + 'static> BoxElem<T> for alloc::boxed::Box<T> {
+    const ELEM: &'static T = unsafe {
+        let ptr: *mut T =
+            core::intrinsics::const_allocate(core::mem::size_of::<T>(), core::mem::align_of::<T>())
+                .cast();
+
+        core::ptr::write(
+            ptr,
+            core::mem::ManuallyDrop::into_inner(<T as TypeLayout>::UNINIT),
+        );
+
+        &*ptr
+    };
+}
+
 unsafe impl<T: TypeLayout> TypeLayout for alloc::boxed::Box<[T]> {
+    type Static = alloc::boxed::Box<[T::Static]>;
+
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),

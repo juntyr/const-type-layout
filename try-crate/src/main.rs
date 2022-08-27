@@ -56,16 +56,16 @@ enum Single {
     Single,
 }
 
-// #[derive(TypeLayout)]
-// enum Double {
-//     A = 2,
-//     B = 3,
-// }
+#[derive(TypeLayout)]
+enum Double {
+    A = 2,
+    B = 3,
+}
 
-// #[derive(TypeLayout)]
-// enum WithDouble {
-//     A(Double)
-// }
+#[derive(TypeLayout)]
+enum WithDouble {
+    A(Double),
+}
 
 #[repr(C)]
 #[repr(u8)]
@@ -82,7 +82,8 @@ enum Quo<T> {
 #[derive(TypeLayout)]
 #[layout(free = "Box<List<T>>")]
 #[layout(bound = "T: ::const_type_layout::TypeLayout")]
-enum List<T> {
+// TODO: remove the static bound once no longer needed
+enum List<T: 'static> {
     Tail,
     Cons { item: T, next: Box<List<T>> },
 }
@@ -92,6 +93,19 @@ enum List<T> {
 pub struct Reference<'r, T: 'r> {
     pointer: *const T,
     reference: std::marker::PhantomData<&'r T>,
+}
+
+#[repr(transparent)]
+#[derive(TypeLayout)]
+pub struct MutReference<'r, T: 'r> {
+    pointer: *mut T,
+    reference: std::marker::PhantomData<&'r mut T>,
+}
+
+#[derive(TypeLayout)]
+pub struct Referencing<'r, T: 'r> {
+    c: &'r T,
+    // m: &'r mut T,
 }
 
 fn main() {
@@ -104,25 +118,28 @@ fn main() {
 
     println!("{:#?}", Never::TYPE_GRAPH);
     println!("{:#?}", Single::TYPE_GRAPH);
-    // println!("{:#?}", Double::TYPE_GRAPH);
-    // println!("{:#?}", WithDouble::TYPE_GRAPH);
+    println!("{:#?}", Double::TYPE_GRAPH);
+    println!("{:#?}", WithDouble::TYPE_GRAPH);
     println!("{:#?}", Quo::<u32>::TYPE_GRAPH);
 
     println!("{:#?}", <()>::TYPE_GRAPH);
     println!("{:#?}", <[u32; 3]>::TYPE_GRAPH);
-    println!("{:#?}", <std::marker::PhantomData<String>>::TYPE_GRAPH);
+    println!("{:#?}", <std::marker::PhantomData<bool>>::TYPE_GRAPH);
     println!("{:#?}", <std::mem::MaybeUninit<Box<i8>>>::TYPE_GRAPH);
     println!("{:#?}", <Box<u8>>::TYPE_GRAPH);
     println!("{:#?}", <Box<[u8]>>::TYPE_GRAPH);
+    println!("{:#?}", <Box<&'static u8>>::TYPE_GRAPH);
 
     println!("{:#?}", <Option<std::num::NonZeroU64>>::TYPE_GRAPH);
     println!("{:#?}", <Result<bool, u8>>::TYPE_GRAPH);
 
     println!("{:#?}", <Reference<i32>>::TYPE_GRAPH);
+    println!("{:#?}", <MutReference<u32>>::TYPE_GRAPH);
+    // println!("{:#?}", <Referencing<&'static u8>>::TYPE_GRAPH);
 
-    // println!("{:#?}", <List<u8>>::TYPE_GRAPH);
+    println!("{:#?}", <List<u8>>::TYPE_GRAPH);
 
-    /*let mut ascii_escaped_layout = String::new();
+    let mut ascii_escaped_layout = String::new();
     for b in SERIALISED_LIST_U8_LAYOUT {
         let part: Vec<u8> = std::ascii::escape_default(b).collect();
         ascii_escaped_layout.push_str(std::str::from_utf8(&part).unwrap());
@@ -130,11 +147,11 @@ fn main() {
     println!("{}", ascii_escaped_layout);
 
     let ron_layout = ron::to_string(&<List<u8>>::TYPE_GRAPH).unwrap();
-    println!("{}", ron_layout);*/
+    println!("{}", ron_layout);
 }
 
-// const SERIALISED_LIST_U8_LAYOUT: [u8; const_type_layout::serialised_type_graph_len::<List<u8>>()] =
-//     const_type_layout::serialise_type_graph::<List<u8>>();
+const SERIALISED_LIST_U8_LAYOUT: [u8; const_type_layout::serialised_type_graph_len::<List<u8>>()] =
+    const_type_layout::serialise_type_graph::<List<u8>>();
 
 #[derive(
     Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,

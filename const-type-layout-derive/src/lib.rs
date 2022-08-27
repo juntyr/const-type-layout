@@ -17,6 +17,57 @@ use syn::{parse_macro_input, spanned::Spanned};
 // - wait for `const_heap` feature to be implemented for a workaround the graph
 //   size limitation: https://github.com/rust-lang/rust/issues/79597
 
+fn make_ts_static(
+    ts: proc_macro2::TokenStream,
+    lifetimes: &[&proc_macro2::Ident],
+    params: &[&proc_macro2::Ident],
+) -> proc_macro2::TokenStream {
+    let mut old_tts = ts.into_iter().peekable();
+    let mut new_tts = Vec::new();
+
+    while let Some(tt) = old_tts.next() {
+        match tt {
+            proc_macro2::TokenTree::Punct(punct) => {
+                if punct.as_char() == '\'' && punct.spacing() == proc_macro2::Spacing::Joint {
+                    if let Some(proc_macro2::TokenTree::Ident(ident)) = old_tts.peek() {
+                        if lifetimes.contains(&ident) {
+                            new_tts.push(proc_macro2::TokenTree::Punct(punct));
+                            new_tts.push(proc_macro2::TokenTree::Ident(proc_macro2::Ident::new(
+                                "static",
+                                ident.span(),
+                            )));
+
+                            std::mem::drop(old_tts.next());
+
+                            continue;
+                        }
+                    }
+                }
+
+                new_tts.push(proc_macro2::TokenTree::Punct(punct));
+            },
+            proc_macro2::TokenTree::Group(group) => {
+                new_tts.push(proc_macro2::TokenTree::Group(proc_macro2::Group::new(
+                    group.delimiter(),
+                    make_ts_static(group.stream(), lifetimes, params),
+                )));
+            },
+            proc_macro2::TokenTree::Ident(ident) => {
+                if params.contains(&&ident) {
+                    new_tts.extend(quote!(<#ident as ::const_type_layout::TypeLayout>::Static));
+                } else {
+                    new_tts.push(proc_macro2::TokenTree::Ident(ident));
+                }
+            },
+            proc_macro2::TokenTree::Literal(literal) => {
+                new_tts.push(proc_macro2::TokenTree::Literal(literal));
+            },
+        }
+    }
+
+    new_tts.into_iter().collect()
+}
+
 #[proc_macro_error]
 #[proc_macro_derive(TypeLayout, attributes(layout))]
 pub fn derive_type_layout(input: TokenStream) -> TokenStream {
@@ -27,10 +78,25 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     let ty_name = input.ident;
     let ty_generics = input.generics.split_for_impl().1;
 
+    let generic_lifetimes = input
+        .generics
+        .lifetimes()
+        .map(|lt| &lt.lifetime.ident)
+        .collect::<Vec<_>>();
+    let generic_params = input
+        .generics
+        .type_params()
+        .map(|param| &param.ident)
+        .collect::<Vec<_>>();
+
+    let ty_static_generics =
+        make_ts_static(quote!(#ty_generics), &generic_lifetimes, &generic_params);
+
     let Attributes {
         reprs,
-        add_bounds,
-        sub_bounds,
+        // add_bounds,
+        // sub_bounds,
+        ..
     } = parse_attributes(&ty_name, &ty_generics, &input.attrs);
 
     let mut consts = Vec::new();
@@ -48,9 +114,9 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
         &ty_generics,
         &input.generics,
         matches!(input.data, syn::Data::Enum(_)),
-        &inner_types,
-        add_bounds,
-        &sub_bounds,
+        // &inner_types,
+        // add_bounds,
+        // &sub_bounds,
     );
     let (type_layout_impl_generics, type_layout_ty_generics, type_layout_where_clause) =
         type_layout_input_generics.split_for_impl();
@@ -61,6 +127,8 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
         unsafe impl #type_layout_impl_generics ::const_type_layout::TypeLayout for
             #ty_name #type_layout_ty_generics #type_layout_where_clause
         {
+            type Static = #ty_name #ty_static_generics;
+
             const TYPE_LAYOUT: ::const_type_layout::TypeLayoutInfo<'static> = {
                 ::const_type_layout::TypeLayoutInfo {
                     name: ::core::any::type_name::<Self>(),
@@ -94,8 +162,8 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
 
 struct Attributes {
     reprs: String,
-    add_bounds: Vec<syn::WherePredicate>,
-    sub_bounds: Vec<String>,
+    // add_bounds: Vec<syn::WherePredicate>,
+    // sub_bounds: Vec<String>,
 }
 
 fn parse_attributes(
@@ -187,8 +255,8 @@ fn parse_attributes(
 
     Attributes {
         reprs,
-        add_bounds,
-        sub_bounds,
+        // add_bounds,
+        // sub_bounds,
     }
 }
 
@@ -263,9 +331,9 @@ fn generate_generics(
     ty_generics: &syn::TypeGenerics,
     generics: &syn::Generics,
     is_enum: bool,
-    inner_types: &[&syn::Type],
-    add_bounds: Vec<syn::WherePredicate>,
-    sub_bounds: &[String],
+    // inner_types: &[&syn::Type],
+    // add_bounds: Vec<syn::WherePredicate>,
+    // sub_bounds: &[String],
 ) -> Generics {
     let mut type_layout_input_generics = generics.clone();
 
@@ -289,34 +357,52 @@ fn generate_generics(
             });
     }
 
-    for ty in inner_types {
-        if !sub_bounds.contains(&quote!(#ty).to_string()) {
-            type_layout_input_generics
-                .make_where_clause()
-                .predicates
-                .push(syn::parse_quote! {
-                    #ty: ::const_type_layout::TypeLayout
-                });
+    for param in generics.type_params() {
+        let ty = &param.ident;
 
-            type_graph_input_generics
-                .make_where_clause()
-                .predicates
-                .push(syn::parse_quote! {
-                    #ty: ~const ::const_type_layout::TypeGraph
-                });
-        }
-    }
-
-    for bound in add_bounds {
         type_layout_input_generics
             .make_where_clause()
             .predicates
-            .push(bound.clone());
+            .push(syn::parse_quote! {
+                #ty: ::const_type_layout::TypeLayout
+            });
+
         type_graph_input_generics
             .make_where_clause()
             .predicates
-            .push(bound);
+            .push(syn::parse_quote! {
+                #ty: ~const ::const_type_layout::TypeGraph
+            });
     }
+
+    // for ty in inner_types {
+    // if !sub_bounds.contains(&quote!(#ty).to_string()) {
+    // type_layout_input_generics
+    // .make_where_clause()
+    // .predicates
+    // .push(syn::parse_quote! {
+    // #ty: ::const_type_layout::TypeLayout
+    // });
+    //
+    // type_graph_input_generics
+    // .make_where_clause()
+    // .predicates
+    // .push(syn::parse_quote! {
+    // #ty: ~const ::const_type_layout::TypeGraph
+    // });
+    // }
+    // }
+    //
+    // for bound in add_bounds {
+    // type_layout_input_generics
+    // .make_where_clause()
+    // .predicates
+    // .push(bound.clone());
+    // type_graph_input_generics
+    // .make_where_clause()
+    // .predicates
+    // .push(bound);
+    // }
 
     Generics {
         type_layout_input_generics,
@@ -476,21 +562,10 @@ fn quote_enum_variants(
             let variant_name = &variant.ident;
             let variant_name_str = Literal::string(&variant_name.to_string());
 
-            let variant_constructor =
-                quote_variant_constructor(ty_name, variant_name, &variant.fields);
-            let variant_destructor =
-                quote_variant_destructor(ty_name, variant_name, &variant.fields);
-
             let fields = quote_fields(
                 ty_name,
                 Some(variant_name),
-                &quote_variant_fields(
-                    ty_name,
-                    ty_generics,
-                    &variant.fields,
-                    &variant_constructor,
-                    &variant_destructor,
-                ),
+                &quote_variant_fields(ty_name, ty_generics, variant_name, &variant.fields),
                 consts,
             );
 
@@ -515,151 +590,69 @@ fn quote_enum_variants(
         .collect::<Vec<_>>()
 }
 
-fn quote_variant_constructor(
-    ty_name: &syn::Ident,
-    variant_name: &syn::Ident,
-    variant_fields: &syn::Fields,
-) -> proc_macro2::TokenStream {
-    match variant_fields {
-        syn::Fields::Unit => quote! { #ty_name::#variant_name },
-        syn::Fields::Unnamed(fields) => {
-            let initialisers = fields.unnamed.iter().map(|field| {
-                let field_ty = &field.ty;
-
-                quote! { unsafe {
-                    let mut value: ::core::mem::MaybeUninit<#field_ty> = ::core::mem::MaybeUninit::uninit();
-
-                    let mut i = 0;
-                    while i < core::mem::size_of::<#field_ty>() {
-                        *value.as_mut_ptr().cast::<u8>().add(i) = 0x01_u8;
-                        i += 1;
-                    }
-
-                    value.assume_init()
-                } }
-            }).collect::<Vec<_>>();
-
-            quote! { #ty_name::#variant_name(#(#initialisers),*) }
-        },
-        syn::Fields::Named(fields) => {
-            let initialisers = fields.named.iter().map(|field| {
-                let field_name = field.ident.as_ref().unwrap();
-                let field_ty = &field.ty;
-
-                quote! { #field_name: unsafe {
-                    let mut value: ::core::mem::MaybeUninit<#field_ty> = ::core::mem::MaybeUninit::uninit();
-
-                    let mut i = 0;
-                    while i < core::mem::size_of::<#field_ty>() {
-                        *value.as_mut_ptr().cast::<u8>().add(i) = 0x01_u8;
-                        i += 1;
-                    }
-
-                    value.assume_init()
-                } }
-            }).collect::<Vec<_>>();
-
-            quote! { #ty_name::#variant_name { #(#initialisers),* } }
-        },
-    }
-}
-
-fn quote_variant_destructor(
-    ty_name: &syn::Ident,
-    variant_name: &syn::Ident,
-    variant_fields: &syn::Fields,
-) -> proc_macro2::TokenStream {
-    match variant_fields {
-        syn::Fields::Unit => quote! { #ty_name::#variant_name },
-        syn::Fields::Unnamed(fields) => {
-            let destructors = fields
-                .unnamed
-                .iter()
-                .enumerate()
-                .map(|(field_index, _)| {
-                    let field_name = quote::format_ident!("__self_{}", field_index);
-
-                    quote! { #field_name }
-                })
-                .collect::<Vec<_>>();
-
-            quote! { #ty_name::#variant_name(#(#destructors),*) }
-        },
-        syn::Fields::Named(fields) => {
-            let destructors = fields
-                .named
-                .iter()
-                .map(|field| {
-                    let field_name = field.ident.as_ref().unwrap();
-
-                    quote! { #field_name }
-                })
-                .collect::<Vec<_>>();
-
-            quote! { #ty_name::#variant_name { #(#destructors),* } }
-        },
-    }
-}
-
 fn quote_variant_fields(
     ty_name: &syn::Ident,
     ty_generics: &syn::TypeGenerics,
+    variant_name: &syn::Ident,
     variant_fields: &syn::Fields,
-    variant_constructor: &proc_macro2::TokenStream,
-    variant_destructor: &proc_macro2::TokenStream,
 ) -> Vec<proc_macro2::TokenStream> {
     match variant_fields {
-        syn::Fields::Named(fields) => {
-            fields.named.iter().map(|field| {
-                let field_name = field.ident.as_ref().unwrap();
-                let field_name_str = Literal::string(&field_name.to_string());
+        syn::Fields::Named(syn::FieldsNamed { named: fields, .. }) => {
+            let field_descriptors = fields
+                .pairs()
+                .map(|pair| {
+                    let syn::Field {
+                        ident: field_name,
+                        colon_token: field_colon,
+                        ty: field_ty,
+                        ..
+                    } = pair.value();
+                    let field_comma = pair.punct();
+
+                    quote!(#field_name #field_colon #field_ty #field_comma)
+                })
+                .collect::<Vec<_>>();
+
+            fields.iter().map(|field| {
+                let field_name_str = Literal::string(&field.ident.as_ref().unwrap().to_string());
+                let field_index = &field.ident;
                 let field_ty = &field.ty;
 
                 quote_spanned! { field.span() =>
                     ::const_type_layout::Field {
                         name: #field_name_str,
-                        offset: {
-                            let __variant_base: ::core::mem::MaybeUninit<#ty_name #ty_generics> = ::core::mem::MaybeUninit::new(#variant_constructor);
-
-                            #[allow(
-                                unused_variables, unreachable_patterns, clippy::cast_sign_loss,
-                                clippy::match_wildcard_for_single_variants
-                            )]
-                            match unsafe { __variant_base.assume_init_ref() } {
-                                #variant_destructor => unsafe {
-                                    (#field_name as *const #field_ty).cast::<u8>().offset_from(__variant_base.as_ptr().cast()) as usize
-                                },
-                                _ => unreachable!(),
-                            }
-                        },
+                        offset: ::const_type_layout::struct_variant_field_offset!(
+                            #ty_name => #ty_name #ty_generics => #variant_name { #(#field_descriptors)* } => #field_index
+                        ),
                         ty: ::core::any::type_name::<#field_ty>(),
                     }
                 }
             }).collect()
         },
-        syn::Fields::Unnamed(fields) => {
-            fields.unnamed.iter().enumerate().map(|(field_index, field)| {
-                let field_name = quote::format_ident!("__self_{}", field_index);
+        syn::Fields::Unnamed(syn::FieldsUnnamed {
+            unnamed: fields, ..
+        }) => {
+            let field_descriptors = fields
+                .pairs()
+                .map(|pair| {
+                    let syn::Field { ty: field_ty, .. } = pair.value();
+                    let field_comma = pair.punct();
+
+                    quote!(#field_ty #field_comma)
+                })
+                .collect::<Vec<_>>();
+
+            fields.iter().enumerate().map(|(field_index, field)| {
                 let field_name_str = Literal::string(&field_index.to_string());
+                let field_index = syn::Index::from(field_index);
                 let field_ty = &field.ty;
 
                 quote_spanned! { field.span() =>
                     ::const_type_layout::Field {
                         name: #field_name_str,
-                        offset: {
-                            let __variant_base: ::core::mem::MaybeUninit<#ty_name #ty_generics> = ::core::mem::MaybeUninit::new(#variant_constructor);
-
-                            #[allow(
-                                unused_variables, unreachable_patterns, clippy::cast_sign_loss,
-                                clippy::match_wildcard_for_single_variants
-                            )]
-                            match unsafe { __variant_base.assume_init_ref() } {
-                                #variant_destructor => unsafe {
-                                    (#field_name as *const #field_ty).cast::<u8>().offset_from(__variant_base.as_ptr().cast()) as usize
-                                },
-                                _ => unreachable!(),
-                            }
-                        },
+                        offset: ::const_type_layout::struct_variant_field_offset!(
+                            #ty_name => #ty_name #ty_generics => #variant_name(#(#field_descriptors)*) => #field_index
+                        ),
                         ty: ::core::any::type_name::<#field_ty>(),
                     }
                 }
@@ -683,30 +676,35 @@ fn quote_discriminant_bytes(
 
     let variant_descriptor = match variant_fields {
         syn::Fields::Named(syn::FieldsNamed { named: fields, .. }) => {
-            let field_descriptors = fields.pairs().map(|pair| {
-                let syn::Field {
-                    ident: field_name,
-                    colon_token: field_colon,
-                    ty: field_ty,
-                    ..
-                } = pair.value();
-                let field_comma = pair.punct();
+            let field_descriptors = fields
+                .pairs()
+                .map(|pair| {
+                    let syn::Field {
+                        ident: field_name,
+                        colon_token: field_colon,
+                        ty: field_ty,
+                        ..
+                    } = pair.value();
+                    let field_comma = pair.punct();
 
-                quote!(#field_name #field_colon #field_ty #field_comma)
-            }).collect::<Vec<_>>();
+                    quote!(#field_name #field_colon #field_ty #field_comma)
+                })
+                .collect::<Vec<_>>();
 
             quote!(#variant_name { #(#field_descriptors)* })
         },
-        syn::Fields::Unnamed(syn::FieldsUnnamed { unnamed: fields, .. }) => {
-            let field_descriptors = fields.pairs().map(|pair| {
-                let syn::Field {
-                    ty: field_ty,
-                    ..
-                } = pair.value();
-                let field_comma = pair.punct();
+        syn::Fields::Unnamed(syn::FieldsUnnamed {
+            unnamed: fields, ..
+        }) => {
+            let field_descriptors = fields
+                .pairs()
+                .map(|pair| {
+                    let syn::Field { ty: field_ty, .. } = pair.value();
+                    let field_comma = pair.punct();
 
-                quote!(#field_ty #field_comma)
-            }).collect::<Vec<_>>();
+                    quote!(#field_ty #field_comma)
+                })
+                .collect::<Vec<_>>();
 
             quote!(#variant_name(#(#field_descriptors)*))
         },
@@ -714,7 +712,7 @@ fn quote_discriminant_bytes(
     };
 
     consts.push(quote! {
-        const #ident: [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()] = 
+        const #ident: [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()] =
             ::const_type_layout::struct_variant_discriminant!(
                 #ty_name => #ty_name #ty_generics => #variant_descriptor
             );

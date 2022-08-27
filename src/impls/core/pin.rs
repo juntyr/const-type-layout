@@ -1,6 +1,8 @@
 use crate::{Field, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
 unsafe impl<T: TypeLayout> TypeLayout for core::pin::Pin<T> {
+    type Static = core::pin::Pin<T::Static>;
+
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),

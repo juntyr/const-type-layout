@@ -20,9 +20,8 @@ where
             <E as TypeLayout>::UNINIT,
         ));
 
-        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = unsafe {
-            core::mem::transmute(core::mem::discriminant(&uninit))
-        };
+        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] =
+            unsafe { core::mem::transmute(core::mem::discriminant(&uninit)) };
 
         core::mem::forget(uninit);
 
@@ -47,9 +46,8 @@ where
             <T as TypeLayout>::UNINIT,
         ));
 
-        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = unsafe {
-            core::mem::transmute(core::mem::discriminant(&uninit))
-        };
+        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] =
+            unsafe { core::mem::transmute(core::mem::discriminant(&uninit)) };
 
         core::mem::forget(uninit);
 
@@ -76,6 +74,8 @@ unsafe impl<T: TypeLayout, E: TypeLayout> TypeLayout for core::result::Result<T,
 where
     [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
 {
+    type Static = core::result::Result<T::Static, E::Static>;
+
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),

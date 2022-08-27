@@ -1,6 +1,8 @@
 use crate::{Field, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
 unsafe impl<T: TypeLayout> TypeLayout for core::mem::ManuallyDrop<T> {
+    type Static = core::mem::ManuallyDrop<T::Static>;
+
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -27,6 +29,8 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for core::mem::ManuallyDrop<T> 
 }
 
 unsafe impl<T: TypeLayout> TypeLayout for core::mem::MaybeUninit<T> {
+    type Static = core::mem::MaybeUninit<T::Static>;
+
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),

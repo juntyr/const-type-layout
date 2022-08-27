@@ -3,6 +3,8 @@ use crate::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructur
 macro_rules! impl_primitive_type_layout {
     (impl $ty:ty => $val:expr) => {
         unsafe impl TypeLayout for $ty {
+            type Static = Self;
+
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),

@@ -4,6 +4,8 @@ macro_rules! impl_atomic_int_layout {
     (impl $at:ident ( $align:literal : $cfg:literal ) => $ty:ty => $val:literal) => {
         #[cfg(target_has_atomic_load_store = $cfg)]
         unsafe impl TypeLayout for core::sync::atomic::$at {
+            type Static = Self;
+
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
@@ -54,6 +56,8 @@ macro_rules! impl_atomic_int_ptr_sized_layout {
         #[cfg(target_has_atomic_load_store = "ptr")]
         #[cfg(target_pointer_width = $cfg)]
         unsafe impl TypeLayout for core::sync::atomic::$at {
+            type Static = Self;
+
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
@@ -103,6 +107,8 @@ macro_rules! impl_atomic_ptr_layout {
         #[cfg(target_has_atomic_load_store = "ptr")]
         #[cfg(target_pointer_width = $cfg)]
         unsafe impl<T: TypeLayout> TypeLayout for core::sync::atomic::AtomicPtr<T> {
+            type Static = core::sync::atomic::AtomicPtr<T::Static>;
+
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),

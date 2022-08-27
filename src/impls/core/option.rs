@@ -18,9 +18,8 @@ where
     const NONE_DISCRIMINANT_BYTES: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = {
         let uninit: Self = None;
 
-        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = unsafe {
-            core::mem::transmute(core::mem::discriminant(&uninit))
-        };
+        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] =
+            unsafe { core::mem::transmute(core::mem::discriminant(&uninit)) };
 
         core::mem::forget(uninit);
 
@@ -45,9 +44,8 @@ where
             <T as TypeLayout>::UNINIT,
         ));
 
-        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = unsafe {
-            core::mem::transmute(core::mem::discriminant(&uninit))
-        };
+        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] =
+            unsafe { core::mem::transmute(core::mem::discriminant(&uninit)) };
 
         core::mem::forget(uninit);
 
@@ -73,6 +71,8 @@ unsafe impl<T: TypeLayout> TypeLayout for core::option::Option<T>
 where
     [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
 {
+    type Static = core::option::Option<T::Static>;
+
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),

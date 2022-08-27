@@ -1,6 +1,8 @@
 use crate::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
 unsafe impl<T: TypeLayout> TypeLayout for *const T {
+    type Static = *const T::Static;
+
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -10,9 +12,8 @@ unsafe impl<T: TypeLayout> TypeLayout for *const T {
             mutability: false,
         },
     };
-    const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new(
-        core::ptr::NonNull::dangling().as_ptr()
-    );
+    const UNINIT: core::mem::ManuallyDrop<Self> =
+        core::mem::ManuallyDrop::new(core::ptr::NonNull::dangling().as_ptr());
 }
 
 unsafe impl<T: ~const TypeGraph> const TypeGraph for *const T {
@@ -24,6 +25,8 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for *const T {
 }
 
 unsafe impl<T: TypeLayout> TypeLayout for *mut T {
+    type Static = *mut T::Static;
+
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -33,9 +36,8 @@ unsafe impl<T: TypeLayout> TypeLayout for *mut T {
             mutability: true,
         },
     };
-    const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new(
-        core::ptr::NonNull::dangling().as_ptr()
-    );
+    const UNINIT: core::mem::ManuallyDrop<Self> =
+        core::mem::ManuallyDrop::new(core::ptr::NonNull::dangling().as_ptr());
 }
 
 unsafe impl<T: ~const TypeGraph> const TypeGraph for *mut T {
@@ -47,6 +49,8 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for *mut T {
 }
 
 unsafe impl<T: TypeLayout> TypeLayout for core::ptr::NonNull<T> {
+    type Static = core::ptr::NonNull<T::Static>;
+
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -56,9 +60,8 @@ unsafe impl<T: TypeLayout> TypeLayout for core::ptr::NonNull<T> {
             mutability: true,
         },
     };
-    const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new(
-        core::ptr::NonNull::dangling()
-    );
+    const UNINIT: core::mem::ManuallyDrop<Self> =
+        core::mem::ManuallyDrop::new(core::ptr::NonNull::dangling());
 }
 
 unsafe impl<T: ~const TypeGraph> const TypeGraph for core::ptr::NonNull<T> {
@@ -70,6 +73,8 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for core::ptr::NonNull<T> {
 }
 
 unsafe impl<T: TypeLayout> TypeLayout for core::ptr::NonNull<[T]> {
+    type Static = core::ptr::NonNull<[T::Static]>;
+
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),

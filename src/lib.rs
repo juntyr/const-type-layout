@@ -159,6 +159,8 @@
 #![feature(allocator_api)]
 #![feature(const_box)]
 #![feature(unsafe_pin_internals)]
+#![feature(const_ptr_write)]
+#![feature(const_slice_from_raw_parts_mut)]
 #![doc(html_root_url = "https://momolangenstein.github.io/const-type-layout")]
 #![cfg_attr(feature = "serde", allow(clippy::type_repetition_in_bounds))]
 
@@ -181,6 +183,8 @@ mod serde;
 /// It is only safe to implement this trait if it accurately describes the
 ///  type's layout. Use `#[derive(TypeLayout)]` instead.
 pub unsafe trait TypeLayout: Sized {
+    type Static: 'static;
+
     const TYPE_LAYOUT: TypeLayoutInfo<'static>;
 
     const UNINIT: core::mem::ManuallyDrop<Self>;
@@ -585,5 +589,56 @@ pub macro struct_variant_discriminant {
         }
 
         big_endian_bytes
+    }},
+}
+
+pub macro struct_variant_field_offset {
+    ($ty_name:ident => $ty:ty => $variant_name:ident($($field_ty:ty),*) => $field_index:tt) => {{
+        let uninit: $ty = $ty_name::$variant_name(
+            $(core::mem::ManuallyDrop::into_inner(
+                <$field_ty as ::const_type_layout::TypeLayout>::UNINIT
+            )),*
+        );
+        let base_ptr: *const $ty = ::core::ptr::addr_of!(uninit).cast();
+
+        let field_ptr: *const u8 = match &uninit {
+            #[allow(clippy::unneeded_field_pattern)]
+            $ty_name::$variant_name { $field_index: field, .. } => {
+                field as *const _ as *const u8
+            },
+            _ => unreachable!(),
+        };
+
+        #[allow(clippy::cast_sign_loss)]
+        let offset = unsafe { field_ptr.cast::<u8>().offset_from(base_ptr.cast()) as usize };
+
+        #[allow(clippy::forget_non_drop)]
+        core::mem::forget(uninit);
+
+        offset
+    }},
+    ($ty_name:ident => $ty:ty => $variant_name:ident { $($field_name:ident: $field_ty:ty),* } => $field_index:ident) => {{
+        let uninit: $ty = $ty_name::$variant_name {
+            $($field_name: core::mem::ManuallyDrop::into_inner(
+                <$field_ty as ::const_type_layout::TypeLayout>::UNINIT)
+            ),*
+        };
+        let base_ptr: *const $ty = ::core::ptr::addr_of!(uninit).cast();
+
+        let field_ptr: *const u8 = match &uninit {
+            #[allow(clippy::unneeded_field_pattern)]
+            $ty_name::$variant_name { $field_index: field, .. } => {
+                field as *const _ as *const u8
+            },
+            _ => unreachable!(),
+        };
+
+        #[allow(clippy::cast_sign_loss)]
+        let offset = unsafe { field_ptr.cast::<u8>().offset_from(base_ptr.cast()) as usize };
+
+        #[allow(clippy::forget_non_drop)]
+        core::mem::forget(uninit);
+
+        offset
     }},
 }
