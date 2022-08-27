@@ -82,8 +82,7 @@ enum Quo<T> {
 #[derive(TypeLayout)]
 #[layout(free = "Box<List<T>>")]
 #[layout(bound = "T: ::const_type_layout::TypeLayout")]
-// TODO: remove the static bound once no longer needed
-enum List<T: 'static> {
+enum List<T> {
     Tail,
     Cons { item: T, next: Box<List<T>> },
 }
@@ -105,6 +104,7 @@ pub struct MutReference<'r, T: 'r> {
 #[derive(TypeLayout)]
 pub struct Referencing<'r, T: 'r> {
     c: &'r T,
+    // FIXME: constructing invalid value at .value: encountered mutable reference in a `const`
     // m: &'r mut T,
 }
 
@@ -135,7 +135,9 @@ fn main() {
 
     println!("{:#?}", <Reference<i32>>::TYPE_GRAPH);
     println!("{:#?}", <MutReference<u32>>::TYPE_GRAPH);
-    // println!("{:#?}", <Referencing<&'static u8>>::TYPE_GRAPH);
+    println!("{:#?}", <Referencing<&'static u8>>::TYPE_GRAPH);
+
+    non_static_ref(&0);
 
     println!("{:#?}", <List<u8>>::TYPE_GRAPH);
 
@@ -148,6 +150,10 @@ fn main() {
 
     let ron_layout = ron::to_string(&<List<u8>>::TYPE_GRAPH).unwrap();
     println!("{}", ron_layout);
+}
+
+fn non_static_ref<'a>(_val: &'a u128) {
+    println!("{:#?}", <Referencing<&'a u8>>::TYPE_GRAPH);
 }
 
 const SERIALISED_LIST_U8_LAYOUT: [u8; const_type_layout::serialised_type_graph_len::<List<u8>>()] =

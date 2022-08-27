@@ -2,7 +2,7 @@ use alloc::alloc::Global;
 
 use crate::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
-unsafe impl<T: TypeLayout + 'static> TypeLayout for alloc::boxed::Box<T> {
+unsafe impl<T: TypeLayout> TypeLayout for alloc::boxed::Box<T> {
     type Static = alloc::boxed::Box<T::Static>;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
@@ -16,13 +16,13 @@ unsafe impl<T: TypeLayout + 'static> TypeLayout for alloc::boxed::Box<T> {
     };
     const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new(unsafe {
         alloc::boxed::Box::from_raw_in(
-            <Self as BoxElem<T>>::ELEM as *const T as *mut T,
+            <Self as BoxElem<T::Static>>::ELEM as *const T::Static as *mut T,
             alloc::alloc::Global,
         )
     });
 }
 
-unsafe impl<T: ~const TypeGraph + 'static> const TypeGraph for alloc::boxed::Box<T> {
+unsafe impl<T: ~const TypeGraph> const TypeGraph for alloc::boxed::Box<T> {
     fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
         if graph.insert(&Self::TYPE_LAYOUT) {
             <T as TypeGraph>::populate_graph(graph);
@@ -30,12 +30,12 @@ unsafe impl<T: ~const TypeGraph + 'static> const TypeGraph for alloc::boxed::Box
     }
 }
 
-trait BoxElem<T: TypeLayout + 'static> {
+trait BoxElem<T: 'static> {
     const ELEM: &'static T;
 }
 
-impl<T: TypeLayout + 'static> BoxElem<T> for alloc::boxed::Box<T> {
-    const ELEM: &'static T = unsafe {
+impl<T: TypeLayout> BoxElem<T::Static> for alloc::boxed::Box<T> {
+    const ELEM: &'static T::Static = unsafe {
         let ptr: *mut T =
             core::intrinsics::const_allocate(core::mem::size_of::<T>(), core::mem::align_of::<T>())
                 .cast();
@@ -45,7 +45,7 @@ impl<T: TypeLayout + 'static> BoxElem<T> for alloc::boxed::Box<T> {
             core::mem::ManuallyDrop::into_inner(<T as TypeLayout>::UNINIT),
         );
 
-        &*ptr
+        &*ptr.cast()
     };
 }
 
