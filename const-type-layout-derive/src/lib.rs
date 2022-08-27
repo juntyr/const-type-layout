@@ -1,5 +1,6 @@
 #![deny(clippy::pedantic)]
 #![feature(iter_intersperse)]
+#![feature(let_else)]
 
 extern crate proc_macro;
 
@@ -35,6 +36,8 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     let mut consts = Vec::new();
     let layout = layout_of_type(&ty_name, &ty_generics, &input.data, &reprs, &mut consts);
 
+    let uninit = uninit_for_type(&ty_name, &input.data);
+
     let inner_types = extract_inner_types(&input.data);
 
     let Generics {
@@ -66,6 +69,11 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
                     structure: #layout,
                 }
             };
+
+            #[allow(unreachable_code, clippy::empty_loop)]
+            const UNINIT: ::core::mem::ManuallyDrop<Self> = ::core::mem::ManuallyDrop::new(
+                #uninit
+            );
         }
 
         #(impl #type_layout_impl_generics #ty_name #type_layout_ty_generics #type_layout_where_clause {
@@ -426,19 +434,7 @@ fn quote_structlike_field_offset(
     let extra_fields = if is_union { quote!() } else { quote!(..) };
 
     quote! {
-        let uninit = ::core::mem::MaybeUninit::<#ty_name #ty_generics>::uninit();
-        let base_ptr: *const #ty_name #ty_generics = uninit.as_ptr();
-
-        #[allow(clippy::unneeded_field_pattern)]
-        let #ty_name { #field_name: _, #extra_fields }: #ty_name #ty_generics;
-
-        #[allow(unused_unsafe)]
-        let field_ptr = unsafe {
-            ::core::ptr::addr_of!((*base_ptr).#field_name)
-        };
-
-        #[allow(clippy::cast_sign_loss)]
-        unsafe { field_ptr.cast::<u8>().offset_from(base_ptr.cast()) as usize }
+        ::const_type_layout::struct_field_offset!(#ty_name => #ty_name #ty_generics => (*base_ptr).#field_name => #extra_fields)
     }
 }
 
@@ -502,7 +498,7 @@ fn quote_enum_variants(
                 ty_name,
                 ty_generics,
                 variant_name,
-                &variant_constructor,
+                &variant.fields,
                 consts,
             );
 
@@ -535,7 +531,7 @@ fn quote_variant_constructor(
 
                     let mut i = 0;
                     while i < core::mem::size_of::<#field_ty>() {
-                        *value.as_mut_ptr().cast::<u8>().add(i) = 0xFF_u8;
+                        *value.as_mut_ptr().cast::<u8>().add(i) = 0x01_u8;
                         i += 1;
                     }
 
@@ -555,7 +551,7 @@ fn quote_variant_constructor(
 
                     let mut i = 0;
                     while i < core::mem::size_of::<#field_ty>() {
-                        *value.as_mut_ptr().cast::<u8>().add(i) = 0xFF_u8;
+                        *value.as_mut_ptr().cast::<u8>().add(i) = 0x01_u8;
                         i += 1;
                     }
 
@@ -677,7 +673,7 @@ fn quote_discriminant_bytes(
     ty_name: &syn::Ident,
     ty_generics: &syn::TypeGenerics,
     variant_name: &syn::Ident,
-    variant_constructor: &proc_macro2::TokenStream,
+    variant_fields: &syn::Fields,
     consts: &mut Vec<proc_macro2::TokenStream>,
 ) -> proc_macro2::TokenStream {
     let ident = syn::Ident::new(
@@ -685,30 +681,43 @@ fn quote_discriminant_bytes(
         ty_name.span(),
     );
 
+    let variant_descriptor = match variant_fields {
+        syn::Fields::Named(syn::FieldsNamed { named: fields, .. }) => {
+            let field_descriptors = fields.pairs().map(|pair| {
+                let syn::Field {
+                    ident: field_name,
+                    colon_token: field_colon,
+                    ty: field_ty,
+                    ..
+                } = pair.value();
+                let field_comma = pair.punct();
+
+                quote!(#field_name #field_colon #field_ty #field_comma)
+            }).collect::<Vec<_>>();
+
+            quote!(#variant_name { #(#field_descriptors)* })
+        },
+        syn::Fields::Unnamed(syn::FieldsUnnamed { unnamed: fields, .. }) => {
+            let field_descriptors = fields.pairs().map(|pair| {
+                let syn::Field {
+                    ty: field_ty,
+                    ..
+                } = pair.value();
+                let field_comma = pair.punct();
+
+                quote!(#field_ty #field_comma)
+            }).collect::<Vec<_>>();
+
+            quote!(#variant_name(#(#field_descriptors)*))
+        },
+        syn::Fields::Unit => quote!(#variant_name),
+    };
+
     consts.push(quote! {
-        const #ident: [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()] = unsafe {
-            let variant: ::core::mem::MaybeUninit<#ty_name #ty_generics> = ::core::mem::MaybeUninit::new(#variant_constructor);
-
-            let system_endian_bytes: [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()] = ::core::mem::transmute(
-                ::core::mem::discriminant(variant.assume_init_ref())
+        const #ident: [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()] = 
+            ::const_type_layout::struct_variant_discriminant!(
+                #ty_name => #ty_name #ty_generics => #variant_descriptor
             );
-
-            let mut big_endian_bytes = [0_u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()];
-
-            let mut i = 0;
-
-            while i < system_endian_bytes.len() {
-                big_endian_bytes[i] = system_endian_bytes[if cfg!(target_endian = "big") {
-                    i
-                } else /* cfg!(target_endian = "little") */ {
-                    system_endian_bytes.len() - i - 1
-                }];
-
-                i += 1;
-            }
-
-            big_endian_bytes
-        };
     });
 
     quote! { Self :: #ident }
@@ -731,4 +740,99 @@ fn quote_variants(
     });
 
     quote! { Self :: #ident }
+}
+
+fn uninit_for_type(ty_name: &syn::Ident, data: &syn::Data) -> proc_macro2::TokenStream {
+    match data {
+        syn::Data::Struct(data) => {
+            let fields = match &data.fields {
+                syn::Fields::Named(syn::FieldsNamed { named: fields, .. })
+                | syn::Fields::Unnamed(syn::FieldsUnnamed {
+                    unnamed: fields, ..
+                }) => fields,
+                syn::Fields::Unit => return quote!(#ty_name),
+            };
+
+            let initialisers = fields
+                .pairs()
+                .map(|pair| {
+                    let syn::Field {
+                        ident: field_name,
+                        colon_token: field_colon,
+                        ty: field_ty,
+                        ..
+                    } = pair.value();
+                    let field_comma = pair.punct();
+
+                    quote! {
+                        #field_name #field_colon ::core::mem::ManuallyDrop::into_inner(
+                            <#field_ty as ::const_type_layout::TypeLayout>::UNINIT
+                        ) #field_comma
+                    }
+                })
+                .collect::<Vec<_>>();
+
+            if let syn::Fields::Named(_) = &data.fields {
+                quote!(#ty_name { #(#initialisers)* })
+            } else {
+                quote!(#ty_name ( #(#initialisers)* ))
+            }
+        },
+        syn::Data::Enum(r#enum) => {
+            let Some(syn::Variant {
+                ident: variant_name,
+                fields,
+                ..
+            }) = &r#enum.variants.first() else {
+                return quote!(loop {});
+            };
+
+            let variant_fields = match fields {
+                syn::Fields::Named(syn::FieldsNamed { named: fields, .. })
+                | syn::Fields::Unnamed(syn::FieldsUnnamed {
+                    unnamed: fields, ..
+                }) => fields,
+                syn::Fields::Unit => return quote!(#ty_name::#variant_name),
+            };
+
+            let initialisers = variant_fields
+                .pairs()
+                .map(|pair| {
+                    let syn::Field {
+                        ident: field_name,
+                        colon_token: field_colon,
+                        ty: field_ty,
+                        ..
+                    } = pair.value();
+                    let field_comma = pair.punct();
+
+                    quote! {
+                        #field_name #field_colon ::core::mem::ManuallyDrop::into_inner(
+                            <#field_ty as ::const_type_layout::TypeLayout>::UNINIT
+                        ) #field_comma
+                    }
+                })
+                .collect::<Vec<_>>();
+
+            if let syn::Fields::Named(_) = fields {
+                quote!(#ty_name::#variant_name { #(#initialisers)* })
+            } else {
+                quote!(#ty_name::#variant_name ( #(#initialisers)* ))
+            }
+        },
+        syn::Data::Union(r#union) => {
+            let syn::Field {
+                ident: field_name,
+                colon_token: field_colon,
+                ty: field_ty,
+                ..
+            } = &r#union.fields.named[0];
+
+            quote!(#ty_name {
+                #field_name #field_colon ::core::mem::ManuallyDrop::into_inner(
+                    <#field_ty as ::const_type_layout::TypeLayout>::UNINIT
+                )
+            })
+        },
+    }
 }

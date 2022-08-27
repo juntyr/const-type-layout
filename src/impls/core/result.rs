@@ -11,24 +11,20 @@ where
     const ERR_DISCRIMINANT_BYTES: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()];
 }
 
-impl<T, E> ResultDiscriminant for Result<T, E>
+impl<T: TypeLayout, E: TypeLayout> ResultDiscriminant for Result<T, E>
 where
     [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
 {
-    const ERR_DISCRIMINANT_BYTES: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = unsafe {
-        let mut value: core::mem::MaybeUninit<E> = core::mem::MaybeUninit::uninit();
+    const ERR_DISCRIMINANT_BYTES: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = {
+        let uninit: Self = Err(core::mem::ManuallyDrop::into_inner(
+            <E as TypeLayout>::UNINIT,
+        ));
 
-        let mut i = 0;
-        while i < core::mem::size_of::<E>() {
-            *value.as_mut_ptr().cast::<u8>().add(i) = 0xFF_u8;
-            i += 1;
-        }
+        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = unsafe {
+            core::mem::transmute(core::mem::discriminant(&uninit))
+        };
 
-        let err: core::mem::MaybeUninit<Self> =
-            core::mem::MaybeUninit::new(Err(value.assume_init()));
-
-        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] =
-            core::mem::transmute(core::mem::discriminant(err.assume_init_ref()));
+        core::mem::forget(uninit);
 
         let mut big_endian_bytes = [0_u8; core::mem::size_of::<core::mem::Discriminant<Self>>()];
 
@@ -46,19 +42,16 @@ where
 
         big_endian_bytes
     };
-    const OK_DISCRIMINANT_BYTES: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = unsafe {
-        let mut value: core::mem::MaybeUninit<T> = core::mem::MaybeUninit::uninit();
+    const OK_DISCRIMINANT_BYTES: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = {
+        let uninit: Self = Ok(core::mem::ManuallyDrop::into_inner(
+            <T as TypeLayout>::UNINIT,
+        ));
 
-        let mut i = 0;
-        while i < core::mem::size_of::<T>() {
-            *value.as_mut_ptr().cast::<u8>().add(i) = 0xFF_u8;
-            i += 1;
-        }
+        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = unsafe {
+            core::mem::transmute(core::mem::discriminant(&uninit))
+        };
 
-        let ok: core::mem::MaybeUninit<Self> = core::mem::MaybeUninit::new(Ok(value.assume_init()));
-
-        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] =
-            core::mem::transmute(core::mem::discriminant(ok.assume_init_ref()));
+        core::mem::forget(uninit);
 
         let mut big_endian_bytes = [0_u8; core::mem::size_of::<core::mem::Discriminant<Self>>()];
 
@@ -78,7 +71,8 @@ where
     };
 }
 
-unsafe impl<T, E> TypeLayout for core::result::Result<T, E>
+// TODO: needs specialisation for uninhabited case?
+unsafe impl<T: TypeLayout, E: TypeLayout> TypeLayout for core::result::Result<T, E>
 where
     [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
 {
@@ -96,27 +90,25 @@ where
                     },
                     fields: &[Field {
                         name: "0",
-                        offset: unsafe {
-                            let mut value: core::mem::MaybeUninit<T> =
-                                core::mem::MaybeUninit::uninit();
+                        offset: {
+                            let uninit: Self = Ok(core::mem::ManuallyDrop::into_inner(
+                                <T as TypeLayout>::UNINIT,
+                            ));
+                            let base_ptr: *const Self = core::ptr::addr_of!(uninit).cast();
 
-                            let mut i = 0;
-                            while i < core::mem::size_of::<T>() {
-                                *value.as_mut_ptr().cast::<u8>().add(i) = 0xFF_u8;
-                                i += 1;
-                            }
-
-                            let ok: core::mem::MaybeUninit<Self> =
-                                core::mem::MaybeUninit::new(Ok(value.assume_init()));
+                            let field_ptr: *const u8 = match &uninit {
+                                Ok(val) => (val as *const T).cast(),
+                                _ => unreachable!(),
+                            };
 
                             #[allow(clippy::cast_sign_loss)]
-                            match ok.assume_init_ref() {
-                                Ok(val) => (val as *const T)
-                                    .cast::<u8>()
-                                    .offset_from(ok.as_ptr().cast())
-                                    as usize,
-                                _ => unreachable!(),
-                            }
+                            let offset = unsafe {
+                                field_ptr.cast::<u8>().offset_from(base_ptr.cast()) as usize
+                            };
+
+                            core::mem::forget(uninit);
+
+                            offset
                         },
                         ty: ::core::any::type_name::<T>(),
                     }],
@@ -128,27 +120,25 @@ where
                     },
                     fields: &[Field {
                         name: "0",
-                        offset: unsafe {
-                            let mut value: core::mem::MaybeUninit<E> =
-                                core::mem::MaybeUninit::uninit();
+                        offset: {
+                            let uninit: Self = Err(core::mem::ManuallyDrop::into_inner(
+                                <E as TypeLayout>::UNINIT,
+                            ));
+                            let base_ptr: *const Self = core::ptr::addr_of!(uninit).cast();
 
-                            let mut i = 0;
-                            while i < core::mem::size_of::<E>() {
-                                *value.as_mut_ptr().cast::<u8>().add(i) = 0xFF_u8;
-                                i += 1;
-                            }
-
-                            let err: core::mem::MaybeUninit<Self> =
-                                core::mem::MaybeUninit::new(Err(value.assume_init()));
+                            let field_ptr: *const u8 = match &uninit {
+                                Err(val) => (val as *const E).cast(),
+                                _ => unreachable!(),
+                            };
 
                             #[allow(clippy::cast_sign_loss)]
-                            match err.assume_init_ref() {
-                                Err(val) => (val as *const E)
-                                    .cast::<u8>()
-                                    .offset_from(err.as_ptr().cast())
-                                    as usize,
-                                _ => unreachable!(),
-                            }
+                            let offset = unsafe {
+                                field_ptr.cast::<u8>().offset_from(base_ptr.cast()) as usize
+                            };
+
+                            core::mem::forget(uninit);
+
+                            offset
                         },
                         ty: ::core::any::type_name::<E>(),
                     }],
@@ -156,6 +146,9 @@ where
             ],
         },
     };
+    const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new(Ok(
+        core::mem::ManuallyDrop::into_inner(<T as TypeLayout>::UNINIT),
+    ));
 }
 
 unsafe impl<T: ~const TypeGraph, E: ~const TypeGraph> const TypeGraph for core::result::Result<T, E>

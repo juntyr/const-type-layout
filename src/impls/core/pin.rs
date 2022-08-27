@@ -14,6 +14,9 @@ unsafe impl<T: TypeLayout> TypeLayout for core::pin::Pin<T> {
             }],
         },
     };
+    const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new(Self {
+        pointer: core::mem::ManuallyDrop::into_inner(T::UNINIT),
+    });
 }
 
 unsafe impl<T: ~const TypeGraph> const TypeGraph for core::pin::Pin<T> {

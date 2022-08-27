@@ -14,6 +14,8 @@ unsafe impl<T: TypeLayout> TypeLayout for core::mem::ManuallyDrop<T> {
             }],
         },
     };
+    const UNINIT: core::mem::ManuallyDrop<Self> =
+        core::mem::ManuallyDrop::new(Self::new(core::mem::ManuallyDrop::into_inner(T::UNINIT)));
 }
 
 unsafe impl<T: ~const TypeGraph> const TypeGraph for core::mem::ManuallyDrop<T> {
@@ -45,6 +47,8 @@ unsafe impl<T: TypeLayout> TypeLayout for core::mem::MaybeUninit<T> {
             ],
         },
     };
+    const UNINIT: core::mem::ManuallyDrop<Self> =
+        core::mem::ManuallyDrop::new(Self::new(core::mem::ManuallyDrop::into_inner(T::UNINIT)));
 }
 
 unsafe impl<T: ~const TypeGraph> const TypeGraph for core::mem::MaybeUninit<T> {

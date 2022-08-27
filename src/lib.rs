@@ -54,8 +54,8 @@
 //! #[derive(TypeLayout)]
 //! #[repr(C)]
 //! struct Foo {
-//! a: u8,
-//! b: u32,
+//!     a: u8,
+//!     b: u32,
 //! }
 //!
 //! println!("{:#?}", Foo::TYPE_LAYOUT);
@@ -107,7 +107,7 @@
 //! #[derive(TypeLayout)]
 //! #[repr(C, align(128))]
 //! struct OverAligned {
-//! value: u8,
+//!     value: u8,
 //! }
 //!
 //! println!("{:#?}", OverAligned::TYPE_LAYOUT);
@@ -152,6 +152,13 @@
 #![feature(let_else)]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
+#![feature(core_intrinsics)]
+#![feature(const_heap)]
+// #![feature(allow_internal_unstable)]
+#![feature(decl_macro)]
+#![feature(allocator_api)]
+#![feature(const_box)]
+#![feature(unsafe_pin_internals)]
 #![doc(html_root_url = "https://momolangenstein.github.io/const-type-layout")]
 #![cfg_attr(feature = "serde", allow(clippy::type_repetition_in_bounds))]
 
@@ -175,6 +182,8 @@ mod serde;
 ///  type's layout. Use `#[derive(TypeLayout)]` instead.
 pub unsafe trait TypeLayout: Sized {
     const TYPE_LAYOUT: TypeLayoutInfo<'static>;
+
+    const UNINIT: core::mem::ManuallyDrop<Self>;
 }
 
 /// # Safety
@@ -468,4 +477,113 @@ impl<'a> PartialOrd for Field<'a> {
     fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
         Some(self.cmp(other))
     }
+}
+
+//#[allow_internal_unstable(const_refs_to_cell)]
+pub macro struct_field_offset($ty_name:ident => $ty:ty => (*$base:ident).$field:tt => $($extra_fields:tt)?) {
+    {
+        #[allow(clippy::unneeded_field_pattern)]
+        let $ty_name { $field: _, $($extra_fields)? }: $ty;
+
+        let uninit = <$ty as ::const_type_layout::TypeLayout>::UNINIT;
+        let $base: *const $ty = ::core::ptr::addr_of!(uninit).cast();
+
+        #[allow(unused_unsafe)]
+        let field_ptr = unsafe {
+            ::core::ptr::addr_of!((*$base).$field)
+        };
+
+        #[allow(clippy::cast_sign_loss)]
+        unsafe { field_ptr.cast::<u8>().offset_from($base.cast()) as usize }
+    }
+}
+
+//#[allow_internal_unstable(const_refs_to_cell)]
+pub macro struct_variant_discriminant {
+    ($ty_name:ident => $ty:ty => $variant_name:ident) => {{
+        let uninit: $ty = $ty_name::$variant_name;
+
+        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<$ty>>()] = unsafe {
+            core::mem::transmute(core::mem::discriminant(&uninit))
+        };
+
+        #[allow(clippy::forget_non_drop)]
+        core::mem::forget(uninit);
+
+        let mut big_endian_bytes = [0_u8; core::mem::size_of::<core::mem::Discriminant<$ty>>()];
+
+        let mut i = 0;
+
+        while i < system_endian_bytes.len() {
+            big_endian_bytes[i] = system_endian_bytes[if cfg!(target_endian = "big") {
+                i
+            } else {
+                system_endian_bytes.len() - i - 1
+            }];
+
+            i += 1;
+        }
+
+        big_endian_bytes
+    }},
+    ($ty_name:ident => $ty:ty => $variant_name:ident($($field_ty:ty),*)) => {{
+        let uninit: $ty = $ty_name::$variant_name(
+            $(core::mem::ManuallyDrop::into_inner(
+                <$field_ty as ::const_type_layout::TypeLayout>::UNINIT
+            )),*
+        );
+
+        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<$ty>>()] = unsafe {
+            core::mem::transmute(core::mem::discriminant(&uninit))
+        };
+
+        #[allow(clippy::forget_non_drop)]
+        core::mem::forget(uninit);
+
+        let mut big_endian_bytes = [0_u8; core::mem::size_of::<core::mem::Discriminant<$ty>>()];
+
+        let mut i = 0;
+
+        while i < system_endian_bytes.len() {
+            big_endian_bytes[i] = system_endian_bytes[if cfg!(target_endian = "big") {
+                i
+            } else {
+                system_endian_bytes.len() - i - 1
+            }];
+
+            i += 1;
+        }
+
+        big_endian_bytes
+    }},
+    ($ty_name:ident => $ty:ty => $variant_name:ident { $($field_name:ident: $field_ty:ty),* }) => {{
+        let uninit: $ty = $ty_name::$variant_name {
+            $($field_name: core::mem::ManuallyDrop::into_inner(
+                <$field_ty as ::const_type_layout::TypeLayout>::UNINIT)
+            ),*
+        };
+
+        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<$ty>>()] = unsafe {
+            core::mem::transmute(core::mem::discriminant(&uninit))
+        };
+
+        #[allow(clippy::forget_non_drop)]
+        core::mem::forget(uninit);
+
+        let mut big_endian_bytes = [0_u8; core::mem::size_of::<core::mem::Discriminant<$ty>>()];
+
+        let mut i = 0;
+
+        while i < system_endian_bytes.len() {
+            big_endian_bytes[i] = system_endian_bytes[if cfg!(target_endian = "big") {
+                i
+            } else {
+                system_endian_bytes.len() - i - 1
+            }];
+
+            i += 1;
+        }
+
+        big_endian_bytes
+    }},
 }

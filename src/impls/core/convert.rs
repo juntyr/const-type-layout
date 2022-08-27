@@ -10,6 +10,8 @@ unsafe impl TypeLayout for core::convert::Infallible {
             variants: &[],
         },
     };
+    #[allow(unreachable_code, clippy::empty_loop)]
+    const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new(loop {});
 }
 
 unsafe impl const TypeGraph for core::convert::Infallible {

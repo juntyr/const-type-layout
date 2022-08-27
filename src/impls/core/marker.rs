@@ -10,6 +10,8 @@ unsafe impl<T> TypeLayout for core::marker::PhantomData<T> {
             fields: &[],
         },
     };
+    const UNINIT: core::mem::ManuallyDrop<Self> =
+        core::mem::ManuallyDrop::new(core::marker::PhantomData);
 }
 
 unsafe impl<T> const TypeGraph for core::marker::PhantomData<T> {
@@ -28,6 +30,8 @@ unsafe impl TypeLayout for core::marker::PhantomPinned {
             fields: &[],
         },
     };
+    const UNINIT: core::mem::ManuallyDrop<Self> =
+        core::mem::ManuallyDrop::new(core::marker::PhantomPinned);
 }
 
 unsafe impl const TypeGraph for core::marker::PhantomPinned {

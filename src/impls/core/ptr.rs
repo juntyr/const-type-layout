@@ -10,6 +10,9 @@ unsafe impl<T: TypeLayout> TypeLayout for *const T {
             mutability: false,
         },
     };
+    const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new(
+        core::ptr::NonNull::dangling().as_ptr()
+    );
 }
 
 unsafe impl<T: ~const TypeGraph> const TypeGraph for *const T {
@@ -30,6 +33,9 @@ unsafe impl<T: TypeLayout> TypeLayout for *mut T {
             mutability: true,
         },
     };
+    const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new(
+        core::ptr::NonNull::dangling().as_ptr()
+    );
 }
 
 unsafe impl<T: ~const TypeGraph> const TypeGraph for *mut T {
@@ -50,6 +56,9 @@ unsafe impl<T: TypeLayout> TypeLayout for core::ptr::NonNull<T> {
             mutability: true,
         },
     };
+    const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new(
+        core::ptr::NonNull::dangling()
+    );
 }
 
 unsafe impl<T: ~const TypeGraph> const TypeGraph for core::ptr::NonNull<T> {
@@ -70,6 +79,10 @@ unsafe impl<T: TypeLayout> TypeLayout for core::ptr::NonNull<[T]> {
             mutability: true,
         },
     };
+    #[allow(clippy::borrow_as_ptr)]
+    const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new(unsafe {
+        core::ptr::NonNull::new_unchecked(&[] as *const [T] as *mut _)
+    });
 }
 
 unsafe impl<T: ~const TypeGraph> const TypeGraph for core::ptr::NonNull<[T]> {

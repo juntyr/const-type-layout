@@ -18,6 +18,10 @@ macro_rules! impl_nonzero_type_layout {
                     ],
                 },
             };
+
+            const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new(
+                Self::new(1).unwrap()
+            );
         }
 
         unsafe impl const TypeGraph for core::num::$nz {
@@ -40,7 +44,7 @@ impl_nonzero_type_layout! {
     NonZeroU128 => u128, NonZeroUsize => usize
 }
 
-unsafe impl<T> TypeLayout for core::num::Wrapping<T> {
+unsafe impl<T: TypeLayout> TypeLayout for core::num::Wrapping<T> {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -54,6 +58,8 @@ unsafe impl<T> TypeLayout for core::num::Wrapping<T> {
             }],
         },
     };
+    const UNINIT: core::mem::ManuallyDrop<Self> =
+        core::mem::ManuallyDrop::new(Self(core::mem::ManuallyDrop::into_inner(T::UNINIT)));
 }
 
 unsafe impl<T: ~const TypeGraph> const TypeGraph for core::num::Wrapping<T> {

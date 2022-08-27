@@ -10,6 +10,10 @@ unsafe impl<'a, T: TypeLayout + 'static> TypeLayout for &'a T {
             mutability: false,
         },
     };
+    #[allow(clippy::borrow_as_ptr)]
+    const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new(unsafe {
+        &*(&<T as TypeLayout>::UNINIT as *const core::mem::ManuallyDrop<T>).cast::<T>()
+    });
 }
 
 unsafe impl<'a, T: ~const TypeGraph + 'static> const TypeGraph for &'a T {
@@ -30,6 +34,10 @@ unsafe impl<'a, T: TypeLayout + 'static> TypeLayout for &'a mut T {
             mutability: true,
         },
     };
+    #[allow(const_item_mutation, clippy::borrow_as_ptr)]
+    const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new(unsafe {
+        &mut *(&mut <T as TypeLayout>::UNINIT as *mut core::mem::ManuallyDrop<T>).cast::<T>()
+    });
 }
 
 unsafe impl<'a, T: ~const TypeGraph + 'static> const TypeGraph for &'a mut T {

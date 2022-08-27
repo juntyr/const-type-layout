@@ -11,15 +11,18 @@ where
     const SOME_DISCRIMINANT_BYTES: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()];
 }
 
-impl<T> OptionDiscriminant for Option<T>
+impl<T: TypeLayout> OptionDiscriminant for Option<T>
 where
     [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
 {
-    const NONE_DISCRIMINANT_BYTES: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = unsafe {
-        let none: core::mem::MaybeUninit<Self> = core::mem::MaybeUninit::new(None);
+    const NONE_DISCRIMINANT_BYTES: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = {
+        let uninit: Self = None;
 
-        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] =
-            core::mem::transmute(core::mem::discriminant(none.assume_init_ref()));
+        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = unsafe {
+            core::mem::transmute(core::mem::discriminant(&uninit))
+        };
+
+        core::mem::forget(uninit);
 
         let mut big_endian_bytes = [0_u8; core::mem::size_of::<core::mem::Discriminant<Self>>()];
 
@@ -37,20 +40,16 @@ where
 
         big_endian_bytes
     };
-    const SOME_DISCRIMINANT_BYTES: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = unsafe {
-        let mut value: core::mem::MaybeUninit<T> = core::mem::MaybeUninit::uninit();
+    const SOME_DISCRIMINANT_BYTES: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = {
+        let uninit = Some(core::mem::ManuallyDrop::into_inner(
+            <T as TypeLayout>::UNINIT,
+        ));
 
-        let mut i = 0;
-        while i < core::mem::size_of::<T>() {
-            *value.as_mut_ptr().cast::<u8>().add(i) = 0xFF_u8;
-            i += 1;
-        }
+        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = unsafe {
+            core::mem::transmute(core::mem::discriminant(&uninit))
+        };
 
-        let some: core::mem::MaybeUninit<Self> =
-            core::mem::MaybeUninit::new(Some(value.assume_init()));
-
-        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] =
-            core::mem::transmute(core::mem::discriminant(some.assume_init_ref()));
+        core::mem::forget(uninit);
 
         let mut big_endian_bytes = [0_u8; core::mem::size_of::<core::mem::Discriminant<Self>>()];
 
@@ -70,7 +69,7 @@ where
     };
 }
 
-unsafe impl<T> TypeLayout for core::option::Option<T>
+unsafe impl<T: TypeLayout> TypeLayout for core::option::Option<T>
 where
     [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
 {
@@ -95,27 +94,25 @@ where
                     },
                     fields: &[Field {
                         name: "0",
-                        offset: unsafe {
-                            let mut value: core::mem::MaybeUninit<T> =
-                                core::mem::MaybeUninit::uninit();
+                        offset: {
+                            let uninit = Some(core::mem::ManuallyDrop::into_inner(
+                                <T as TypeLayout>::UNINIT,
+                            ));
+                            let base_ptr: *const Self = core::ptr::addr_of!(uninit).cast();
 
-                            let mut i = 0;
-                            while i < core::mem::size_of::<T>() {
-                                *value.as_mut_ptr().cast::<u8>().add(i) = 0xFF_u8;
-                                i += 1;
-                            }
-
-                            let some: core::mem::MaybeUninit<Self> =
-                                core::mem::MaybeUninit::new(Some(value.assume_init()));
+                            let field_ptr: *const u8 = match &uninit {
+                                Some(val) => (val as *const T).cast(),
+                                _ => unreachable!(),
+                            };
 
                             #[allow(clippy::cast_sign_loss)]
-                            match some.assume_init_ref() {
-                                Some(val) => (val as *const T)
-                                    .cast::<u8>()
-                                    .offset_from(some.as_ptr().cast())
-                                    as usize,
-                                _ => unreachable!(),
-                            }
+                            let offset = unsafe {
+                                field_ptr.cast::<u8>().offset_from(base_ptr.cast()) as usize
+                            };
+
+                            core::mem::forget(uninit);
+
+                            offset
                         },
                         ty: ::core::any::type_name::<T>(),
                     }],
@@ -123,6 +120,7 @@ where
             ],
         },
     };
+    const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new(None);
 }
 
 unsafe impl<T: ~const TypeGraph> const TypeGraph for core::option::Option<T>

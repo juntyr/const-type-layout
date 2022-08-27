@@ -1,3 +1,5 @@
+use alloc::alloc::Global;
+
 use crate::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
 unsafe impl<T: TypeLayout> TypeLayout for alloc::boxed::Box<T> {
@@ -10,6 +12,17 @@ unsafe impl<T: TypeLayout> TypeLayout for alloc::boxed::Box<T> {
             mutability: true,
         },
     };
+    // TODO: Box cannot trigger undefined behaviour
+    // if dangling we're not allowed to use it
+    // if uninit we're not allowed to use it
+    // if init we can get an infinite dependency
+    #[allow(clippy::borrow_as_ptr)]
+    const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new(unsafe {
+        alloc::boxed::Box::from_raw_in(
+            &<T as TypeLayout>::UNINIT as *const _ as *mut _,
+            alloc::alloc::Global,
+        )
+    });
 }
 
 unsafe impl<T: ~const TypeGraph> const TypeGraph for alloc::boxed::Box<T> {
@@ -30,6 +43,10 @@ unsafe impl<T: TypeLayout> TypeLayout for alloc::boxed::Box<[T]> {
             mutability: true,
         },
     };
+    #[allow(clippy::borrow_as_ptr)]
+    const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new(unsafe {
+        alloc::boxed::Box::from_raw_in(&[] as *const [T] as *mut _, Global)
+    });
 }
 
 unsafe impl<T: ~const TypeGraph> const TypeGraph for alloc::boxed::Box<[T]> {

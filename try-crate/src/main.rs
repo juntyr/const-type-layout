@@ -13,6 +13,8 @@
 #![feature(const_mut_refs)]
 #![cfg_attr(not(version("1.61.0")), feature(const_fn_trait_bound))]
 #![cfg_attr(not(version("1.61.0")), feature(const_ptr_offset))]
+// #![feature(core_intrinsics)]
+// #![feature(const_heap)]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 
@@ -54,6 +56,17 @@ enum Single {
     Single,
 }
 
+// #[derive(TypeLayout)]
+// enum Double {
+//     A = 2,
+//     B = 3,
+// }
+
+// #[derive(TypeLayout)]
+// enum WithDouble {
+//     A(Double)
+// }
+
 #[repr(C)]
 #[repr(u8)]
 #[derive(TypeLayout)]
@@ -63,13 +76,15 @@ enum Quo<T> {
     Struct { a: T, b: u16, c: T },
 }
 
+// TODO: allow annotating any variant as the base case (same for unions)
+
 #[repr(u8, C)]
 #[derive(TypeLayout)]
 #[layout(free = "Box<List<T>>")]
 #[layout(bound = "T: ::const_type_layout::TypeLayout")]
 enum List<T> {
-    Cons { item: T, next: Box<List<T>> },
     Tail,
+    Cons { item: T, next: Box<List<T>> },
 }
 
 #[repr(transparent)]
@@ -89,6 +104,8 @@ fn main() {
 
     println!("{:#?}", Never::TYPE_GRAPH);
     println!("{:#?}", Single::TYPE_GRAPH);
+    // println!("{:#?}", Double::TYPE_GRAPH);
+    // println!("{:#?}", WithDouble::TYPE_GRAPH);
     println!("{:#?}", Quo::<u32>::TYPE_GRAPH);
 
     println!("{:#?}", <()>::TYPE_GRAPH);
@@ -103,9 +120,9 @@ fn main() {
 
     println!("{:#?}", <Reference<i32>>::TYPE_GRAPH);
 
-    println!("{:#?}", <List<u8>>::TYPE_GRAPH);
+    // println!("{:#?}", <List<u8>>::TYPE_GRAPH);
 
-    let mut ascii_escaped_layout = String::new();
+    /*let mut ascii_escaped_layout = String::new();
     for b in SERIALISED_LIST_U8_LAYOUT {
         let part: Vec<u8> = std::ascii::escape_default(b).collect();
         ascii_escaped_layout.push_str(std::str::from_utf8(&part).unwrap());
@@ -113,11 +130,11 @@ fn main() {
     println!("{}", ascii_escaped_layout);
 
     let ron_layout = ron::to_string(&<List<u8>>::TYPE_GRAPH).unwrap();
-    println!("{}", ron_layout);
+    println!("{}", ron_layout);*/
 }
 
-const SERIALISED_LIST_U8_LAYOUT: [u8; const_type_layout::serialised_type_graph_len::<List<u8>>()] =
-    const_type_layout::serialise_type_graph::<List<u8>>();
+// const SERIALISED_LIST_U8_LAYOUT: [u8; const_type_layout::serialised_type_graph_len::<List<u8>>()] =
+//     const_type_layout::serialise_type_graph::<List<u8>>();
 
 #[derive(
     Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
