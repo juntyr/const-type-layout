@@ -142,6 +142,7 @@
 #![feature(const_ptr_write)]
 #![feature(inline_const)]
 #![feature(const_eval_select)]
+#![feature(never_type)]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 #![doc(html_root_url = "https://momolangenstein.github.io/const-type-layout")]

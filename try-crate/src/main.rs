@@ -6,6 +6,7 @@
 #![feature(const_mut_refs)]
 #![cfg_attr(not(version("1.61.0")), feature(const_fn_trait_bound))]
 #![cfg_attr(not(version("1.61.0")), feature(const_ptr_offset))]
+#![feature(never_type)]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 
@@ -39,6 +40,7 @@ union Bar {
     b: u16,
 }
 
+#[allow(clippy::empty_enum)]
 #[derive(TypeLayout)]
 enum Never {}
 
@@ -132,6 +134,7 @@ fn main() {
     println!("{:#?}", <Result<bool, u8>>::TYPE_GRAPH);
 
     println!("{:#?}", <std::convert::Infallible>::TYPE_GRAPH);
+    println!("{:#?}", <!>::TYPE_GRAPH);
 
     // TODO: will require optional uninits to represent uninhabited values
     // println!("{:#?}", <Option<std::convert::Infallible>>::TYPE_GRAPH);
