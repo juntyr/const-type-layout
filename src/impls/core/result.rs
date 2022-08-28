@@ -9,8 +9,6 @@ unsafe impl<T: ~const TypeLayout, E: ~const TypeLayout> const TypeLayout
 where
     [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
 {
-    type Static = core::result::Result<T::Static, E::Static>;
-
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),

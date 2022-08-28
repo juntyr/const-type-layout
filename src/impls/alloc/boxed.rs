@@ -5,8 +5,6 @@ use crate::{
 };
 
 unsafe impl<T: ~const TypeLayout> const TypeLayout for alloc::boxed::Box<T> {
-    type Static = alloc::boxed::Box<T::Static>;
-
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -34,8 +32,6 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for alloc::boxed::Box<T> {
 }
 
 unsafe impl<T: ~const TypeLayout> const TypeLayout for alloc::boxed::Box<[T]> {
-    type Static = alloc::boxed::Box<[T::Static]>;
-
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),

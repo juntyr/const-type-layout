@@ -166,9 +166,6 @@ mod serde;
 /// It is only safe to implement this trait if it accurately describes the
 ///  type's layout. Use `#[derive(TypeLayout)]` instead.
 pub unsafe trait TypeLayout: Sized {
-    // TODO: do we still need the static?
-    type Static: 'static;
-
     const TYPE_LAYOUT: TypeLayoutInfo<'static>;
 
     #[must_use]

@@ -3,8 +3,6 @@ use crate::{
 };
 
 unsafe impl<T: ~const TypeLayout> const TypeLayout for *const T {
-    type Static = *const T::Static;
-
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -29,8 +27,6 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for *const T {
 }
 
 unsafe impl<T: ~const TypeLayout> const TypeLayout for *mut T {
-    type Static = *mut T::Static;
-
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -55,8 +51,6 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for *mut T {
 }
 
 unsafe impl<T: ~const TypeLayout> const TypeLayout for core::ptr::NonNull<T> {
-    type Static = core::ptr::NonNull<T::Static>;
-
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -81,8 +75,6 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for core::ptr::NonNull<T> {
 }
 
 unsafe impl<T: ~const TypeLayout> const TypeLayout for core::ptr::NonNull<[T]> {
-    type Static = core::ptr::NonNull<[T::Static]>;
-
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),

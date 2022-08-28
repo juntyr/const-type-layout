@@ -17,57 +17,6 @@ use syn::{parse_macro_input, spanned::Spanned};
 // - wait for `const_heap` feature to be implemented for a workaround the graph
 //   size limitation: https://github.com/rust-lang/rust/issues/79597
 
-fn make_ts_static(
-    ts: proc_macro2::TokenStream,
-    lifetimes: &[&proc_macro2::Ident],
-    params: &[&proc_macro2::Ident],
-) -> proc_macro2::TokenStream {
-    let mut old_tts = ts.into_iter().peekable();
-    let mut new_tts = Vec::new();
-
-    while let Some(tt) = old_tts.next() {
-        match tt {
-            proc_macro2::TokenTree::Punct(punct) => {
-                if punct.as_char() == '\'' && punct.spacing() == proc_macro2::Spacing::Joint {
-                    if let Some(proc_macro2::TokenTree::Ident(ident)) = old_tts.peek() {
-                        if lifetimes.contains(&ident) {
-                            new_tts.push(proc_macro2::TokenTree::Punct(punct));
-                            new_tts.push(proc_macro2::TokenTree::Ident(proc_macro2::Ident::new(
-                                "static",
-                                ident.span(),
-                            )));
-
-                            std::mem::drop(old_tts.next());
-
-                            continue;
-                        }
-                    }
-                }
-
-                new_tts.push(proc_macro2::TokenTree::Punct(punct));
-            },
-            proc_macro2::TokenTree::Group(group) => {
-                new_tts.push(proc_macro2::TokenTree::Group(proc_macro2::Group::new(
-                    group.delimiter(),
-                    make_ts_static(group.stream(), lifetimes, params),
-                )));
-            },
-            proc_macro2::TokenTree::Ident(ident) => {
-                if params.contains(&&ident) {
-                    new_tts.extend(quote!(<#ident as ::const_type_layout::TypeLayout>::Static));
-                } else {
-                    new_tts.push(proc_macro2::TokenTree::Ident(ident));
-                }
-            },
-            proc_macro2::TokenTree::Literal(literal) => {
-                new_tts.push(proc_macro2::TokenTree::Literal(literal));
-            },
-        }
-    }
-
-    new_tts.into_iter().collect()
-}
-
 #[proc_macro_error]
 #[proc_macro_derive(TypeLayout, attributes(layout))]
 pub fn derive_type_layout(input: TokenStream) -> TokenStream {
@@ -77,20 +26,6 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     // Used in the quasi-quotation below as `#ty_name`.
     let ty_name = input.ident;
     let ty_generics = input.generics.split_for_impl().1;
-
-    let generic_lifetimes = input
-        .generics
-        .lifetimes()
-        .map(|lt| &lt.lifetime.ident)
-        .collect::<Vec<_>>();
-    let generic_params = input
-        .generics
-        .type_params()
-        .map(|param| &param.ident)
-        .collect::<Vec<_>>();
-
-    let ty_static_generics =
-        make_ts_static(quote!(#ty_generics), &generic_lifetimes, &generic_params);
 
     let Attributes {
         reprs,
@@ -123,8 +58,6 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
         unsafe impl #type_layout_impl_generics const ::const_type_layout::TypeLayout for
             #ty_name #type_layout_ty_generics #type_layout_where_clause
         {
-            type Static = #ty_name #ty_static_generics;
-
             const TYPE_LAYOUT: ::const_type_layout::TypeLayoutInfo<'static> = {
                 ::const_type_layout::TypeLayoutInfo {
                     name: ::core::any::type_name::<Self>(),

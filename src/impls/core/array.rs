@@ -1,8 +1,6 @@
 use crate::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
 unsafe impl<T: ~const TypeLayout, const N: usize> const TypeLayout for [T; N] {
-    type Static = [T::Static; N];
-
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),

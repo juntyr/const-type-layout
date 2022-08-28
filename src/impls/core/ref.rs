@@ -3,8 +3,6 @@ use crate::{
 };
 
 unsafe impl<'a, T: ~const TypeLayout + 'a> const TypeLayout for &'a T {
-    type Static = &'static T::Static;
-
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -29,8 +27,6 @@ unsafe impl<'a, T: ~const TypeGraph + 'a> const TypeGraph for &'a T {
 }
 
 unsafe impl<'a, T: ~const TypeLayout + 'a> const TypeLayout for &'a mut T {
-    type Static = &'static mut T::Static;
-
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
