@@ -71,8 +71,8 @@ enum Quo<T> {
 
 #[repr(u8, C)]
 #[derive(TypeLayout)]
-#[layout(free = "Box<List<T>>")]
-#[layout(bound = "T: ::const_type_layout::TypeLayout")]
+// #[layout(free = "Box<List<T>>")]
+// #[layout(bound = "T: ::const_type_layout::TypeLayout")]
 enum List<T> {
     Tail,
     Cons { item: T, next: Box<List<T>> },
@@ -123,6 +123,20 @@ fn main() {
 
     println!("{:#?}", <Option<std::num::NonZeroU64>>::TYPE_GRAPH);
     println!("{:#?}", <Result<bool, u8>>::TYPE_GRAPH);
+
+    println!("{:#?}", <std::convert::Infallible>::TYPE_GRAPH);
+
+    // FIXME: will require optional uninits to represent uninhabited values
+    // println!("{:#?}", <Option<std::convert::Infallible>>::TYPE_GRAPH);
+    // println!("{:#?}", <Result<u8, std::convert::Infallible>>::TYPE_GRAPH);
+    // println!("{:#?}", <Result<std::convert::Infallible, u8>>::TYPE_GRAPH);
+    // println!("{:#?}", <Result<std::convert::Infallible,
+    // std::convert::Infallible>>::TYPE_GRAPH);
+
+    println!("{:#?}", <*const u8>::TYPE_GRAPH);
+    println!("{:#?}", <*mut u8>::TYPE_GRAPH);
+    println!("{:#?}", <&u8>::TYPE_GRAPH);
+    println!("{:#?}", <&mut u8>::TYPE_GRAPH);
 
     println!("{:#?}", <Reference<i32>>::TYPE_GRAPH);
     println!("{:#?}", <MutReference<u32>>::TYPE_GRAPH);
