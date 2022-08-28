@@ -3,7 +3,7 @@ use crate::{Field, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeS
 macro_rules! impl_atomic_int_layout {
     (impl $at:ident ( $align:literal : $cfg:literal ) => $ty:ty => $val:literal) => {
         #[cfg(target_has_atomic_load_store = $cfg)]
-        unsafe impl TypeLayout for core::sync::atomic::$at {
+        unsafe impl const TypeLayout for core::sync::atomic::$at {
             type Static = Self;
 
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
@@ -22,10 +22,9 @@ macro_rules! impl_atomic_int_layout {
                 },
             };
 
-            #[allow(clippy::declare_interior_mutable_const)]
-            const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new(
-                Self::new($val)
-            );
+            unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
+                core::mem::ManuallyDrop::new(Self::new($val))
+            }
         }
 
         #[cfg(target_has_atomic_load_store = $cfg)]
@@ -55,7 +54,7 @@ macro_rules! impl_atomic_int_ptr_sized_layout {
     (impl $at:ident ( $align:literal : $cfg:literal ) => $ty:ty => $val:literal) => {
         #[cfg(target_has_atomic_load_store = "ptr")]
         #[cfg(target_pointer_width = $cfg)]
-        unsafe impl TypeLayout for core::sync::atomic::$at {
+        unsafe impl const TypeLayout for core::sync::atomic::$at {
             type Static = Self;
 
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
@@ -74,10 +73,9 @@ macro_rules! impl_atomic_int_ptr_sized_layout {
                 },
             };
 
-            #[allow(clippy::declare_interior_mutable_const)]
-            const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new(
-                Self::new($val)
-            );
+            unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
+                core::mem::ManuallyDrop::new(Self::new($val))
+            }
         }
 
         #[cfg(target_has_atomic_load_store = "ptr")]
@@ -106,7 +104,7 @@ macro_rules! impl_atomic_ptr_layout {
     (impl ( $align:literal : $cfg:literal )) => {
         #[cfg(target_has_atomic_load_store = "ptr")]
         #[cfg(target_pointer_width = $cfg)]
-        unsafe impl<T: TypeLayout> TypeLayout for core::sync::atomic::AtomicPtr<T> {
+        unsafe impl<T: ~const TypeLayout> const TypeLayout for core::sync::atomic::AtomicPtr<T> {
             type Static = core::sync::atomic::AtomicPtr<T::Static>;
 
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
@@ -125,12 +123,15 @@ macro_rules! impl_atomic_ptr_layout {
                 },
             };
 
-            #[allow(const_item_mutation, clippy::declare_interior_mutable_const)]
-            const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new(
-                Self::new(
-                    (&mut <T as TypeLayout>::UNINIT as *mut core::mem::ManuallyDrop<T>).cast()
+            unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
+                core::mem::ManuallyDrop::new(
+                    Self::new(
+                        alloc::boxed::Box::leak(core::mem::ManuallyDrop::into_inner(
+                            <alloc::boxed::Box<T> as TypeLayout>::uninit(),
+                        )) as *mut T
+                    )
                 )
-            );
+            }
         }
 
         #[cfg(target_has_atomic_load_store = "ptr")]

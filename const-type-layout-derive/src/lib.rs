@@ -102,29 +102,42 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     let mut consts = Vec::new();
     let layout = layout_of_type(&ty_name, &ty_generics, &input.data, &reprs, &mut consts);
 
+    let mut const_idents = Vec::with_capacity(consts.len());
+    let mut const_tys = Vec::with_capacity(consts.len());
+    let mut const_vals = Vec::with_capacity(consts.len());
+
+    for (ident, ty, val) in consts {
+        const_idents.push(ident);
+        const_tys.push(ty);
+        const_vals.push(val);
+    }
+
     let uninit = uninit_for_type(&ty_name, &input.data);
 
     let inner_types = extract_inner_types(&input.data);
 
     let Generics {
         type_layout_input_generics,
+        type_const_input_generics,
         type_graph_input_generics,
     } = generate_generics(
         &ty_name,
         &ty_generics,
         &input.generics,
         matches!(input.data, syn::Data::Enum(_)),
-        // &inner_types,
-        // add_bounds,
-        // &sub_bounds,
     );
     let (type_layout_impl_generics, type_layout_ty_generics, type_layout_where_clause) =
         type_layout_input_generics.split_for_impl();
+    let (type_const_impl_generics, type_const_ty_generics, type_const_where_clause) =
+        type_const_input_generics.split_for_impl();
     let (type_graph_impl_generics, type_graph_ty_generics, type_graph_where_clause) =
         type_graph_input_generics.split_for_impl();
 
+    let internal_name =
+        syn::Ident::new(&format!("__{}TypeLayoutInternals", ty_name), ty_name.span());
+
     quote! {
-        unsafe impl #type_layout_impl_generics ::const_type_layout::TypeLayout for
+        unsafe impl #type_layout_impl_generics const ::const_type_layout::TypeLayout for
             #ty_name #type_layout_ty_generics #type_layout_where_clause
         {
             type Static = #ty_name #ty_static_generics;
@@ -139,14 +152,25 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
             };
 
             #[allow(unreachable_code, clippy::empty_loop)]
-            const UNINIT: ::core::mem::ManuallyDrop<Self> = ::core::mem::ManuallyDrop::new(
-                #uninit
-            );
+            unsafe fn uninit() -> ::core::mem::ManuallyDrop<Self> {
+                ::core::mem::ManuallyDrop::new(
+                    #uninit
+                )
+            }
         }
 
-        #(impl #type_layout_impl_generics #ty_name #type_layout_ty_generics #type_layout_where_clause {
-            #consts
-        })*
+        #[doc(hidden)]
+        trait #internal_name {
+            #(
+                const #const_idents: #const_tys;
+            )*
+        }
+
+        impl #type_const_impl_generics const #internal_name for #ty_name #type_const_ty_generics #type_const_where_clause {
+            #(
+                const #const_idents: #const_tys = #const_vals;
+            )*
+        }
 
         unsafe impl #type_graph_impl_generics const ::const_type_layout::TypeGraph for
             #ty_name #type_graph_ty_generics #type_graph_where_clause
@@ -157,7 +181,8 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
                 }
             }
         }
-    }.into()
+    }
+    .into()
 }
 
 struct Attributes {
@@ -323,6 +348,7 @@ fn extract_inner_types(data: &syn::Data) -> Vec<&syn::Type> {
 
 struct Generics {
     type_layout_input_generics: syn::Generics,
+    type_const_input_generics: syn::Generics,
     type_graph_input_generics: syn::Generics,
 }
 
@@ -331,11 +357,10 @@ fn generate_generics(
     ty_generics: &syn::TypeGenerics,
     generics: &syn::Generics,
     is_enum: bool,
-    // inner_types: &[&syn::Type],
-    // add_bounds: Vec<syn::WherePredicate>,
-    // sub_bounds: &[String],
 ) -> Generics {
     let mut type_layout_input_generics = generics.clone();
+    let mut type_const_input_generics = generics.clone();
+    let mut type_graph_input_generics = generics.clone();
 
     if is_enum {
         type_layout_input_generics
@@ -344,11 +369,14 @@ fn generate_generics(
             .push(syn::parse_quote! {
                 [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()]:
             });
-    }
 
-    let mut type_graph_input_generics = generics.clone();
+        type_const_input_generics
+            .make_where_clause()
+            .predicates
+            .push(syn::parse_quote! {
+                [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()]:
+            });
 
-    if is_enum {
         type_graph_input_generics
             .make_where_clause()
             .predicates
@@ -364,7 +392,21 @@ fn generate_generics(
             .make_where_clause()
             .predicates
             .push(syn::parse_quote! {
-                #ty: ::const_type_layout::TypeLayout
+                #ty: ~const ::const_type_layout::TypeLayout
+            });
+
+        type_const_input_generics
+            .make_where_clause()
+            .predicates
+            .push(syn::parse_quote! {
+                #ty: ~const ::const_type_layout::TypeLayout
+            });
+
+        type_graph_input_generics
+            .make_where_clause()
+            .predicates
+            .push(syn::parse_quote! {
+                #ty: ~const ::const_type_layout::TypeLayout
             });
 
         type_graph_input_generics
@@ -375,37 +417,9 @@ fn generate_generics(
             });
     }
 
-    // for ty in inner_types {
-    // if !sub_bounds.contains(&quote!(#ty).to_string()) {
-    // type_layout_input_generics
-    // .make_where_clause()
-    // .predicates
-    // .push(syn::parse_quote! {
-    // #ty: ::const_type_layout::TypeLayout
-    // });
-    //
-    // type_graph_input_generics
-    // .make_where_clause()
-    // .predicates
-    // .push(syn::parse_quote! {
-    // #ty: ~const ::const_type_layout::TypeGraph
-    // });
-    // }
-    // }
-    //
-    // for bound in add_bounds {
-    // type_layout_input_generics
-    // .make_where_clause()
-    // .predicates
-    // .push(bound.clone());
-    // type_graph_input_generics
-    // .make_where_clause()
-    // .predicates
-    // .push(bound);
-    // }
-
     Generics {
         type_layout_input_generics,
+        type_const_input_generics,
         type_graph_input_generics,
     }
 }
@@ -415,7 +429,11 @@ fn layout_of_type(
     ty_generics: &syn::TypeGenerics,
     data: &syn::Data,
     reprs: &str,
-    consts: &mut Vec<proc_macro2::TokenStream>,
+    consts: &mut Vec<(
+        proc_macro2::TokenStream,
+        proc_macro2::TokenStream,
+        proc_macro2::TokenStream,
+    )>,
 ) -> proc_macro2::TokenStream {
     match data {
         syn::Data::Struct(data) => {
@@ -528,10 +546,12 @@ fn quote_fields(
     ty_name: &syn::Ident,
     qualifier: Option<&syn::Ident>,
     fields: &[proc_macro2::TokenStream],
-    consts: &mut Vec<proc_macro2::TokenStream>,
+    consts: &mut Vec<(
+        proc_macro2::TokenStream,
+        proc_macro2::TokenStream,
+        proc_macro2::TokenStream,
+    )>,
 ) -> proc_macro2::TokenStream {
-    let fields_len = fields.len();
-
     let ident = syn::Ident::new(
         &(if let Some(qualifier) = qualifier {
             format!("__{}_{}_fields", ty_name, qualifier)
@@ -542,9 +562,11 @@ fn quote_fields(
         ty_name.span(),
     );
 
-    consts.push(quote! {
-        const #ident: &'static [::const_type_layout::Field<'static>; #fields_len] = &[#(#fields),*];
-    });
+    consts.push((
+        quote!(#ident),
+        quote!(&'static [::const_type_layout::Field<'static>]),
+        quote!(&[#(#fields),*]),
+    ));
 
     quote! { Self :: #ident }
 }
@@ -553,7 +575,11 @@ fn quote_enum_variants(
     ty_name: &syn::Ident,
     ty_generics: &syn::TypeGenerics,
     r#enum: &syn::DataEnum,
-    consts: &mut Vec<proc_macro2::TokenStream>,
+    consts: &mut Vec<(
+        proc_macro2::TokenStream,
+        proc_macro2::TokenStream,
+        proc_macro2::TokenStream,
+    )>,
 ) -> Vec<proc_macro2::TokenStream> {
     r#enum
         .variants
@@ -667,7 +693,11 @@ fn quote_discriminant_bytes(
     ty_generics: &syn::TypeGenerics,
     variant_name: &syn::Ident,
     variant_fields: &syn::Fields,
-    consts: &mut Vec<proc_macro2::TokenStream>,
+    consts: &mut Vec<(
+        proc_macro2::TokenStream,
+        proc_macro2::TokenStream,
+        proc_macro2::TokenStream,
+    )>,
 ) -> proc_macro2::TokenStream {
     let ident = syn::Ident::new(
         &format!("__{}_{}_discriminant", ty_name, variant_name).to_uppercase(),
@@ -711,12 +741,13 @@ fn quote_discriminant_bytes(
         syn::Fields::Unit => quote!(#variant_name),
     };
 
-    consts.push(quote! {
-        const #ident: [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()] =
-            ::const_type_layout::struct_variant_discriminant!(
-                #ty_name => #ty_name #ty_generics => #variant_descriptor
-            );
-    });
+    consts.push((
+        quote!(#ident),
+        quote!(&'static [u8]),
+        quote!(&::const_type_layout::struct_variant_discriminant!(
+            #ty_name => #ty_name #ty_generics => #variant_descriptor
+        )),
+    ));
 
     quote! { Self :: #ident }
 }
@@ -724,18 +755,22 @@ fn quote_discriminant_bytes(
 fn quote_variants(
     ty_name: &syn::Ident,
     variants: &[proc_macro2::TokenStream],
-    consts: &mut Vec<proc_macro2::TokenStream>,
+    consts: &mut Vec<(
+        proc_macro2::TokenStream,
+        proc_macro2::TokenStream,
+        proc_macro2::TokenStream,
+    )>,
 ) -> proc_macro2::TokenStream {
-    let variants_len = variants.len();
-
     let ident = syn::Ident::new(
         &format!("__{}_variants", ty_name).to_uppercase(),
         ty_name.span(),
     );
 
-    consts.push(quote! {
-        const #ident: &'static [::const_type_layout::Variant<'static>; #variants_len] = &[#(#variants),*];
-    });
+    consts.push((
+        quote!(#ident),
+        quote!(&'static [::const_type_layout::Variant<'static>]),
+        quote!(&[#(#variants),*]),
+    ));
 
     quote! { Self :: #ident }
 }
@@ -764,7 +799,7 @@ fn uninit_for_type(ty_name: &syn::Ident, data: &syn::Data) -> proc_macro2::Token
 
                     quote! {
                         #field_name #field_colon ::core::mem::ManuallyDrop::into_inner(
-                            <#field_ty as ::const_type_layout::TypeLayout>::UNINIT
+                            <#field_ty as ::const_type_layout::TypeLayout>::uninit()
                         ) #field_comma
                     }
                 })
@@ -806,7 +841,7 @@ fn uninit_for_type(ty_name: &syn::Ident, data: &syn::Data) -> proc_macro2::Token
 
                     quote! {
                         #field_name #field_colon ::core::mem::ManuallyDrop::into_inner(
-                            <#field_ty as ::const_type_layout::TypeLayout>::UNINIT
+                            <#field_ty as ::const_type_layout::TypeLayout>::uninit()
                         ) #field_comma
                     }
                 })
@@ -828,7 +863,7 @@ fn uninit_for_type(ty_name: &syn::Ident, data: &syn::Data) -> proc_macro2::Token
 
             quote!(#ty_name {
                 #field_name #field_colon ::core::mem::ManuallyDrop::into_inner(
-                    <#field_ty as ::const_type_layout::TypeLayout>::UNINIT
+                    <#field_ty as ::const_type_layout::TypeLayout>::uninit()
                 )
             })
         },

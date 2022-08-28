@@ -1,6 +1,6 @@
 use crate::{Field, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
-unsafe impl<T: TypeLayout> TypeLayout for core::cmp::Reverse<T> {
+unsafe impl<T: ~const TypeLayout> const TypeLayout for core::cmp::Reverse<T> {
     type Static = core::cmp::Reverse<T::Static>;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
@@ -16,8 +16,10 @@ unsafe impl<T: TypeLayout> TypeLayout for core::cmp::Reverse<T> {
             }],
         },
     };
-    const UNINIT: core::mem::ManuallyDrop<Self> =
-        core::mem::ManuallyDrop::new(Self(core::mem::ManuallyDrop::into_inner(T::UNINIT)));
+
+    unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
+        core::mem::ManuallyDrop::new(Self(core::mem::ManuallyDrop::into_inner(T::uninit())))
+    }
 }
 
 unsafe impl<T: ~const TypeGraph> const TypeGraph for core::cmp::Reverse<T> {

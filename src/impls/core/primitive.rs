@@ -2,7 +2,7 @@ use crate::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructur
 
 macro_rules! impl_primitive_type_layout {
     (impl $ty:ty => $val:expr) => {
-        unsafe impl TypeLayout for $ty {
+        unsafe impl const TypeLayout for $ty {
             type Static = Self;
 
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
@@ -12,7 +12,9 @@ macro_rules! impl_primitive_type_layout {
                 structure: TypeStructure::Primitive,
             };
 
-            const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new($val);
+            unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
+                core::mem::ManuallyDrop::new($val)
+            }
         }
 
         unsafe impl const TypeGraph for $ty {

@@ -2,7 +2,7 @@ use crate::{Field, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeS
 
 macro_rules! impl_nonzero_type_layout {
     (impl $nz:ident => $ty:ty) => {
-        unsafe impl TypeLayout for core::num::$nz {
+        unsafe impl const TypeLayout for core::num::$nz {
             type Static = Self;
 
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
@@ -21,9 +21,9 @@ macro_rules! impl_nonzero_type_layout {
                 },
             };
 
-            const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new(
-                Self::new(1).unwrap()
-            );
+            unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
+                core::mem::ManuallyDrop::new(Self::new(1).unwrap())
+            }
         }
 
         unsafe impl const TypeGraph for core::num::$nz {
@@ -46,7 +46,7 @@ impl_nonzero_type_layout! {
     NonZeroU128 => u128, NonZeroUsize => usize
 }
 
-unsafe impl<T: TypeLayout> TypeLayout for core::num::Wrapping<T> {
+unsafe impl<T: ~const TypeLayout> const TypeLayout for core::num::Wrapping<T> {
     type Static = core::num::Wrapping<T::Static>;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
@@ -62,8 +62,10 @@ unsafe impl<T: TypeLayout> TypeLayout for core::num::Wrapping<T> {
             }],
         },
     };
-    const UNINIT: core::mem::ManuallyDrop<Self> =
-        core::mem::ManuallyDrop::new(Self(core::mem::ManuallyDrop::into_inner(T::UNINIT)));
+
+    unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
+        core::mem::ManuallyDrop::new(Self(core::mem::ManuallyDrop::into_inner(T::uninit())))
+    }
 }
 
 unsafe impl<T: ~const TypeGraph> const TypeGraph for core::num::Wrapping<T> {

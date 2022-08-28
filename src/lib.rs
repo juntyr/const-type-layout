@@ -140,6 +140,7 @@
 #![feature(const_box)]
 #![feature(const_pin)]
 #![feature(const_ptr_write)]
+#![feature(inline_const)]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 #![doc(html_root_url = "https://momolangenstein.github.io/const-type-layout")]
@@ -164,11 +165,18 @@ mod serde;
 /// It is only safe to implement this trait if it accurately describes the
 ///  type's layout. Use `#[derive(TypeLayout)]` instead.
 pub unsafe trait TypeLayout: Sized {
+    // TODO: do we still need the static?
     type Static: 'static;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static>;
 
-    const UNINIT: core::mem::ManuallyDrop<Self>;
+    #[must_use]
+    /// # Safety
+    ///
+    /// The returned value is not safe to be used in any other way than
+    /// to calculate field offsets and discriminants.
+    /// The value and any value built with it must NOT be dropped.
+    unsafe fn uninit() -> core::mem::ManuallyDrop<Self>;
 }
 
 /// # Safety
@@ -470,7 +478,7 @@ pub macro struct_field_offset($ty_name:ident => $ty:ty => (*$base:ident).$field:
         #[allow(clippy::unneeded_field_pattern)]
         let $ty_name { $field: _, $($extra_fields)? }: $ty;
 
-        let uninit = <$ty as ::const_type_layout::TypeLayout>::UNINIT;
+        let uninit = unsafe { <$ty as $crate::TypeLayout>::uninit() };
         let $base: *const $ty = ::core::ptr::addr_of!(uninit).cast();
 
         #[allow(unused_unsafe)]
@@ -514,7 +522,7 @@ pub macro struct_variant_discriminant {
     ($ty_name:ident => $ty:ty => $variant_name:ident($($field_ty:ty),*)) => {{
         let uninit: $ty = $ty_name::$variant_name(
             $(core::mem::ManuallyDrop::into_inner(
-                <$field_ty as ::const_type_layout::TypeLayout>::UNINIT
+                unsafe { <$field_ty as $crate::TypeLayout>::uninit() }
             )),*
         );
 
@@ -544,8 +552,8 @@ pub macro struct_variant_discriminant {
     ($ty_name:ident => $ty:ty => $variant_name:ident { $($field_name:ident: $field_ty:ty),* }) => {{
         let uninit: $ty = $ty_name::$variant_name {
             $($field_name: core::mem::ManuallyDrop::into_inner(
-                <$field_ty as ::const_type_layout::TypeLayout>::UNINIT)
-            ),*
+                unsafe { <$field_ty as $crate::TypeLayout>::uninit() }
+            )),*
         };
 
         let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<$ty>>()] = unsafe {
@@ -578,13 +586,13 @@ pub macro struct_variant_field_offset {
     ($ty_name:ident => $ty:ty => $variant_name:ident($($field_ty:ty),*) => $field_index:tt) => {{
         let uninit: $ty = $ty_name::$variant_name(
             $(core::mem::ManuallyDrop::into_inner(
-                <$field_ty as ::const_type_layout::TypeLayout>::UNINIT
+                unsafe { <$field_ty as $crate::TypeLayout>::uninit() }
             )),*
         );
         let base_ptr: *const $ty = ::core::ptr::addr_of!(uninit).cast();
 
         let field_ptr: *const u8 = match &uninit {
-            #[allow(clippy::unneeded_field_pattern)]
+            #[allow(clippy::unneeded_field_pattern, clippy::ptr_as_ptr)]
             $ty_name::$variant_name { $field_index: field, .. } => {
                 field as *const _ as *const u8
             },
@@ -602,8 +610,8 @@ pub macro struct_variant_field_offset {
     ($ty_name:ident => $ty:ty => $variant_name:ident { $($field_name:ident: $field_ty:ty),* } => $field_index:ident) => {{
         let uninit: $ty = $ty_name::$variant_name {
             $($field_name: core::mem::ManuallyDrop::into_inner(
-                <$field_ty as ::const_type_layout::TypeLayout>::UNINIT)
-            ),*
+                unsafe { <$field_ty as $crate::TypeLayout>::uninit() }
+            )),*
         };
         let base_ptr: *const $ty = ::core::ptr::addr_of!(uninit).cast();
 

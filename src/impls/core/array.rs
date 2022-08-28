@@ -1,6 +1,6 @@
 use crate::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
-unsafe impl<T: TypeLayout, const N: usize> TypeLayout for [T; N] {
+unsafe impl<T: ~const TypeLayout, const N: usize> const TypeLayout for [T; N] {
     type Static = [T::Static; N];
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
@@ -12,7 +12,13 @@ unsafe impl<T: TypeLayout, const N: usize> TypeLayout for [T; N] {
             len: N,
         },
     };
-    const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new([Self::ELEM; N]);
+
+    unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
+        core::mem::ManuallyDrop::new(
+            [const { core::mem::ManuallyDrop::into_inner(unsafe { <T as TypeLayout>::uninit() }) };
+                N],
+        )
+    }
 }
 
 unsafe impl<T: ~const TypeGraph, const N: usize> const TypeGraph for [T; N] {
@@ -21,12 +27,4 @@ unsafe impl<T: ~const TypeGraph, const N: usize> const TypeGraph for [T; N] {
             <T as TypeGraph>::populate_graph(graph);
         }
     }
-}
-
-trait ArrayElem<T: TypeLayout> {
-    const ELEM: T;
-}
-
-impl<T: TypeLayout, const N: usize> ArrayElem<T> for [T; N] {
-    const ELEM: T = core::mem::ManuallyDrop::into_inner(<T as TypeLayout>::UNINIT);
 }

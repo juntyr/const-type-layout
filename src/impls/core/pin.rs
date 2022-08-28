@@ -1,6 +1,6 @@
 use crate::{Field, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
-unsafe impl<T: TypeLayout + core::ops::Deref> TypeLayout for core::pin::Pin<T> {
+unsafe impl<T: ~const TypeLayout + core::ops::Deref> const TypeLayout for core::pin::Pin<T> {
     type Static = core::pin::Pin<T::Static>;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
@@ -16,9 +16,12 @@ unsafe impl<T: TypeLayout + core::ops::Deref> TypeLayout for core::pin::Pin<T> {
             }],
         },
     };
-    const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new(unsafe {
-        Self::new_unchecked(core::mem::ManuallyDrop::into_inner(T::UNINIT))
-    });
+
+    unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
+        core::mem::ManuallyDrop::new(Self::new_unchecked(core::mem::ManuallyDrop::into_inner(
+            T::uninit(),
+        )))
+    }
 }
 
 unsafe impl<T: ~const TypeGraph + core::ops::Deref> const TypeGraph for core::pin::Pin<T> {

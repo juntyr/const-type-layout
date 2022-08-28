@@ -67,7 +67,7 @@ enum Quo<T> {
     Struct { a: T, b: u16, c: T },
 }
 
-// TODO: allow annotating any variant as the base case (same for unions)
+// // TODO: allow annotating any variant as the base case (same for unions)
 
 #[repr(u8, C)]
 #[derive(TypeLayout)]
@@ -95,8 +95,7 @@ pub struct MutReference<'r, T: 'r> {
 #[derive(TypeLayout)]
 pub struct Referencing<'r, T: 'r> {
     c: &'r T,
-    // FIXME: constructing invalid value at .value: encountered mutable reference in a `const`
-    // m: &'r mut T,
+    m: &'r mut T,
 }
 
 fn main() {

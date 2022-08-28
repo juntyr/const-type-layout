@@ -1,6 +1,6 @@
 use crate::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
-unsafe impl<'a, T: TypeLayout + 'a> TypeLayout for &'a T {
+unsafe impl<'a, T: ~const TypeLayout + 'a> const TypeLayout for &'a T {
     type Static = &'static T::Static;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
@@ -12,11 +12,14 @@ unsafe impl<'a, T: TypeLayout + 'a> TypeLayout for &'a T {
             mutability: false,
         },
     };
-    const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new({
-        alloc::boxed::Box::leak(core::mem::ManuallyDrop::into_inner(
-            <alloc::boxed::Box<T> as TypeLayout>::UNINIT,
-        ))
-    });
+
+    unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
+        core::mem::ManuallyDrop::new({
+            alloc::boxed::Box::leak(core::mem::ManuallyDrop::into_inner(
+                <alloc::boxed::Box<T> as TypeLayout>::uninit(),
+            ))
+        })
+    }
 }
 
 unsafe impl<'a, T: ~const TypeGraph + 'a> const TypeGraph for &'a T {
@@ -27,7 +30,7 @@ unsafe impl<'a, T: ~const TypeGraph + 'a> const TypeGraph for &'a T {
     }
 }
 
-unsafe impl<'a, T: TypeLayout + 'a> TypeLayout for &'a mut T {
+unsafe impl<'a, T: ~const TypeLayout + 'a> const TypeLayout for &'a mut T {
     type Static = &'static mut T::Static;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
@@ -39,13 +42,16 @@ unsafe impl<'a, T: TypeLayout + 'a> TypeLayout for &'a mut T {
             mutability: true,
         },
     };
+
     // FIXME: constructing invalid value at .value: encountered mutable reference in
     // a `const`
-    const UNINIT: core::mem::ManuallyDrop<Self> = core::mem::ManuallyDrop::new({
-        alloc::boxed::Box::leak(core::mem::ManuallyDrop::into_inner(
-            <alloc::boxed::Box<T> as TypeLayout>::UNINIT,
-        ))
-    });
+    unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
+        core::mem::ManuallyDrop::new({
+            alloc::boxed::Box::leak(core::mem::ManuallyDrop::into_inner(
+                <alloc::boxed::Box<T> as TypeLayout>::uninit(),
+            ))
+        })
+    }
 }
 
 unsafe impl<'a, T: ~const TypeGraph + 'a> const TypeGraph for &'a mut T {

@@ -1,6 +1,6 @@
 use crate::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
-unsafe impl<T: TypeLayout> TypeLayout for core::marker::PhantomData<T> {
+unsafe impl<T: ~const TypeLayout> const TypeLayout for core::marker::PhantomData<T> {
     type Static = core::marker::PhantomData<T::Static>;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
@@ -12,8 +12,10 @@ unsafe impl<T: TypeLayout> TypeLayout for core::marker::PhantomData<T> {
             fields: &[],
         },
     };
-    const UNINIT: core::mem::ManuallyDrop<Self> =
-        core::mem::ManuallyDrop::new(core::marker::PhantomData);
+
+    unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
+        core::mem::ManuallyDrop::new(core::marker::PhantomData::<T>)
+    }
 }
 
 unsafe impl<T: ~const TypeGraph> const TypeGraph for core::marker::PhantomData<T> {
@@ -22,7 +24,7 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for core::marker::PhantomData<T
     }
 }
 
-unsafe impl TypeLayout for core::marker::PhantomPinned {
+unsafe impl const TypeLayout for core::marker::PhantomPinned {
     type Static = Self;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
@@ -34,8 +36,10 @@ unsafe impl TypeLayout for core::marker::PhantomPinned {
             fields: &[],
         },
     };
-    const UNINIT: core::mem::ManuallyDrop<Self> =
-        core::mem::ManuallyDrop::new(core::marker::PhantomPinned);
+
+    unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
+        core::mem::ManuallyDrop::new(core::marker::PhantomPinned)
+    }
 }
 
 unsafe impl const TypeGraph for core::marker::PhantomPinned {
