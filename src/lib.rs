@@ -36,17 +36,11 @@
 //! ```rust
 //! # #![feature(cfg_version)]
 //! # #![feature(const_type_name)]
-//! # #![cfg_attr(not(version("1.58.0")), feature(const_raw_ptr_deref))]
-//! # #![cfg_attr(not(version("1.59.0")), feature(const_maybe_uninit_as_ptr))]
-//! # #![cfg_attr(version("1.59.0"), feature(const_maybe_uninit_as_mut_ptr))]
-//! # #![feature(const_ptr_offset_from)]
-//! # #![cfg_attr(not(version("1.57.0")), feature(const_panic))]
 //! # #![feature(const_refs_to_cell)]
-//! # #![feature(const_maybe_uninit_assume_init)]
-//! # #![feature(const_discriminant)]
 //! # #![feature(const_trait_impl)]
 //! # #![feature(const_mut_refs)]
 //! # #![cfg_attr(not(version("1.61.0")), feature(const_fn_trait_bound))]
+//! # #![cfg_attr(not(version("1.61.0")), feature(const_ptr_offset))]
 //! # #![allow(incomplete_features)]
 //! # #![feature(generic_const_exprs)]
 //! use const_type_layout::TypeLayout;
@@ -89,17 +83,11 @@
 //! ```rust
 //! # #![feature(cfg_version)]
 //! # #![feature(const_type_name)]
-//! # #![cfg_attr(not(version("1.58.0")), feature(const_raw_ptr_deref))]
-//! # #![cfg_attr(not(version("1.59.0")), feature(const_maybe_uninit_as_ptr))]
-//! # #![cfg_attr(version("1.59.0"), feature(const_maybe_uninit_as_mut_ptr))]
-//! # #![feature(const_ptr_offset_from)]
-//! # #![cfg_attr(not(version("1.57.0")), feature(const_panic))]
 //! # #![feature(const_refs_to_cell)]
-//! # #![feature(const_maybe_uninit_assume_init)]
-//! # #![feature(const_discriminant)]
 //! # #![feature(const_trait_impl)]
 //! # #![feature(const_mut_refs)]
 //! # #![cfg_attr(not(version("1.61.0")), feature(const_fn_trait_bound))]
+//! # #![cfg_attr(not(version("1.61.0")), feature(const_ptr_offset))]
 //! # #![allow(incomplete_features)]
 //! # #![feature(generic_const_exprs)]
 //! use const_type_layout::TypeLayout;
@@ -134,33 +122,26 @@
 #![no_std]
 #![feature(cfg_version)]
 #![feature(const_type_name)]
-#![cfg_attr(not(version("1.58.0")), feature(const_raw_ptr_deref))]
 #![cfg_attr(not(version("1.61.0")), feature(const_ptr_offset))]
 #![feature(const_mut_refs)]
-#![feature(const_raw_ptr_comparison)]
 #![feature(const_trait_impl)]
 #![cfg_attr(not(version("1.61.0")), feature(const_fn_trait_bound))]
-#![cfg_attr(not(version("1.57.0")), feature(const_panic))]
 #![feature(cfg_target_has_atomic)]
 #![feature(const_discriminant)]
-#![feature(const_maybe_uninit_assume_init)]
 #![feature(const_ptr_offset_from)]
 #![feature(const_refs_to_cell)]
-#![cfg_attr(not(version("1.59.0")), feature(const_maybe_uninit_as_ptr))]
-#![cfg_attr(version("1.59.0"), feature(const_maybe_uninit_as_mut_ptr))]
 #![feature(const_option)]
 #![feature(let_else)]
-#![allow(incomplete_features)]
-#![feature(generic_const_exprs)]
 #![feature(core_intrinsics)]
 #![feature(const_heap)]
-// #![feature(allow_internal_unstable)]
+#![feature(allow_internal_unstable)]
 #![feature(decl_macro)]
 #![feature(allocator_api)]
 #![feature(const_box)]
-#![feature(unsafe_pin_internals)]
+#![feature(const_pin)]
 #![feature(const_ptr_write)]
-#![feature(const_slice_from_raw_parts_mut)]
+#![allow(incomplete_features)]
+#![feature(generic_const_exprs)]
 #![doc(html_root_url = "https://momolangenstein.github.io/const-type-layout")]
 #![cfg_attr(feature = "serde", allow(clippy::type_repetition_in_bounds))]
 
@@ -483,7 +464,7 @@ impl<'a> PartialOrd for Field<'a> {
     }
 }
 
-//#[allow_internal_unstable(const_refs_to_cell)]
+#[allow_internal_unstable(const_ptr_offset_from)]
 pub macro struct_field_offset($ty_name:ident => $ty:ty => (*$base:ident).$field:tt => $($extra_fields:tt)?) {
     {
         #[allow(clippy::unneeded_field_pattern)]
@@ -502,7 +483,7 @@ pub macro struct_field_offset($ty_name:ident => $ty:ty => (*$base:ident).$field:
     }
 }
 
-//#[allow_internal_unstable(const_refs_to_cell)]
+#[allow_internal_unstable(const_discriminant)]
 pub macro struct_variant_discriminant {
     ($ty_name:ident => $ty:ty => $variant_name:ident) => {{
         let uninit: $ty = $ty_name::$variant_name;
@@ -592,6 +573,7 @@ pub macro struct_variant_discriminant {
     }},
 }
 
+#[allow_internal_unstable(const_ptr_offset_from)]
 pub macro struct_variant_field_offset {
     ($ty_name:ident => $ty:ty => $variant_name:ident($($field_ty:ty),*) => $field_index:tt) => {{
         let uninit: $ty = $ty_name::$variant_name(
