@@ -37,8 +37,6 @@ unsafe impl<'a, T: ~const TypeLayout + 'a> const TypeLayout for &'a mut T {
         },
     };
 
-    // FIXME: constructing invalid value at .value: encountered mutable reference in
-    // a `const`
     unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
         core::mem::ManuallyDrop::new(&mut *leak_uninit_ptr())
     }

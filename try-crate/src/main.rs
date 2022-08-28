@@ -67,7 +67,7 @@ enum Quo<T> {
     Struct { a: T, b: u16, c: T },
 }
 
-// // TODO: allow annotating any variant as the base case (same for unions)
+// TODO: allow annotating any variant as the base case (same for unions)
 
 #[repr(u8, C)]
 #[derive(TypeLayout)]
@@ -133,7 +133,7 @@ fn main() {
 
     println!("{:#?}", <std::convert::Infallible>::TYPE_GRAPH);
 
-    // FIXME: will require optional uninits to represent uninhabited values
+    // TODO: will require optional uninits to represent uninhabited values
     // println!("{:#?}", <Option<std::convert::Infallible>>::TYPE_GRAPH);
     // println!("{:#?}", <Result<u8, std::convert::Infallible>>::TYPE_GRAPH);
     // println!("{:#?}", <Result<std::convert::Infallible, u8>>::TYPE_GRAPH);
