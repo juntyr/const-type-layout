@@ -71,8 +71,6 @@ enum Quo<T> {
 
 #[repr(u8, C)]
 #[derive(TypeLayout)]
-// #[layout(free = "Box<List<T>>")]
-// #[layout(bound = "T: ::const_type_layout::TypeLayout")]
 enum List<T> {
     Tail,
     Cons { item: T, next: Box<List<T>> },
@@ -98,6 +96,12 @@ pub struct Referencing<'r, T: 'r> {
     m: &'r mut T,
 }
 
+#[derive(TypeLayout)]
+#[layout(free = "T")]
+pub struct MyPhantomData<T> {
+    marker: std::marker::PhantomData<T>,
+}
+
 fn main() {
     println!("{:#?}", Foo1::TYPE_GRAPH);
     println!("{:#?}", Foo2::TYPE_GRAPH);
@@ -114,11 +118,15 @@ fn main() {
 
     println!("{:#?}", <()>::TYPE_GRAPH);
     println!("{:#?}", <[u32; 3]>::TYPE_GRAPH);
-    println!("{:#?}", <std::marker::PhantomData<bool>>::TYPE_GRAPH);
     println!("{:#?}", <std::mem::MaybeUninit<Box<i8>>>::TYPE_GRAPH);
     println!("{:#?}", <Box<u8>>::TYPE_GRAPH);
     println!("{:#?}", <Box<[u8]>>::TYPE_GRAPH);
     println!("{:#?}", <Box<&'static u8>>::TYPE_GRAPH);
+
+    println!("{:#?}", <std::marker::PhantomData<bool>>::TYPE_GRAPH);
+    println!("{:#?}", <std::marker::PhantomData<String>>::TYPE_GRAPH);
+    println!("{:#?}", <MyPhantomData<bool>>::TYPE_GRAPH);
+    println!("{:#?}", <MyPhantomData<String>>::TYPE_GRAPH);
 
     println!("{:#?}", <Option<std::num::NonZeroU64>>::TYPE_GRAPH);
     println!("{:#?}", <Result<bool, u8>>::TYPE_GRAPH);

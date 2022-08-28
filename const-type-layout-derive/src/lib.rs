@@ -27,12 +27,17 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     let ty_name = input.ident;
     let ty_generics = input.generics.split_for_impl().1;
 
+    let mut type_params = input
+        .generics
+        .type_params()
+        .map(|param| &param.ident)
+        .collect::<Vec<_>>();
+
     let Attributes {
         reprs,
-        // add_bounds,
-        // sub_bounds,
+        extra_bounds,
         ..
-    } = parse_attributes(&ty_name, &ty_generics, &input.attrs);
+    } = parse_attributes(&input.attrs, &mut type_params);
 
     let layout = layout_of_type(&ty_name, &ty_generics, &input.data, &reprs);
 
@@ -48,6 +53,8 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
         &ty_generics,
         &input.generics,
         matches!(input.data, syn::Data::Enum(_)),
+        &extra_bounds,
+        &type_params,
     );
     let (type_layout_impl_generics, type_layout_ty_generics, type_layout_where_clause) =
         type_layout_input_generics.split_for_impl();
@@ -90,20 +97,14 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
 
 struct Attributes {
     reprs: String,
-    // add_bounds: Vec<syn::WherePredicate>,
-    // sub_bounds: Vec<String>,
+    extra_bounds: Vec<syn::WherePredicate>,
 }
 
-fn parse_attributes(
-    ty_name: &syn::Ident,
-    ty_generics: &syn::TypeGenerics,
-    attrs: &[syn::Attribute],
-) -> Attributes {
+fn parse_attributes(attrs: &[syn::Attribute], type_params: &mut Vec<&syn::Ident>) -> Attributes {
     // Could parse based on https://github.com/rust-lang/rust/blob/d13e8dd41d44a73664943169d5b7fe39b22c449f/compiler/rustc_attr/src/builtin.rs#L772-L781 instead
     let mut reprs = Vec::new();
 
-    let mut add_bounds: Vec<syn::WherePredicate> = Vec::new();
-    let mut sub_bounds: Vec<String> = vec![quote!(#ty_name #ty_generics).to_string()];
+    let mut extra_bounds: Vec<syn::WherePredicate> = Vec::new();
 
     for attr in attrs {
         if attr.path.is_ident("repr") {
@@ -130,8 +131,21 @@ fn parse_attributes(
                     })) = &meta
                     {
                         if path.is_ident("free") {
-                            match syn::parse_str::<syn::Type>(&s.value()) {
-                                Ok(ty) => sub_bounds.push(quote!(#ty).to_string()),
+                            match syn::parse_str::<syn::Ident>(&s.value()) {
+                                Ok(param) => {
+                                    if let Some(i) = type_params.iter().position(|ty| **ty == param)
+                                    {
+                                        type_params.swap_remove(i);
+                                    } else {
+                                        emit_error!(
+                                            s.span(),
+                                            "[const-type-layout]: Invalid #[layout(free)] \
+                                             attribute: \"{}\" is either not a type parameter or \
+                                             has already been freed (duplicate attribute).",
+                                            param,
+                                        );
+                                    }
+                                },
                                 Err(err) => emit_error!(
                                     s.span(),
                                     "[const-type-layout]: Invalid #[layout(free = \"<type>\")] \
@@ -141,7 +155,7 @@ fn parse_attributes(
                             }
                         } else if path.is_ident("bound") {
                             match syn::parse_str(&s.value()) {
-                                Ok(bound) => add_bounds.push(bound),
+                                Ok(bound) => extra_bounds.push(bound),
                                 Err(err) => emit_error!(
                                     s.span(),
                                     "[const-type-layout]: Invalid #[layout(bound = \
@@ -183,8 +197,7 @@ fn parse_attributes(
 
     Attributes {
         reprs,
-        // add_bounds,
-        // sub_bounds,
+        extra_bounds,
     }
 }
 
@@ -259,6 +272,8 @@ fn generate_generics(
     ty_generics: &syn::TypeGenerics,
     generics: &syn::Generics,
     is_enum: bool,
+    extra_bounds: &[syn::WherePredicate],
+    type_params: &[&syn::Ident],
 ) -> Generics {
     let mut type_layout_input_generics = generics.clone();
     let mut type_graph_input_generics = generics.clone();
@@ -279,9 +294,7 @@ fn generate_generics(
             });
     }
 
-    for param in generics.type_params() {
-        let ty = &param.ident;
-
+    for ty in type_params {
         type_layout_input_generics
             .make_where_clause()
             .predicates
@@ -302,6 +315,18 @@ fn generate_generics(
             .push(syn::parse_quote! {
                 #ty: ~const ::const_type_layout::TypeGraph
             });
+    }
+
+    for bound in extra_bounds {
+        type_layout_input_generics
+            .make_where_clause()
+            .predicates
+            .push(bound.clone());
+
+        type_graph_input_generics
+            .make_where_clause()
+            .predicates
+            .push(bound.clone());
     }
 
     Generics {
