@@ -128,7 +128,7 @@
 #![cfg_attr(not(version("1.61.0")), feature(const_fn_trait_bound))]
 #![feature(cfg_target_has_atomic)]
 #![feature(const_discriminant)]
-#![feature(const_ptr_offset_from)]
+#![cfg_attr(not(version("1.65.0")), feature(const_ptr_offset_from))]
 #![feature(const_refs_to_cell)]
 #![feature(const_option)]
 #![feature(let_else)]
@@ -470,7 +470,7 @@ impl<'a> PartialOrd for Field<'a> {
     }
 }
 
-#[allow_internal_unstable(const_ptr_offset_from)]
+#[cfg_attr(not(version("1.65.0")), allow_internal_unstable(const_ptr_offset_from))]
 pub macro struct_field_offset($ty_name:ident => $ty:ty => (*$base:ident).$field:tt => $($extra_fields:tt)?) {
     {
         #[allow(clippy::unneeded_field_pattern)]
@@ -579,7 +579,7 @@ pub macro struct_variant_discriminant {
     }},
 }
 
-#[allow_internal_unstable(const_ptr_offset_from)]
+#[cfg_attr(not(version("1.65.0")), allow_internal_unstable(const_ptr_offset_from))]
 pub macro struct_variant_field_offset {
     ($ty_name:ident => $ty:ty => $variant_name:ident($($field_ty:ty),*) => $field_index:tt) => {{
         let uninit: $ty = $ty_name::$variant_name(
