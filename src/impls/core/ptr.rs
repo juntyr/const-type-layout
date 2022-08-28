@@ -74,11 +74,9 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::ptr::NonNull<T> {
     };
 
     unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-        core::mem::ManuallyDrop::new(
-            core::ptr::NonNull::new_unchecked(alloc::boxed::Box::leak(
-                core::mem::ManuallyDrop::into_inner(<alloc::boxed::Box<T> as TypeLayout>::uninit()),
-            ) as *mut T)
-        )
+        core::mem::ManuallyDrop::new(core::ptr::NonNull::new_unchecked(alloc::boxed::Box::leak(
+            core::mem::ManuallyDrop::into_inner(<alloc::boxed::Box<T> as TypeLayout>::uninit()),
+        ) as *mut T))
     }
 }
 
@@ -104,13 +102,9 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::ptr::NonNull<[T]> {
     };
 
     unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-        core::mem::ManuallyDrop::new(
-            core::ptr::NonNull::new_unchecked(alloc::boxed::Box::leak(
-                core::mem::ManuallyDrop::into_inner(
-                    <alloc::boxed::Box<[T]> as TypeLayout>::uninit(),
-                ),
-            ) as *mut [T])
-        )
+        core::mem::ManuallyDrop::new(core::ptr::NonNull::new_unchecked(alloc::boxed::Box::leak(
+            core::mem::ManuallyDrop::into_inner(<alloc::boxed::Box<[T]> as TypeLayout>::uninit()),
+        ) as *mut [T]))
     }
 }
 
