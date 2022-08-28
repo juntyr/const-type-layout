@@ -1,4 +1,6 @@
-use crate::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
+use crate::{
+    impls::leak_uninit_ptr, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+};
 
 unsafe impl<T: ~const TypeLayout> const TypeLayout for *const T {
     type Static = *const T::Static;
@@ -14,11 +16,7 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for *const T {
     };
 
     unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-        core::mem::ManuallyDrop::new({
-            alloc::boxed::Box::leak(core::mem::ManuallyDrop::into_inner(
-                <alloc::boxed::Box<T> as TypeLayout>::uninit(),
-            )) as *const T
-        })
+        core::mem::ManuallyDrop::new(leak_uninit_ptr())
     }
 }
 
@@ -44,11 +42,7 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for *mut T {
     };
 
     unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-        core::mem::ManuallyDrop::new({
-            alloc::boxed::Box::leak(core::mem::ManuallyDrop::into_inner(
-                <alloc::boxed::Box<T> as TypeLayout>::uninit(),
-            )) as *mut T
-        })
+        core::mem::ManuallyDrop::new(leak_uninit_ptr())
     }
 }
 
@@ -74,9 +68,7 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::ptr::NonNull<T> {
     };
 
     unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-        core::mem::ManuallyDrop::new(core::ptr::NonNull::new_unchecked(alloc::boxed::Box::leak(
-            core::mem::ManuallyDrop::into_inner(<alloc::boxed::Box<T> as TypeLayout>::uninit()),
-        ) as *mut T))
+        core::mem::ManuallyDrop::new(core::ptr::NonNull::new_unchecked(leak_uninit_ptr()))
     }
 }
 

@@ -1,4 +1,6 @@
-use crate::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
+use crate::{
+    impls::leak_uninit_ptr, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+};
 
 unsafe impl<'a, T: ~const TypeLayout + 'a> const TypeLayout for &'a T {
     type Static = &'static T::Static;
@@ -14,11 +16,7 @@ unsafe impl<'a, T: ~const TypeLayout + 'a> const TypeLayout for &'a T {
     };
 
     unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-        core::mem::ManuallyDrop::new({
-            alloc::boxed::Box::leak(core::mem::ManuallyDrop::into_inner(
-                <alloc::boxed::Box<T> as TypeLayout>::uninit(),
-            ))
-        })
+        core::mem::ManuallyDrop::new(&*leak_uninit_ptr())
     }
 }
 
@@ -46,11 +44,7 @@ unsafe impl<'a, T: ~const TypeLayout + 'a> const TypeLayout for &'a mut T {
     // FIXME: constructing invalid value at .value: encountered mutable reference in
     // a `const`
     unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-        core::mem::ManuallyDrop::new({
-            alloc::boxed::Box::leak(core::mem::ManuallyDrop::into_inner(
-                <alloc::boxed::Box<T> as TypeLayout>::uninit(),
-            ))
-        })
+        core::mem::ManuallyDrop::new(&mut *leak_uninit_ptr())
     }
 }
 

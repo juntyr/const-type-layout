@@ -1,4 +1,7 @@
-use crate::{Field, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
+use crate::{
+    impls::leak_uninit_ptr, Field, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo,
+    TypeStructure,
+};
 
 macro_rules! impl_atomic_int_layout {
     (impl $at:ident ( $align:literal : $cfg:literal ) => $ty:ty => $val:literal) => {
@@ -125,11 +128,7 @@ macro_rules! impl_atomic_ptr_layout {
 
             unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
                 core::mem::ManuallyDrop::new(
-                    Self::new(
-                        alloc::boxed::Box::leak(core::mem::ManuallyDrop::into_inner(
-                            <alloc::boxed::Box<T> as TypeLayout>::uninit(),
-                        )) as *mut T
-                    )
+                    Self::new(leak_uninit_ptr())
                 )
             }
         }

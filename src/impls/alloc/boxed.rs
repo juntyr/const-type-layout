@@ -1,6 +1,8 @@
 use alloc::alloc::Global;
 
-use crate::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
+use crate::{
+    impls::leak_uninit_ptr, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+};
 
 unsafe impl<T: ~const TypeLayout> const TypeLayout for alloc::boxed::Box<T> {
     type Static = alloc::boxed::Box<T::Static>;
@@ -17,7 +19,7 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for alloc::boxed::Box<T> {
 
     unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
         core::mem::ManuallyDrop::new(alloc::boxed::Box::from_raw_in(
-            <Self as BoxElem<T::Static>>::ELEM as *const T::Static as *mut T,
+            leak_uninit_ptr(),
             alloc::alloc::Global,
         ))
     }
@@ -29,25 +31,6 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for alloc::boxed::Box<T> {
             <T as TypeGraph>::populate_graph(graph);
         }
     }
-}
-
-trait BoxElem<T: 'static> {
-    const ELEM: &'static T;
-}
-
-impl<T: ~const TypeLayout> const BoxElem<T::Static> for alloc::boxed::Box<T> {
-    const ELEM: &'static T::Static = unsafe {
-        let ptr: *mut T =
-            core::intrinsics::const_allocate(core::mem::size_of::<T>(), core::mem::align_of::<T>())
-                .cast();
-
-        core::ptr::write(
-            ptr,
-            core::mem::ManuallyDrop::into_inner(<T as TypeLayout>::uninit()),
-        );
-
-        &*ptr.cast()
-    };
 }
 
 unsafe impl<T: ~const TypeLayout> const TypeLayout for alloc::boxed::Box<[T]> {
