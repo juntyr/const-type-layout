@@ -35,9 +35,16 @@ struct Foo4<T>(T);
 
 #[repr(C)]
 #[derive(TypeLayout)]
+#[layout(ground = "b")]
 union Bar {
     a: u8,
     b: u16,
+}
+
+#[repr(C)]
+#[derive(TypeLayout)]
+union SingleUnion {
+    a: u8,
 }
 
 #[allow(clippy::empty_enum)]
@@ -69,13 +76,23 @@ enum Quo<T> {
     Struct { a: T, b: u16, c: T },
 }
 
-// TODO: allow annotating any variant as the base case (same for unions)
-
 #[repr(u8, C)]
 #[derive(TypeLayout)]
 enum List<T> {
-    Tail,
     Cons { item: T, next: Box<List<T>> },
+    Tail,
+}
+
+#[derive(TypeLayout)]
+#[layout(ground = "Leaf")]
+enum Tree<T> {
+    Node {
+        left: Box<Tree<T>>,
+        right: Box<Tree<T>>,
+    },
+    Leaf {
+        item: T,
+    },
 }
 
 #[repr(transparent)]
@@ -111,6 +128,7 @@ fn main() {
     println!("{:#?}", Foo4::<u8>::TYPE_GRAPH);
 
     println!("{:#?}", Bar::TYPE_GRAPH);
+    println!("{:#?}", SingleUnion::TYPE_GRAPH);
 
     println!("{:#?}", Never::TYPE_GRAPH);
     println!("{:#?}", Single::TYPE_GRAPH);
@@ -155,6 +173,7 @@ fn main() {
     non_static_ref(&0);
 
     println!("{:#?}", <List<u8>>::TYPE_GRAPH);
+    println!("{:#?}", <Tree<u8>>::TYPE_GRAPH);
 
     let mut ascii_escaped_layout = String::new();
     for b in SERIALISED_LIST_U8_LAYOUT {

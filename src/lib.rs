@@ -518,7 +518,7 @@ pub macro struct_variant_discriminant {
 
         big_endian_bytes
     }},
-    ($ty_name:ident => $ty:ty => $variant_name:ident($($field_ty:ty),*)) => {{
+    ($ty_name:ident => $ty:ty => $variant_name:ident($($field_ty:ty),* $(,)?)) => {{
         let uninit: $ty = $ty_name::$variant_name(
             $(core::mem::ManuallyDrop::into_inner(
                 unsafe { <$field_ty as $crate::TypeLayout>::uninit() }
@@ -548,7 +548,7 @@ pub macro struct_variant_discriminant {
 
         big_endian_bytes
     }},
-    ($ty_name:ident => $ty:ty => $variant_name:ident { $($field_name:ident: $field_ty:ty),* }) => {{
+    ($ty_name:ident => $ty:ty => $variant_name:ident { $($field_name:ident: $field_ty:ty),* $(,)? }) => {{
         let uninit: $ty = $ty_name::$variant_name {
             $($field_name: core::mem::ManuallyDrop::into_inner(
                 unsafe { <$field_ty as $crate::TypeLayout>::uninit() }
@@ -582,7 +582,7 @@ pub macro struct_variant_discriminant {
 
 #[cfg_attr(not(version("1.65.0")), allow_internal_unstable(const_ptr_offset_from))]
 pub macro struct_variant_field_offset {
-    ($ty_name:ident => $ty:ty => $variant_name:ident($($field_ty:ty),*) => $field_index:tt) => {{
+    ($ty_name:ident => $ty:ty => $variant_name:ident($($field_ty:ty),* $(,)?) => $field_index:tt) => {{
         let uninit: $ty = $ty_name::$variant_name(
             $(core::mem::ManuallyDrop::into_inner(
                 unsafe { <$field_ty as $crate::TypeLayout>::uninit() }
@@ -606,7 +606,7 @@ pub macro struct_variant_field_offset {
 
         offset
     }},
-    ($ty_name:ident => $ty:ty => $variant_name:ident { $($field_name:ident: $field_ty:ty),* } => $field_index:ident) => {{
+    ($ty_name:ident => $ty:ty => $variant_name:ident { $($field_name:ident: $field_ty:ty),* $(,)? } => $field_index:ident) => {{
         let uninit: $ty = $ty_name::$variant_name {
             $($field_name: core::mem::ManuallyDrop::into_inner(
                 unsafe { <$field_ty as $crate::TypeLayout>::uninit() }

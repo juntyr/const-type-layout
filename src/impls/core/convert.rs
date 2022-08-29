@@ -11,9 +11,8 @@ unsafe impl const TypeLayout for core::convert::Infallible {
         },
     };
 
-    #[allow(unreachable_code, clippy::empty_loop)]
     unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-        core::mem::ManuallyDrop::new(loop {})
+        panic!("cannot construct core::convert::Infallible")
     }
 }
 

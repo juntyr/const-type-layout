@@ -1,5 +1,3 @@
-use alloc::alloc::Global;
-
 use crate::{
     impls::leak_uninit_ptr, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
 };
@@ -46,7 +44,7 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for alloc::boxed::Box<[T]> {
     unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
         core::mem::ManuallyDrop::new(alloc::boxed::Box::from_raw_in(
             &[] as *const [T] as *mut _,
-            Global,
+            alloc::alloc::Global,
         ))
     }
 }

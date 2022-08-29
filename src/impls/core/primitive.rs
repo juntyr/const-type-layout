@@ -41,9 +41,8 @@ unsafe impl const TypeLayout for ! {
         structure: TypeStructure::Primitive,
     };
 
-    #[allow(unreachable_code, clippy::empty_loop)]
     unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-        core::mem::ManuallyDrop::new(loop {})
+        panic!("cannot construct the never type")
     }
 }
 
