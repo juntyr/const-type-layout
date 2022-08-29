@@ -111,3 +111,35 @@ jobs:
           cargo hack clippy --all \
             --feature-powerset --keep-going \
             -- -D warnings
+
+  miri:
+    name: miri
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        rust: [nightly]
+
+    steps:
+      - name: Checkout the Repository
+        uses: actions/checkout@v2
+
+      - name: Install the Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          override: true
+
+      - name: Install power tools
+        uses: taiki-e/install-action@cargo-hack
+
+      - name: Run the miri powerset tests
+        run: |
+          cargo hack miri test --workspace \
+            --no-fail-fast --feature-powerset --keep-going
+
+      - name: Run the miri trycrate powerset
+        run: |
+          cd try-crate
+          cargo hack miri run \
+            --feature-powerset --keep-going
