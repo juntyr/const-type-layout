@@ -32,19 +32,13 @@ jobs:
           toolchain: ${{ matrix.rust }}
           override: true
 
-      - name: Check without default features
-        run: |
-          cargo check --all \
-            --no-default-features
+      - name: Install power tools
+        uses: taiki-e/install-action@cargo-hack
 
-      - name: Check with the default features
+      - name: Check the powerset
         run: |
-          cargo check --all
-
-      - name: Check with all features
-        run: |
-          cargo check --all \
-            --all-features
+          cargo hack check --all \
+            --feature-powerset --keep-going
 
   test:
     name: Test Suite
@@ -63,10 +57,14 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           override: true
+
+      - name: Install power tools
+        uses: taiki-e/install-action@cargo-hack
       
-      - name: Run the test-suite
+      - name: Run the test-suite powerset
         run: |
-          cargo test --workspace --no-fail-fast
+          cargo hack test --workspace \
+            --no-fail-fast --feature-powerset --keep-going
 
   fmt:
     name: Rustfmt
@@ -105,19 +103,11 @@ jobs:
           components: clippy
           override: true
 
-      - name: Check the code style without default features
-        run: |
-          cargo clippy --all \
-            --no-default-features \
-            -- -D warnings
+      - name: Install power tools
+        uses: taiki-e/install-action@cargo-hack
 
-      - name: Check the code style with the default features
+      - name: Check the code style powerset
         run: |
-          cargo clippy --all \
-            -- -D warnings
-
-      - name: Check the code style with all features
-        run: |
-          cargo clippy --all \
-            --all-features \
+          cargo hack clippy --all \
+            --feature-powerset --keep-going \
             -- -D warnings
