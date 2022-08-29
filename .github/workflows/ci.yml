@@ -117,7 +117,7 @@ jobs:
             -- -D warnings
 
   miri:
-    name: miri
+    name: Miri
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -133,7 +133,7 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           profile: minimal
-          components: miri
+          components: miri, rust-src
           override: true
 
       - name: Install power tools
