@@ -30,6 +30,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
+          profile: minimal
           override: true
 
       - name: Install power tools
@@ -56,6 +57,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
+          profile: minimal
           override: true
 
       - name: Install power tools
@@ -78,6 +80,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
+          profile: minimal
           components: rustfmt
           override: true
 
@@ -100,6 +103,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
+          profile: minimal
           components: clippy
           override: true
 
@@ -128,6 +132,8 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
+          profile: minimal
+          components: miri
           override: true
 
       - name: Install power tools
