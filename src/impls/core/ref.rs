@@ -13,8 +13,8 @@ unsafe impl<'a, T: ~const TypeLayout + 'a> const TypeLayout for &'a T {
         },
     };
 
-    unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-        core::mem::ManuallyDrop::new(&*leak_uninit_ptr())
+    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
+        core::mem::MaybeUninit::new(&*leak_uninit_ptr())
     }
 }
 
@@ -37,8 +37,8 @@ unsafe impl<'a, T: ~const TypeLayout + 'a> const TypeLayout for &'a mut T {
         },
     };
 
-    unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-        core::mem::ManuallyDrop::new(&mut *leak_uninit_ptr())
+    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
+        core::mem::MaybeUninit::new(&mut *leak_uninit_ptr())
     }
 }
 

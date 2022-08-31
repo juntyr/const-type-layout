@@ -15,8 +15,8 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::cell::UnsafeCell<T>
         },
     };
 
-    unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-        core::mem::ManuallyDrop::new(Self::new(core::mem::ManuallyDrop::into_inner(T::uninit())))
+    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
+        core::mem::MaybeUninit::new(Self::new(T::uninit().assume_init()))
     }
 }
 
@@ -43,8 +43,8 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::cell::Cell<T> {
         },
     };
 
-    unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-        core::mem::ManuallyDrop::new(Self::new(core::mem::ManuallyDrop::into_inner(T::uninit())))
+    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
+        core::mem::MaybeUninit::new(Self::new(T::uninit().assume_init()))
     }
 }
 

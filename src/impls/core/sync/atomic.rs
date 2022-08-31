@@ -23,8 +23,8 @@ macro_rules! impl_atomic_int_layout {
                 },
             };
 
-            unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-                core::mem::ManuallyDrop::new(Self::new($val))
+            unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
+                core::mem::MaybeUninit::new(Self::new($val))
             }
         }
 
@@ -72,8 +72,8 @@ macro_rules! impl_atomic_int_ptr_sized_layout {
                 },
             };
 
-            unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-                core::mem::ManuallyDrop::new(Self::new($val))
+            unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
+                core::mem::MaybeUninit::new(Self::new($val))
             }
         }
 
@@ -120,8 +120,8 @@ macro_rules! impl_atomic_ptr_layout {
                 },
             };
 
-            unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-                core::mem::ManuallyDrop::new(
+            unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
+                core::mem::MaybeUninit::new(
                     Self::new(leak_uninit_ptr())
                 )
             }

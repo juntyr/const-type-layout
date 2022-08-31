@@ -39,6 +39,7 @@
 //! # #![feature(const_refs_to_cell)]
 //! # #![feature(const_trait_impl)]
 //! # #![feature(const_mut_refs)]
+//! # #![feature(const_transmute_copy)]
 //! # #![cfg_attr(not(version("1.61.0")), feature(const_fn_trait_bound))]
 //! # #![cfg_attr(not(version("1.61.0")), feature(const_ptr_offset))]
 //! # #![allow(incomplete_features)]
@@ -86,6 +87,7 @@
 //! # #![feature(const_refs_to_cell)]
 //! # #![feature(const_trait_impl)]
 //! # #![feature(const_mut_refs)]
+//! # #![feature(const_transmute_copy)]
 //! # #![cfg_attr(not(version("1.61.0")), feature(const_fn_trait_bound))]
 //! # #![cfg_attr(not(version("1.61.0")), feature(const_ptr_offset))]
 //! # #![allow(incomplete_features)]
@@ -175,7 +177,7 @@ pub unsafe trait TypeLayout: Sized {
     /// The returned value is not safe to be used in any other way than
     /// to calculate field offsets and discriminants.
     /// The value and any value built with it must NOT be dropped.
-    unsafe fn uninit() -> core::mem::ManuallyDrop<Self>;
+    unsafe fn uninit() -> core::mem::MaybeUninit<Self>;
 }
 
 /// # Safety
@@ -471,7 +473,7 @@ impl<'a> PartialOrd for Field<'a> {
     }
 }
 
-#[cfg_attr(not(version("1.65.0")), allow_internal_unstable(const_ptr_offset_from))]
+#[allow_internal_unstable(const_ptr_offset_from)]
 pub macro struct_field_offset($ty_name:ident => $ty:ty => (*$base:ident).$field:tt => $($extra_fields:tt)?) {
     {
         #[allow(clippy::unneeded_field_pattern)]
@@ -520,9 +522,7 @@ pub macro struct_variant_discriminant {
     }},
     ($ty_name:ident => $ty:ty => $variant_name:ident($($field_ty:ty),* $(,)?)) => {{
         let uninit: $ty = $ty_name::$variant_name(
-            $(core::mem::ManuallyDrop::into_inner(
-                unsafe { <$field_ty as $crate::TypeLayout>::uninit() }
-            )),*
+            $(unsafe { <$field_ty as $crate::TypeLayout>::uninit().assume_init() }),*
         );
 
         let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<$ty>>()] = unsafe {
@@ -550,9 +550,7 @@ pub macro struct_variant_discriminant {
     }},
     ($ty_name:ident => $ty:ty => $variant_name:ident { $($field_name:ident: $field_ty:ty),* $(,)? }) => {{
         let uninit: $ty = $ty_name::$variant_name {
-            $($field_name: core::mem::ManuallyDrop::into_inner(
-                unsafe { <$field_ty as $crate::TypeLayout>::uninit() }
-            )),*
+            $($field_name: unsafe { <$field_ty as $crate::TypeLayout>::uninit().assume_init() }),*
         };
 
         let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<$ty>>()] = unsafe {
@@ -580,13 +578,11 @@ pub macro struct_variant_discriminant {
     }},
 }
 
-#[cfg_attr(not(version("1.65.0")), allow_internal_unstable(const_ptr_offset_from))]
+#[allow_internal_unstable(const_ptr_offset_from)]
 pub macro struct_variant_field_offset {
     ($ty_name:ident => $ty:ty => $variant_name:ident($($field_ty:ty),* $(,)?) => $field_index:tt) => {{
         let uninit: $ty = $ty_name::$variant_name(
-            $(core::mem::ManuallyDrop::into_inner(
-                unsafe { <$field_ty as $crate::TypeLayout>::uninit() }
-            )),*
+            $(unsafe { <$field_ty as $crate::TypeLayout>::uninit().assume_init() }),*
         );
         let base_ptr: *const $ty = ::core::ptr::addr_of!(uninit).cast();
 
@@ -608,9 +604,7 @@ pub macro struct_variant_field_offset {
     }},
     ($ty_name:ident => $ty:ty => $variant_name:ident { $($field_name:ident: $field_ty:ty),* $(,)? } => $field_index:ident) => {{
         let uninit: $ty = $ty_name::$variant_name {
-            $($field_name: core::mem::ManuallyDrop::into_inner(
-                unsafe { <$field_ty as $crate::TypeLayout>::uninit() }
-            )),*
+            $($field_name: unsafe { <$field_ty as $crate::TypeLayout>::uninit().assume_init() }),*
         };
         let base_ptr: *const $ty = ::core::ptr::addr_of!(uninit).cast();
 

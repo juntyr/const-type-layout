@@ -41,8 +41,8 @@ where
         },
     };
 
-    unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-        core::mem::ManuallyDrop::new(None)
+    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
+        core::mem::MaybeUninit::new(None)
     }
 }
 

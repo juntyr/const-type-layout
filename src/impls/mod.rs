@@ -20,10 +20,7 @@ const unsafe fn leak_uninit_ptr<T: ~const TypeLayout>() -> *mut T {
 
     let ptr = ::core::intrinsics::const_eval_select((), alloc_comptime, alloc_runtime);
 
-    ::core::ptr::write(
-        ptr,
-        ::core::mem::ManuallyDrop::into_inner(<T as TypeLayout>::uninit()),
-    );
+    ::core::ptr::write(ptr, <T as TypeLayout>::uninit().assume_init());
 
     ptr
 }

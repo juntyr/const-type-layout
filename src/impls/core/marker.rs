@@ -11,8 +11,8 @@ unsafe impl<T> const TypeLayout for core::marker::PhantomData<T> {
         },
     };
 
-    unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-        core::mem::ManuallyDrop::new(core::marker::PhantomData::<T>)
+    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
+        core::mem::MaybeUninit::new(core::marker::PhantomData::<T>)
     }
 }
 
@@ -33,8 +33,8 @@ unsafe impl const TypeLayout for core::marker::PhantomPinned {
         },
     };
 
-    unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-        core::mem::ManuallyDrop::new(core::marker::PhantomPinned)
+    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
+        core::mem::MaybeUninit::new(core::marker::PhantomPinned)
     }
 }
 

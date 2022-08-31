@@ -11,7 +11,7 @@ unsafe impl const TypeLayout for core::convert::Infallible {
         },
     };
 
-    unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
+    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
         panic!("cannot construct core::convert::Infallible")
     }
 }

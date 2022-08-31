@@ -4,6 +4,7 @@
 #![feature(const_refs_to_cell)]
 #![feature(const_trait_impl)]
 #![feature(const_mut_refs)]
+#![feature(const_transmute_copy)]
 #![cfg_attr(not(version("1.61.0")), feature(const_fn_trait_bound))]
 #![cfg_attr(not(version("1.61.0")), feature(const_ptr_offset))]
 #![feature(never_type)]
@@ -35,10 +36,9 @@ struct Foo4<T>(T);
 
 #[repr(C)]
 #[derive(TypeLayout)]
-#[layout(ground = "b")]
 union Bar {
     a: u8,
-    b: u16,
+    b: bool,
 }
 
 #[repr(C)]

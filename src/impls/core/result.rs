@@ -46,10 +46,8 @@ where
         },
     };
 
-    unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-        core::mem::ManuallyDrop::new(Ok(core::mem::ManuallyDrop::into_inner(
-            <T as TypeLayout>::uninit(),
-        )))
+    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
+        core::mem::MaybeUninit::new(Ok(<T as TypeLayout>::uninit().assume_init()))
     }
 }
 

@@ -15,8 +15,8 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::cmp::Reverse<T> {
         },
     };
 
-    unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-        core::mem::ManuallyDrop::new(Self(core::mem::ManuallyDrop::into_inner(T::uninit())))
+    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
+        core::mem::MaybeUninit::new(Self(T::uninit().assume_init()))
     }
 }
 

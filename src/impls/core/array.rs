@@ -11,10 +11,9 @@ unsafe impl<T: ~const TypeLayout, const N: usize> const TypeLayout for [T; N] {
         },
     };
 
-    unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-        core::mem::ManuallyDrop::new(
-            [const { core::mem::ManuallyDrop::into_inner(unsafe { <T as TypeLayout>::uninit() }) };
-                N],
+    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
+        core::mem::MaybeUninit::new(
+            [const { unsafe { <T as TypeLayout>::uninit().assume_init() } }; N],
         )
     }
 }

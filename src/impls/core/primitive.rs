@@ -10,8 +10,8 @@ macro_rules! impl_primitive_type_layout {
                 structure: TypeStructure::Primitive,
             };
 
-            unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-                core::mem::ManuallyDrop::new($val)
+            unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
+                core::mem::MaybeUninit::new($val)
             }
         }
 
@@ -41,7 +41,7 @@ unsafe impl const TypeLayout for ! {
         structure: TypeStructure::Primitive,
     };
 
-    unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
+    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
         panic!("cannot construct the never type")
     }
 }

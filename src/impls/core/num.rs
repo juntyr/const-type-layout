@@ -19,8 +19,8 @@ macro_rules! impl_nonzero_type_layout {
                 },
             };
 
-            unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-                core::mem::ManuallyDrop::new(Self::new(1).unwrap())
+            unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
+                core::mem::MaybeUninit::new(Self::new(1).unwrap())
             }
         }
 
@@ -59,8 +59,8 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::num::Wrapping<T> {
         },
     };
 
-    unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-        core::mem::ManuallyDrop::new(Self(core::mem::ManuallyDrop::into_inner(T::uninit())))
+    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
+        core::mem::MaybeUninit::new(Self(T::uninit().assume_init()))
     }
 }
 

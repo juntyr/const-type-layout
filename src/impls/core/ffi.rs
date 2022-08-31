@@ -11,7 +11,7 @@ unsafe impl const TypeLayout for core::ffi::c_void {
         },
     };
 
-    unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
+    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
         panic!("cannot construct core::ffi::c_void")
     }
 }

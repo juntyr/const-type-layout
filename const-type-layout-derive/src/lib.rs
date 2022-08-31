@@ -41,7 +41,7 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
 
     let layout = layout_of_type(&ty_name, &ty_generics, &input.data, &reprs);
 
-    let uninit = uninit_for_type(&ty_name, &input.data, ground.as_ref());
+    let uninit = uninit_for_type(&ty_name, &ty_generics, &input.data, ground.as_ref());
 
     let inner_types = extract_inner_types(&input.data);
 
@@ -75,8 +75,8 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
             };
 
             #[allow(unreachable_code)]
-            unsafe fn uninit() -> ::core::mem::ManuallyDrop<Self> {
-                ::core::mem::ManuallyDrop::new(
+            unsafe fn uninit() -> ::core::mem::MaybeUninit<Self> {
+                ::core::mem::MaybeUninit::new(
                     #uninit
                 )
             }
@@ -179,37 +179,11 @@ fn parse_attributes(
                                         "[const-type-layout]: Invalid #[layout(ground)] \
                                          attribute: structs do not have a ground layout."
                                     ),
-                                    syn::Data::Union(syn::DataUnion {
-                                        fields: syn::FieldsNamed { named: fields, .. },
-                                        ..
-                                    }) => {
-                                        let mut found = false;
-
-                                        for field in fields {
-                                            if field.ident.as_ref() == Some(&g) {
-                                                found = true;
-                                            }
-                                        }
-
-                                        if found {
-                                            if ground.is_some() {
-                                                emit_error!(
-                                                    path.span(),
-                                                    "[const-type-layout]: Duplicate \
-                                                     #[layout(ground)] attribute."
-                                                );
-                                            } else {
-                                                ground = Some(g);
-                                            }
-                                        } else {
-                                            emit_error!(
-                                                path.span(),
-                                                "[const-type-layout]: Invalid #[layout(ground)] \
-                                                 attribute: \"{}\" is not a field in this union.",
-                                                g
-                                            );
-                                        }
-                                    },
+                                    syn::Data::Union(_) => emit_error!(
+                                        path.span(),
+                                        "[const-type-layout]: Invalid #[layout(ground)] \
+                                         attribute: unions do not need an explicit ground layout."
+                                    ),
                                     syn::Data::Enum(syn::DataEnum { variants, .. }) => {
                                         let mut found = false;
 
@@ -241,12 +215,8 @@ fn parse_attributes(
                                 },
                                 Err(err) => emit_error!(
                                     s.span(),
-                                    "[const-type-layout]: Invalid #[layout(bound = \"{}\")] \
+                                    "[const-type-layout]: Invalid #[layout(bound = \"variant\")] \
                                      attribute: {}.",
-                                    match data {
-                                        syn::Data::Enum(_) => "variant",
-                                        _ => "field",
-                                    },
                                     err
                                 ),
                             }
@@ -275,28 +245,7 @@ fn parse_attributes(
 
     if ground.is_none() {
         match data {
-            syn::Data::Struct(_) => (),
-            syn::Data::Union(syn::DataUnion {
-                union_token,
-                fields: syn::FieldsNamed { named: fields, .. },
-            }) => {
-                if fields.len() == 1 {
-                    if let Some(syn::Field {
-                        ident: Some(field), ..
-                    }) = fields.first()
-                    {
-                        ground = Some(field.clone());
-                    }
-                }
-
-                if ground.is_none() {
-                    emit_error!(
-                        union_token.span(),
-                        "[const-type-layout]: multi-field unions require an explicit \
-                         #[layout(ground = \"field\")] attribute."
-                    );
-                }
-            },
+            syn::Data::Struct(_) | syn::Data::Union(_) => (),
             syn::Data::Enum(syn::DataEnum {
                 enum_token,
                 variants,
@@ -729,11 +678,13 @@ fn quote_discriminant_bytes(
 
 fn uninit_for_type(
     ty_name: &syn::Ident,
+    ty_generics: &syn::TypeGenerics,
     data: &syn::Data,
     ground: Option<&syn::Ident>,
 ) -> proc_macro2::TokenStream {
     match data {
         syn::Data::Struct(data) => {
+            // Structs are uninhabited if any of their fields in uninhabited
             let fields = match &data.fields {
                 syn::Fields::Named(syn::FieldsNamed { named: fields, .. })
                 | syn::Fields::Unnamed(syn::FieldsUnnamed {
@@ -754,9 +705,9 @@ fn uninit_for_type(
                     let field_comma = pair.punct();
 
                     quote! {
-                        #field_name #field_colon ::core::mem::ManuallyDrop::into_inner(
-                            <#field_ty as ::const_type_layout::TypeLayout>::uninit()
-                        ) #field_comma
+                        #field_name #field_colon <
+                            #field_ty as ::const_type_layout::TypeLayout
+                        >::uninit().assume_init() #field_comma
                     }
                 })
                 .collect::<Vec<_>>();
@@ -768,6 +719,12 @@ fn uninit_for_type(
             }
         },
         syn::Data::Enum(r#enum) => {
+            // Enums are uninhabited if
+            //  (a) they have no variants
+            //  (b) all their variants are uninhabited
+            //    (1) unit variants are always inhabited
+            //    (2) tuple and struct variants are uninhabited
+            //        if any of their fields are uninhabited
             let Some(syn::Variant {
                 ident: variant_name,
                 fields,
@@ -796,9 +753,9 @@ fn uninit_for_type(
                     let field_comma = pair.punct();
 
                     quote! {
-                        #field_name #field_colon ::core::mem::ManuallyDrop::into_inner(
-                            <#field_ty as ::const_type_layout::TypeLayout>::uninit()
-                        ) #field_comma
+                        #field_name #field_colon <
+                            #field_ty as ::const_type_layout::TypeLayout
+                        >::uninit().assume_init() #field_comma
                     }
                 })
                 .collect::<Vec<_>>();
@@ -809,24 +766,10 @@ fn uninit_for_type(
                 quote!(#ty_name::#variant_name ( #(#initialisers)* ))
             }
         },
-        syn::Data::Union(r#union) => {
-            let syn::Field {
-                ident: field_name,
-                colon_token: field_colon,
-                ty: field_ty,
-                ..
-            } = &r#union
-                .fields
-                .named
-                .iter()
-                .find(|f| f.ident.as_ref() == ground)
-                .expect("ground checked already");
-
-            quote!(#ty_name {
-                #field_name #field_colon ::core::mem::ManuallyDrop::into_inner(
-                    <#field_ty as ::const_type_layout::TypeLayout>::uninit()
-                )
-            })
+        syn::Data::Union(_) => {
+            // Unions are nieche-less blobs of bytes and all reads are unsafe
+            // Unions are uninhabited if all fields are uninhabited
+            quote!(::core::mem::transmute_copy(&[0x0_u8; ::core::mem::size_of::<#ty_name #ty_generics>()]))
         },
     }
 }

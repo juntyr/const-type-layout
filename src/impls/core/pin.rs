@@ -15,10 +15,8 @@ unsafe impl<T: ~const TypeLayout + core::ops::Deref> const TypeLayout for core::
         },
     };
 
-    unsafe fn uninit() -> core::mem::ManuallyDrop<Self> {
-        core::mem::ManuallyDrop::new(Self::new_unchecked(core::mem::ManuallyDrop::into_inner(
-            T::uninit(),
-        )))
+    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
+        core::mem::MaybeUninit::new(Self::new_unchecked(T::uninit().assume_init()))
     }
 }
 
