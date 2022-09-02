@@ -1,6 +1,6 @@
 use crate::{
-    impls::leak_uninit_ptr, Field, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo,
-    TypeStructure,
+    impls::leak_uninit_ptr, Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph,
+    TypeLayoutInfo, TypeStructure,
 };
 
 macro_rules! impl_atomic_int_layout {
@@ -11,6 +11,7 @@ macro_rules! impl_atomic_int_layout {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
+                inhabited: MaybeUninhabited::Inhabited(()),
                 structure: TypeStructure::Struct {
                     repr: concat!("C,align(", $align, ")"),
                     fields: &[
@@ -60,6 +61,7 @@ macro_rules! impl_atomic_int_ptr_sized_layout {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
+                inhabited: MaybeUninhabited::Inhabited(()),
                 structure: TypeStructure::Struct {
                     repr: concat!("C,align(", $align, ")"),
                     fields: &[
@@ -108,6 +110,7 @@ macro_rules! impl_atomic_ptr_layout {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
+                inhabited: MaybeUninhabited::Inhabited(()),
                 structure: TypeStructure::Struct {
                     repr: concat!("C,align(", $align, ")"),
                     fields: &[

@@ -1,10 +1,13 @@
-use crate::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
+use crate::{
+    MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+};
 
 unsafe impl<T> const TypeLayout for core::marker::PhantomData<T> {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
+        inhabited: MaybeUninhabited::Inhabited(()),
         structure: TypeStructure::Struct {
             repr: "",
             fields: &[],
@@ -27,6 +30,7 @@ unsafe impl const TypeLayout for core::marker::PhantomPinned {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
+        inhabited: MaybeUninhabited::Inhabited(()),
         structure: TypeStructure::Struct {
             repr: "",
             fields: &[],

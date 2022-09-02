@@ -13,6 +13,7 @@ where
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
+        inhabited: T::TYPE_LAYOUT.inhabited.or(E::TYPE_LAYOUT.inhabited),
         structure: TypeStructure::Enum {
             repr: "",
             variants: &[

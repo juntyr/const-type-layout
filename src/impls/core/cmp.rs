@@ -5,6 +5,7 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::cmp::Reverse<T> {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
+        inhabited: T::TYPE_LAYOUT.inhabited,
         structure: TypeStructure::Struct {
             repr: "transparent",
             fields: &[Field {

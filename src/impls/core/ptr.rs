@@ -1,5 +1,6 @@
 use crate::{
-    impls::leak_uninit_ptr, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+    impls::leak_uninit_ptr, MaybeUninhabited, Mutability, TypeGraph, TypeLayout, TypeLayoutGraph,
+    TypeLayoutInfo, TypeStructure,
 };
 
 unsafe impl<T: ~const TypeLayout> const TypeLayout for *const T {
@@ -7,9 +8,10 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for *const T {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
+        inhabited: MaybeUninhabited::Inhabited(()),
         structure: TypeStructure::Pointer {
             inner: ::core::any::type_name::<T>(),
-            mutability: false,
+            mutability: Mutability::Immutable,
         },
     };
 
@@ -31,9 +33,10 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for *mut T {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
+        inhabited: MaybeUninhabited::Inhabited(()),
         structure: TypeStructure::Pointer {
             inner: ::core::any::type_name::<T>(),
-            mutability: true,
+            mutability: Mutability::Mutable,
         },
     };
 
@@ -55,9 +58,10 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::ptr::NonNull<T> {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
+        inhabited: MaybeUninhabited::Inhabited(()),
         structure: TypeStructure::Pointer {
             inner: ::core::any::type_name::<T>(),
-            mutability: true,
+            mutability: Mutability::Mutable,
         },
     };
 
@@ -79,9 +83,10 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::ptr::NonNull<[T]> {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
+        inhabited: MaybeUninhabited::Inhabited(()),
         structure: TypeStructure::Pointer {
             inner: ::core::any::type_name::<T>(),
-            mutability: true,
+            mutability: Mutability::Mutable,
         },
     };
 

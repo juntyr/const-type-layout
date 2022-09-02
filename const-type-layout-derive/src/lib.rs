@@ -39,8 +39,8 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
         ground,
     } = parse_attributes(&input.attrs, &mut type_params, &input.data);
 
+    let inhabited = inhabited_for_type(&input.data);
     let layout = layout_of_type(&ty_name, &ty_generics, &input.data, &reprs);
-
     let uninit = uninit_for_type(&ty_name, &ty_generics, &input.data, ground.as_ref());
 
     let inner_types = extract_inner_types(&input.data);
@@ -70,6 +70,7 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
                     name: ::core::any::type_name::<Self>(),
                     size: ::core::mem::size_of::<Self>(),
                     alignment: ::core::mem::align_of::<Self>(),
+                    inhabited: #inhabited,
                     structure: #layout,
                 }
             };
@@ -770,6 +771,100 @@ fn uninit_for_type(
             // Unions are nieche-less blobs of bytes and all reads are unsafe
             // Unions are uninhabited if all fields are uninhabited
             quote!(::core::mem::transmute_copy(&[0x0_u8; ::core::mem::size_of::<#ty_name #ty_generics>()]))
+        },
+    }
+}
+
+fn inhabited_for_type(data: &syn::Data) -> proc_macro2::TokenStream {
+    match data {
+        syn::Data::Struct(data) => {
+            // Structs are uninhabited if any of their fields in uninhabited
+            let fields = match &data.fields {
+                syn::Fields::Named(syn::FieldsNamed { named: fields, .. })
+                | syn::Fields::Unnamed(syn::FieldsUnnamed {
+                    unnamed: fields, ..
+                }) => fields,
+                syn::Fields::Unit => {
+                    return quote!(::const_type_layout::MaybeUninhabited::Inhabited(()))
+                },
+            };
+
+            let mut inhabited = quote!(::const_type_layout::MaybeUninhabited::Inhabited(()));
+
+            for field in fields.iter() {
+                let field_ty = &field.ty;
+
+                inhabited = quote! {
+                    #inhabited.and(
+                        <#field_ty as ::const_type_layout::TypeLayout>::TYPE_LAYOUT.inhabited
+                    )
+                }
+            }
+
+            inhabited
+        },
+        syn::Data::Enum(syn::DataEnum { variants, .. }) => {
+            // Enums are uninhabited if
+            //  (a) they have no variants
+            //  (b) all their variants are uninhabited
+            //    (1) unit variants are always inhabited
+            //    (2) tuple and struct variants are uninhabited
+            //        if any of their fields are uninhabited
+
+            let mut inhabited = quote!(::const_type_layout::MaybeUninhabited::Uninhabited);
+
+            for variant in variants {
+                let inner_inhabited = match &variant.fields {
+                    syn::Fields::Named(syn::FieldsNamed { named: fields, .. })
+                    | syn::Fields::Unnamed(syn::FieldsUnnamed {
+                        unnamed: fields, ..
+                    }) => {
+                        let mut inner_inhabited =
+                            quote!(::const_type_layout::MaybeUninhabited::Inhabited(()));
+
+                        for field in fields.iter() {
+                            let field_ty = &field.ty;
+
+                            inner_inhabited = quote! {
+                                #inner_inhabited.and(
+                                    <#field_ty as ::const_type_layout::TypeLayout>::TYPE_LAYOUT.inhabited
+                                )
+                            }
+                        }
+
+                        inner_inhabited
+                    },
+                    syn::Fields::Unit => {
+                        quote!(::const_type_layout::MaybeUninhabited::Inhabited(()))
+                    },
+                };
+
+                inhabited = quote! {
+                    #inhabited.or(#inner_inhabited)
+                }
+            }
+
+            inhabited
+        },
+        syn::Data::Union(syn::DataUnion {
+            fields: syn::FieldsNamed { named: fields, .. },
+            ..
+        }) => {
+            // Unions are uninhabited if all fields are uninhabited
+
+            let mut inhabited = quote!(::const_type_layout::MaybeUninhabited::Uninhabited);
+
+            for field in fields.iter() {
+                let field_ty = &field.ty;
+
+                inhabited = quote! {
+                    #inhabited.or(
+                        <#field_ty as ::const_type_layout::TypeLayout>::TYPE_LAYOUT.inhabited
+                    )
+                }
+            }
+
+            inhabited
         },
     }
 }

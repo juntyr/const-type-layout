@@ -145,6 +145,7 @@
 #![feature(inline_const)]
 #![feature(const_eval_select)]
 #![feature(never_type)]
+#![feature(min_specialization)]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 #![doc(html_root_url = "https://momolangenstein.github.io/const-type-layout")]
@@ -163,6 +164,64 @@ mod impls;
 mod ser;
 #[cfg(feature = "serde")]
 mod serde;
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize))]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
+pub enum MaybeUninhabited<T = ()> {
+    Uninhabited,
+    Inhabited(T),
+}
+
+impl<T: Default> Default for MaybeUninhabited<T> {
+    fn default() -> Self {
+        Self::Inhabited(T::default())
+    }
+}
+
+impl<T: fmt::Debug> fmt::Debug for MaybeUninhabited<T> {
+    default fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Inhabited(val) => fmt.debug_tuple("Inhabited").field(val).finish(),
+            Self::Uninhabited => fmt.debug_struct("Uninhabited").finish(),
+        }
+    }
+}
+
+impl fmt::Debug for MaybeUninhabited {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::Inhabited(_) => fmt.debug_struct("Inhabited").finish(),
+            Self::Uninhabited => fmt.debug_struct("Uninhabited").finish(),
+        }
+    }
+}
+
+impl MaybeUninhabited {
+    #[must_use]
+    pub const fn or(self, other: Self) -> Self {
+        match (self, other) {
+            (Self::Uninhabited, Self::Uninhabited) => Self::Uninhabited,
+            _ => Self::Inhabited(()),
+        }
+    }
+
+    #[must_use]
+    pub const fn and(self, other: Self) -> Self {
+        match (self, other) {
+            (Self::Inhabited(()), Self::Inhabited(())) => Self::Inhabited(()),
+            _ => Self::Uninhabited,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize))]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
+pub enum Mutability {
+    Immutable,
+    Mutable,
+}
 
 /// # Safety
 ///
@@ -251,6 +310,7 @@ pub struct TypeLayoutInfo<
     pub name: &'a str,
     pub size: usize,
     pub alignment: usize,
+    pub inhabited: MaybeUninhabited,
     pub structure: TypeStructure<'a, F, V>,
 }
 
@@ -261,13 +321,31 @@ pub enum TypeStructure<
     F: Deref<Target = [Field<'a>]> = &'a [Field<'a>],
     V: Deref<Target = [Variant<'a, F>]> = &'a [Variant<'a, F>],
 > {
-    Struct { repr: &'a str, fields: F },
-    Union { repr: &'a str, fields: F },
-    Enum { repr: &'a str, variants: V },
+    Struct {
+        repr: &'a str,
+        fields: F,
+    },
+    Union {
+        repr: &'a str,
+        fields: F,
+    },
+    Enum {
+        repr: &'a str,
+        variants: V,
+    },
     Primitive,
-    Array { item: &'a str, len: usize },
-    Reference { inner: &'a str, mutability: bool },
-    Pointer { inner: &'a str, mutability: bool },
+    Array {
+        item: &'a str,
+        len: usize,
+    },
+    Reference {
+        inner: &'a str,
+        mutability: Mutability,
+    },
+    Pointer {
+        inner: &'a str,
+        mutability: Mutability,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]

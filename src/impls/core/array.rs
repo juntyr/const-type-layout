@@ -5,6 +5,7 @@ unsafe impl<T: ~const TypeLayout, const N: usize> const TypeLayout for [T; N] {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
+        inhabited: T::TYPE_LAYOUT.inhabited,
         structure: TypeStructure::Array {
             item: ::core::any::type_name::<T>(),
             len: N,

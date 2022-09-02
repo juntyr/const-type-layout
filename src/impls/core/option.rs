@@ -1,6 +1,6 @@
 use crate::{
-    Discriminant, Field, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
-    Variant,
+    Discriminant, Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo,
+    TypeStructure, Variant,
 };
 
 // TODO: needs specialisation for uninhabited case?
@@ -12,6 +12,7 @@ where
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
+        inhabited: MaybeUninhabited::Inhabited(()),
         structure: TypeStructure::Enum {
             repr: "",
             variants: &[

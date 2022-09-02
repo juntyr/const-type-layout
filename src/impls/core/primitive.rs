@@ -1,4 +1,6 @@
-use crate::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
+use crate::{
+    MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+};
 
 macro_rules! impl_primitive_type_layout {
     (impl $ty:ty => $val:expr) => {
@@ -7,6 +9,7 @@ macro_rules! impl_primitive_type_layout {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
+                inhabited: MaybeUninhabited::Inhabited(()),
                 structure: TypeStructure::Primitive,
             };
 
@@ -38,6 +41,7 @@ unsafe impl const TypeLayout for ! {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
+        inhabited: MaybeUninhabited::Uninhabited,
         structure: TypeStructure::Primitive,
     };
 
