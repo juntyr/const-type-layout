@@ -139,6 +139,10 @@ pub struct MyPhantomData<T> {
     marker: std::marker::PhantomData<T>,
 }
 
+#[derive(TypeLayout)]
+#[repr(transparent)]
+pub struct Wrapper(f64);
+
 fn main() {
     println!("{:#?}", Foo1::TYPE_GRAPH);
     println!("{:#?}", Foo2::TYPE_GRAPH);
@@ -191,6 +195,8 @@ fn main() {
     println!("{:#?}", <Reference<i32>>::TYPE_GRAPH);
     println!("{:#?}", <MutReference<u32>>::TYPE_GRAPH);
     println!("{:#?}", <Referencing<&'static u8>>::TYPE_GRAPH);
+
+    println!("{:#?}", <Wrapper>::TYPE_GRAPH);
 
     non_static_ref(&0);
 
