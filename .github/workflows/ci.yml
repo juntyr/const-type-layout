@@ -30,21 +30,16 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
+          profile: minimal
           override: true
 
-      - name: Check without default features
-        run: |
-          cargo check --all \
-            --no-default-features
+      - name: Install power tools
+        uses: taiki-e/install-action@cargo-hack
 
-      - name: Check with the default features
+      - name: Check the powerset
         run: |
-          cargo check --all
-
-      - name: Check with all features
-        run: |
-          cargo check --all \
-            --all-features
+          cargo hack check --all \
+            --feature-powerset --keep-going
 
   test:
     name: Test Suite
@@ -62,11 +57,16 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
+          profile: minimal
           override: true
+
+      - name: Install power tools
+        uses: taiki-e/install-action@cargo-hack
       
-      - name: Run the test-suite
+      - name: Run the test-suite powerset
         run: |
-          cargo test --workspace --no-fail-fast
+          cargo hack test --workspace \
+            --no-fail-fast --feature-powerset --keep-going
 
   fmt:
     name: Rustfmt
@@ -80,6 +80,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
+          profile: minimal
           components: rustfmt
           override: true
 
@@ -102,22 +103,49 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ matrix.rust }}
+          profile: minimal
           components: clippy
           override: true
 
-      - name: Check the code style without default features
+      - name: Install power tools
+        uses: taiki-e/install-action@cargo-hack
+
+      - name: Check the code style powerset
         run: |
-          cargo clippy --all \
-            --no-default-features \
+          cargo hack clippy --all \
+            --feature-powerset --keep-going \
             -- -D warnings
 
-      - name: Check the code style with the default features
-        run: |
-          cargo clippy --all \
-            -- -D warnings
+  miri:
+    name: Miri
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        rust: [nightly]
 
-      - name: Check the code style with all features
+    steps:
+      - name: Checkout the Repository
+        uses: actions/checkout@v2
+
+      - name: Install the Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          profile: minimal
+          components: miri, rust-src
+          override: true
+
+      - name: Install power tools
+        uses: taiki-e/install-action@cargo-hack
+
+      - name: Run the miri powerset tests
         run: |
-          cargo clippy --all \
-            --all-features \
-            -- -D warnings
+          cargo hack miri test --workspace \
+            --no-fail-fast --feature-powerset --keep-going
+
+      - name: Run the miri trycrate powerset
+        run: |
+          cd try-crate
+          cargo hack miri run \
+            --feature-powerset --keep-going

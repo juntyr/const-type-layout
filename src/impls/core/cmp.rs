@@ -1,6 +1,8 @@
-use crate::{Field, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
+use crate::{
+    Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+};
 
-unsafe impl<T> const TypeLayout for core::cmp::Reverse<T> {
+unsafe impl<T: ~const TypeLayout> const TypeLayout for core::cmp::Reverse<T> {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -9,11 +11,20 @@ unsafe impl<T> const TypeLayout for core::cmp::Reverse<T> {
             repr: "transparent",
             fields: &[Field {
                 name: "0",
-                offset: 0,
+                offset: unsafe { <T as TypeLayout>::uninit() }.map(0),
                 ty: ::core::any::type_name::<T>(),
             }],
         },
     };
+
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        match <T as TypeLayout>::uninit() {
+            MaybeUninhabited::Uninhabited => MaybeUninhabited::Uninhabited,
+            MaybeUninhabited::Inhabited(uninit) => {
+                MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(Self(uninit.assume_init())))
+            },
+        }
+    }
 }
 
 unsafe impl<T: ~const TypeGraph> const TypeGraph for core::cmp::Reverse<T> {

@@ -1,84 +1,10 @@
 use crate::{
-    Discriminant, Field, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+    Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
     Variant,
 };
 
-trait ResultDiscriminant: Sized
-where
-    [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
-{
-    const OK_DISCRIMINANT_BYTES: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()];
-    const ERR_DISCRIMINANT_BYTES: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()];
-}
-
-impl<T, E> ResultDiscriminant for Result<T, E>
-where
-    [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
-{
-    const ERR_DISCRIMINANT_BYTES: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = unsafe {
-        let mut value: core::mem::MaybeUninit<E> = core::mem::MaybeUninit::uninit();
-
-        let mut i = 0;
-        while i < core::mem::size_of::<E>() {
-            *value.as_mut_ptr().cast::<u8>().add(i) = 0xFF_u8;
-            i += 1;
-        }
-
-        let err: core::mem::MaybeUninit<Self> =
-            core::mem::MaybeUninit::new(Err(value.assume_init()));
-
-        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] =
-            core::mem::transmute(core::mem::discriminant(err.assume_init_ref()));
-
-        let mut big_endian_bytes = [0_u8; core::mem::size_of::<core::mem::Discriminant<Self>>()];
-
-        let mut i = 0;
-
-        while i < system_endian_bytes.len() {
-            big_endian_bytes[i] = system_endian_bytes[if cfg!(target_endian = "big") {
-                i
-            } else {
-                system_endian_bytes.len() - i - 1
-            }];
-
-            i += 1;
-        }
-
-        big_endian_bytes
-    };
-    const OK_DISCRIMINANT_BYTES: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] = unsafe {
-        let mut value: core::mem::MaybeUninit<T> = core::mem::MaybeUninit::uninit();
-
-        let mut i = 0;
-        while i < core::mem::size_of::<T>() {
-            *value.as_mut_ptr().cast::<u8>().add(i) = 0xFF_u8;
-            i += 1;
-        }
-
-        let ok: core::mem::MaybeUninit<Self> = core::mem::MaybeUninit::new(Ok(value.assume_init()));
-
-        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()] =
-            core::mem::transmute(core::mem::discriminant(ok.assume_init_ref()));
-
-        let mut big_endian_bytes = [0_u8; core::mem::size_of::<core::mem::Discriminant<Self>>()];
-
-        let mut i = 0;
-
-        while i < system_endian_bytes.len() {
-            big_endian_bytes[i] = system_endian_bytes[if cfg!(target_endian = "big") {
-                i
-            } else {
-                system_endian_bytes.len() - i - 1
-            }];
-
-            i += 1;
-        }
-
-        big_endian_bytes
-    };
-}
-
-unsafe impl<T, E> const TypeLayout for core::result::Result<T, E>
+unsafe impl<T: ~const TypeLayout, E: ~const TypeLayout> const TypeLayout
+    for core::result::Result<T, E>
 where
     [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
 {
@@ -91,74 +17,49 @@ where
             variants: &[
                 Variant {
                     name: "Ok",
-                    discriminant: Discriminant {
-                        big_endian_bytes: &<Self as ResultDiscriminant>::OK_DISCRIMINANT_BYTES,
-                    },
+                    discriminant: crate::struct_variant_discriminant!(
+                        Result => Result<T, E> => Ok(f_0: T)
+                    ),
                     fields: &[Field {
                         name: "0",
-                        offset: unsafe {
-                            let mut value: core::mem::MaybeUninit<T> =
-                                core::mem::MaybeUninit::uninit();
-
-                            let mut i = 0;
-                            while i < core::mem::size_of::<T>() {
-                                *value.as_mut_ptr().cast::<u8>().add(i) = 0xFF_u8;
-                                i += 1;
-                            }
-
-                            let ok: core::mem::MaybeUninit<Self> =
-                                core::mem::MaybeUninit::new(Ok(value.assume_init()));
-
-                            #[allow(clippy::cast_sign_loss)]
-                            match ok.assume_init_ref() {
-                                Ok(val) => (val as *const T)
-                                    .cast::<u8>()
-                                    .offset_from(ok.as_ptr().cast())
-                                    as usize,
-                                _ => unreachable!(),
-                            }
-                        },
+                        offset: crate::struct_variant_field_offset!(Result => Result<T, E> => Ok(f_0: T) => 0),
                         ty: ::core::any::type_name::<T>(),
                     }],
                 },
                 Variant {
                     name: "Err",
-                    discriminant: Discriminant {
-                        big_endian_bytes: &<Self as ResultDiscriminant>::ERR_DISCRIMINANT_BYTES,
-                    },
+                    discriminant: crate::struct_variant_discriminant!(
+                        Result => Result<T, E> => Err(f_0: E)
+                    ),
                     fields: &[Field {
                         name: "0",
-                        offset: unsafe {
-                            let mut value: core::mem::MaybeUninit<E> =
-                                core::mem::MaybeUninit::uninit();
-
-                            let mut i = 0;
-                            while i < core::mem::size_of::<E>() {
-                                *value.as_mut_ptr().cast::<u8>().add(i) = 0xFF_u8;
-                                i += 1;
-                            }
-
-                            let err: core::mem::MaybeUninit<Self> =
-                                core::mem::MaybeUninit::new(Err(value.assume_init()));
-
-                            #[allow(clippy::cast_sign_loss)]
-                            match err.assume_init_ref() {
-                                Err(val) => (val as *const E)
-                                    .cast::<u8>()
-                                    .offset_from(err.as_ptr().cast())
-                                    as usize,
-                                _ => unreachable!(),
-                            }
-                        },
+                        offset: crate::struct_variant_field_offset!(Result => Result<T, E> => Err(f_0: E) => 0),
                         ty: ::core::any::type_name::<E>(),
                     }],
                 },
             ],
         },
     };
+
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        if let MaybeUninhabited::Inhabited(uninit) = <T as TypeLayout>::uninit() {
+            return MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(Ok(
+                uninit.assume_init()
+            )));
+        }
+
+        if let MaybeUninhabited::Inhabited(uninit) = <E as TypeLayout>::uninit() {
+            return MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(Err(
+                uninit.assume_init()
+            )));
+        }
+
+        MaybeUninhabited::Uninhabited
+    }
 }
 
-unsafe impl<T: ~const TypeGraph, E: ~const TypeGraph> const TypeGraph for core::result::Result<T, E>
+unsafe impl<T: ~const TypeGraph + ~const TypeLayout, E: ~const TypeGraph + ~const TypeLayout> const
+    TypeGraph for core::result::Result<T, E>
 where
     [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
 {
