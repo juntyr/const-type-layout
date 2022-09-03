@@ -47,6 +47,18 @@ union SingleUnion {
     a: u8,
 }
 
+#[derive(TypeLayout)]
+#[layout(ground = "b")]
+union RecursiveRef<'a> {
+    a: &'a RecursiveRef<'a>,
+    b: (),
+}
+
+#[derive(TypeLayout)]
+union RecursivePtr {
+    a: *const RecursivePtr,
+}
+
 #[allow(clippy::empty_enum)]
 #[derive(TypeLayout)]
 enum Never {}
@@ -89,15 +101,15 @@ enum List<T> {
     Tail,
 }
 
-// TODO: allow an arbitrary variant order
 #[derive(TypeLayout)]
+#[layout(ground = "Leaf")]
 enum Tree<T> {
-    Leaf {
-        item: T,
-    },
     Node {
         left: Box<Tree<T>>,
         right: Box<Tree<T>>,
+    },
+    Leaf {
+        item: T,
     },
 }
 
@@ -135,6 +147,8 @@ fn main() {
 
     println!("{:#?}", Bar::TYPE_GRAPH);
     println!("{:#?}", SingleUnion::TYPE_GRAPH);
+    println!("{:#?}", RecursiveRef::<'static>::TYPE_GRAPH);
+    println!("{:#?}", RecursivePtr::TYPE_GRAPH);
 
     println!("{:#?}", Never::TYPE_GRAPH);
     println!("{:#?}", Single::TYPE_GRAPH);

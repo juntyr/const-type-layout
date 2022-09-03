@@ -36,10 +36,11 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     let Attributes {
         reprs,
         extra_bounds,
-    } = parse_attributes(&input.attrs, &mut type_params);
+        ground,
+    } = parse_attributes(&input.attrs, &mut type_params, &input.data);
 
     let layout = layout_of_type(&ty_name, &ty_generics, &input.data, &reprs);
-    let uninit = uninit_for_type(&ty_name, &input.data);
+    let uninit = uninit_for_type(&ty_name, &input.data, &ground);
 
     let inner_types = extract_inner_types(&input.data);
 
@@ -95,14 +96,48 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
 struct Attributes {
     reprs: String,
     extra_bounds: Vec<syn::WherePredicate>,
+    ground: Vec<syn::Ident>,
 }
 
 #[allow(clippy::too_many_lines)]
-fn parse_attributes(attrs: &[syn::Attribute], type_params: &mut Vec<&syn::Ident>) -> Attributes {
+fn parse_attributes(
+    attrs: &[syn::Attribute],
+    type_params: &mut Vec<&syn::Ident>,
+    data: &syn::Data,
+) -> Attributes {
     // Could parse based on https://github.com/rust-lang/rust/blob/d13e8dd41d44a73664943169d5b7fe39b22c449f/compiler/rustc_attr/src/builtin.rs#L772-L781 instead
     let mut reprs = Vec::new();
 
     let mut extra_bounds: Vec<syn::WherePredicate> = Vec::new();
+
+    let mut ground = match data {
+        syn::Data::Struct(_) => Vec::new(),
+        syn::Data::Enum(syn::DataEnum { variants, .. }) => {
+            let mut ground = Vec::with_capacity(variants.len());
+
+            for variant in variants {
+                if matches!(variant.fields, syn::Fields::Unit) {
+                    ground.push(variant.ident.clone());
+                }
+            }
+
+            for variant in variants {
+                if !matches!(variant.fields, syn::Fields::Unit) {
+                    ground.push(variant.ident.clone());
+                }
+            }
+
+            ground
+        },
+        syn::Data::Union(syn::DataUnion {
+            fields: syn::FieldsNamed { named: fields, .. },
+            ..
+        }) => fields
+            .iter()
+            .map(|field| field.ident.clone().unwrap())
+            .collect(),
+    };
+    let mut groundier = Vec::with_capacity(ground.len());
 
     for attr in attrs {
         if attr.path.is_ident("repr") {
@@ -161,10 +196,63 @@ fn parse_attributes(attrs: &[syn::Attribute], type_params: &mut Vec<&syn::Ident>
                                     err
                                 ),
                             }
+                        } else if path.is_ident("ground") {
+                            match syn::parse_str(&s.value()) {
+                                Ok(g) => match data {
+                                    syn::Data::Struct(_) => emit_error!(
+                                        path.span(),
+                                        "[const-type-layout]: Invalid #[layout(ground)] \
+                                         attribute: structs do not have a ground layout."
+                                    ),
+                                    syn::Data::Union(_) | syn::Data::Enum(_) => {
+                                        let g: syn::Ident = g;
+
+                                        if let Some(i) = ground.iter().position(|e| e == &g) {
+                                            let g = ground.remove(i);
+                                            groundier.push(g);
+                                        } else if groundier.contains(&g) {
+                                            emit_error!(
+                                                path.span(),
+                                                "[const-type-layout]: Duplicate #[layout(ground = \
+                                                 \"{}\")] attribute.",
+                                                g
+                                            );
+                                        } else {
+                                            emit_error!(
+                                                path.span(),
+                                                "[const-type-layout]: Invalid #[layout(ground)] \
+                                                 attribute: \"{}\" is not a {} in this {}.",
+                                                g,
+                                                match data {
+                                                    syn::Data::Enum(_) => "variant",
+                                                    syn::Data::Struct(_) | syn::Data::Union(_) =>
+                                                        "field",
+                                                },
+                                                match data {
+                                                    syn::Data::Enum(_) => "enum",
+                                                    syn::Data::Struct(_) | syn::Data::Union(_) =>
+                                                        "union",
+                                                },
+                                            );
+                                        }
+                                    },
+                                },
+                                Err(err) => emit_error!(
+                                    s.span(),
+                                    "[const-type-layout]: Invalid #[layout(ground = \"{}\")] \
+                                     attribute: {}.",
+                                    match data {
+                                        syn::Data::Enum(_) => "variant",
+                                        syn::Data::Struct(_) | syn::Data::Union(_) => "field",
+                                    },
+                                    err
+                                ),
+                            }
                         } else {
                             emit_error!(
                                 path.span(),
-                                "[const-type-layout]: Unknown attribute, use `bound` or `free`."
+                                "[const-type-layout]: Unknown attribute, use `bound`, `free`, or \
+                                 `ground`."
                             );
                         }
                     } else {
@@ -193,9 +281,12 @@ fn parse_attributes(attrs: &[syn::Attribute], type_params: &mut Vec<&syn::Ident>
         .intersperse(String::from(","))
         .collect::<String>();
 
+    groundier.extend(ground);
+
     Attributes {
         reprs,
         extra_bounds,
+        ground: groundier,
     }
 }
 
@@ -587,7 +678,11 @@ fn quote_discriminant(
 }
 
 #[allow(clippy::too_many_lines)]
-fn uninit_for_type(ty_name: &syn::Ident, data: &syn::Data) -> proc_macro2::TokenStream {
+fn uninit_for_type(
+    ty_name: &syn::Ident,
+    data: &syn::Data,
+    ground: &[syn::Ident],
+) -> proc_macro2::TokenStream {
     match data {
         syn::Data::Struct(data) => {
             // Structs are uninhabited if any of their fields in uninhabited
@@ -656,7 +751,7 @@ fn uninit_for_type(ty_name: &syn::Ident, data: &syn::Data) -> proc_macro2::Token
             //    (2) tuple and struct variants are uninhabited
             //        if any of their fields are uninhabited
 
-            let variant_initialisers = variants.iter().map(|syn::Variant {
+            let variant_initialisers = ground.iter().filter_map(|g| variants.iter().find(|v| &v.ident == g)).map(|syn::Variant {
                 ident: variant_name,
                 fields: variant_fields,
                 ..
@@ -732,8 +827,9 @@ fn uninit_for_type(ty_name: &syn::Ident, data: &syn::Data) -> proc_macro2::Token
         }) => {
             // Unions are uninhabited if all fields are uninhabited
 
-            let (field_names, field_initialisers) = fields
+            let (field_names, field_initialisers) = ground
                 .iter()
+                .filter_map(|g| fields.iter().find(|f| f.ident.as_ref() == Some(g)))
                 .map(
                     |syn::Field {
                          ident: field_name,

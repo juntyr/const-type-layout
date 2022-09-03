@@ -1,6 +1,6 @@
 use crate::{
-    impls::leak_uninit_ptr, MaybeUninhabited, Mutability, TypeGraph, TypeLayout, TypeLayoutGraph,
-    TypeLayoutInfo, TypeStructure,
+    MaybeUninhabited, Mutability, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo,
+    TypeStructure,
 };
 
 unsafe impl<T: ~const TypeLayout> const TypeLayout for *const T {
@@ -15,7 +15,9 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for *const T {
     };
 
     unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(leak_uninit_ptr()))
+        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(
+            core::ptr::NonNull::dangling().as_ptr(),
+        ))
     }
 }
 
@@ -39,7 +41,9 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for *mut T {
     };
 
     unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(leak_uninit_ptr()))
+        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(
+            core::ptr::NonNull::dangling().as_ptr(),
+        ))
     }
 }
 
@@ -63,9 +67,7 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::ptr::NonNull<T> {
     };
 
     unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(
-            core::ptr::NonNull::new_unchecked(leak_uninit_ptr()),
-        ))
+        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(core::ptr::NonNull::dangling()))
     }
 }
 

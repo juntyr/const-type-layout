@@ -15,7 +15,6 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for alloc::boxed::Box<T> {
     };
 
     unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-        // TODO: Handle infinite recursion case
         if let MaybeUninhabited::Uninhabited = <T as TypeLayout>::uninit() {
             return MaybeUninhabited::Uninhabited;
         }
