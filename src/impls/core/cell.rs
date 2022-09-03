@@ -1,23 +1,29 @@
-use crate::{Field, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
+use crate::{
+    Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+};
 
 unsafe impl<T: ~const TypeLayout> const TypeLayout for core::cell::UnsafeCell<T> {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
-        inhabited: T::TYPE_LAYOUT.inhabited,
         structure: TypeStructure::Struct {
             repr: "no_nieche,transparent",
             fields: &[Field {
                 name: "value",
-                offset: 0,
+                offset: unsafe { <T as TypeLayout>::uninit() }.map(0),
                 ty: ::core::any::type_name::<T>(),
             }],
         },
     };
 
-    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-        core::mem::MaybeUninit::new(Self::new(T::uninit().assume_init()))
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        match <T as TypeLayout>::uninit() {
+            MaybeUninhabited::Uninhabited => MaybeUninhabited::Uninhabited,
+            MaybeUninhabited::Inhabited(uninit) => MaybeUninhabited::Inhabited(
+                core::mem::MaybeUninit::new(Self::new(uninit.assume_init())),
+            ),
+        }
     }
 }
 
@@ -34,19 +40,23 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::cell::Cell<T> {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
-        inhabited: T::TYPE_LAYOUT.inhabited,
         structure: TypeStructure::Struct {
             repr: "transparent",
             fields: &[Field {
                 name: "value",
-                offset: 0,
+                offset: unsafe { <T as TypeLayout>::uninit() }.map(0),
                 ty: ::core::any::type_name::<core::cell::UnsafeCell<T>>(),
             }],
         },
     };
 
-    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-        core::mem::MaybeUninit::new(Self::new(T::uninit().assume_init()))
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        match <T as TypeLayout>::uninit() {
+            MaybeUninhabited::Uninhabited => MaybeUninhabited::Uninhabited,
+            MaybeUninhabited::Inhabited(uninit) => MaybeUninhabited::Inhabited(
+                core::mem::MaybeUninit::new(Self::new(uninit.assume_init())),
+            ),
+        }
     }
 }
 

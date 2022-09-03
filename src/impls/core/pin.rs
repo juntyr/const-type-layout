@@ -1,23 +1,29 @@
-use crate::{Field, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
+use crate::{
+    Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+};
 
 unsafe impl<T: ~const TypeLayout + core::ops::Deref> const TypeLayout for core::pin::Pin<T> {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
-        inhabited: T::TYPE_LAYOUT.inhabited,
         structure: TypeStructure::Struct {
             repr: "transparent",
             fields: &[Field {
                 name: "pointer",
-                offset: 0,
+                offset: unsafe { <T as TypeLayout>::uninit() }.map(0),
                 ty: ::core::any::type_name::<T>(),
             }],
         },
     };
 
-    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-        core::mem::MaybeUninit::new(Self::new_unchecked(T::uninit().assume_init()))
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        match <T as TypeLayout>::uninit() {
+            MaybeUninhabited::Uninhabited => MaybeUninhabited::Uninhabited,
+            MaybeUninhabited::Inhabited(uninit) => MaybeUninhabited::Inhabited(
+                core::mem::MaybeUninit::new(Self::new_unchecked(uninit.assume_init())),
+            ),
+        }
     }
 }
 

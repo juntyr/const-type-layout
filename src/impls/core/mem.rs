@@ -7,19 +7,23 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::mem::ManuallyDrop<T
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
-        inhabited: T::TYPE_LAYOUT.inhabited,
         structure: TypeStructure::Struct {
             repr: "transparent",
             fields: &[Field {
                 name: "value",
-                offset: 0,
+                offset: unsafe { <T as TypeLayout>::uninit() }.map(0),
                 ty: ::core::any::type_name::<T>(),
             }],
         },
     };
 
-    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-        core::mem::MaybeUninit::new(Self::new(T::uninit().assume_init()))
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        match <T as TypeLayout>::uninit() {
+            MaybeUninhabited::Uninhabited => MaybeUninhabited::Uninhabited,
+            MaybeUninhabited::Inhabited(uninit) => MaybeUninhabited::Inhabited(
+                core::mem::MaybeUninit::new(Self::new(uninit.assume_init())),
+            ),
+        }
     }
 }
 
@@ -36,26 +40,25 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::mem::MaybeUninit<T>
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
-        inhabited: MaybeUninhabited::Inhabited(()),
         structure: TypeStructure::Union {
             repr: "transparent",
             fields: &[
                 Field {
                     name: "uninit",
-                    offset: 0,
+                    offset: MaybeUninhabited::Inhabited(0),
                     ty: ::core::any::type_name::<()>(),
                 },
                 Field {
                     name: "value",
-                    offset: 0,
-                    ty: ::core::any::type_name::<T>(),
+                    offset: unsafe { <T as TypeLayout>::uninit() }.map(0),
+                    ty: ::core::any::type_name::<core::mem::ManuallyDrop<T>>(),
                 },
             ],
         },
     };
 
-    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-        core::mem::MaybeUninit::new(T::uninit())
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(core::mem::MaybeUninit::uninit()))
     }
 }
 
@@ -63,7 +66,7 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for core::mem::MaybeUninit<T> {
     fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
         if graph.insert(&Self::TYPE_LAYOUT) {
             <() as TypeGraph>::populate_graph(graph);
-            <T as TypeGraph>::populate_graph(graph);
+            <core::mem::ManuallyDrop<T> as TypeGraph>::populate_graph(graph);
         }
     }
 }

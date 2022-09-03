@@ -1,9 +1,8 @@
 use crate::{
-    Discriminant, Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo,
-    TypeStructure, Variant,
+    Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+    Variant,
 };
 
-// TODO: needs specialisation for uninhabited case?
 unsafe impl<T: ~const TypeLayout> const TypeLayout for core::option::Option<T>
 where
     [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
@@ -12,29 +11,24 @@ where
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
-        inhabited: MaybeUninhabited::Inhabited(()),
         structure: TypeStructure::Enum {
             repr: "",
             variants: &[
                 Variant {
                     name: "None",
-                    discriminant: Discriminant {
-                        big_endian_bytes: &crate::struct_variant_discriminant!(
-                            Option => Option<T> => None
-                        ),
-                    },
+                    discriminant: crate::struct_variant_discriminant!(
+                        Option => Option<T> => None
+                    ),
                     fields: &[],
                 },
                 Variant {
                     name: "Some",
-                    discriminant: Discriminant {
-                        big_endian_bytes: &crate::struct_variant_discriminant!(
-                            Option => Option<T> => Some(T)
-                        ),
-                    },
+                    discriminant: crate::struct_variant_discriminant!(
+                        Option => Option<T> => Some(f_0: T)
+                    ),
                     fields: &[Field {
                         name: "0",
-                        offset: crate::struct_variant_field_offset!(Option => Option<T> => Some(T) => 0),
+                        offset: crate::struct_variant_field_offset!(Option => Option<T> => Some(f_0: T) => 0),
                         ty: ::core::any::type_name::<T>(),
                     }],
                 },
@@ -42,8 +36,8 @@ where
         },
     };
 
-    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-        core::mem::MaybeUninit::new(None)
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(None))
     }
 }
 

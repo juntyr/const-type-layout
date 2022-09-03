@@ -9,12 +9,11 @@ macro_rules! impl_primitive_type_layout {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
-                inhabited: MaybeUninhabited::Inhabited(()),
                 structure: TypeStructure::Primitive,
             };
 
-            unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-                core::mem::MaybeUninit::new($val)
+            unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+                MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new($val))
             }
         }
 
@@ -41,12 +40,11 @@ unsafe impl const TypeLayout for ! {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
-        inhabited: MaybeUninhabited::Uninhabited,
         structure: TypeStructure::Primitive,
     };
 
-    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-        panic!("cannot construct the never type")
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        MaybeUninhabited::Uninhabited
     }
 }
 

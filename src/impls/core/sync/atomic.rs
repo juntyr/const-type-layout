@@ -11,21 +11,22 @@ macro_rules! impl_atomic_int_layout {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
-                inhabited: MaybeUninhabited::Inhabited(()),
                 structure: TypeStructure::Struct {
                     repr: concat!("C,align(", $align, ")"),
                     fields: &[
                         Field {
                             name: "v",
-                            offset: 0,
+                            offset: MaybeUninhabited::Inhabited(0),
                             ty: core::any::type_name::<core::cell::UnsafeCell<$ty>>(),
                         },
                     ],
                 },
             };
 
-            unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-                core::mem::MaybeUninit::new(Self::new($val))
+            unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+                MaybeUninhabited::Inhabited(
+                    core::mem::MaybeUninit::new(Self::new($val))
+                )
             }
         }
 
@@ -61,21 +62,22 @@ macro_rules! impl_atomic_int_ptr_sized_layout {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
-                inhabited: MaybeUninhabited::Inhabited(()),
                 structure: TypeStructure::Struct {
                     repr: concat!("C,align(", $align, ")"),
                     fields: &[
                         Field {
                             name: "v",
-                            offset: 0,
+                            offset: MaybeUninhabited::Inhabited(0),
                             ty: core::any::type_name::<core::cell::UnsafeCell<$ty>>(),
                         },
                     ],
                 },
             };
 
-            unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-                core::mem::MaybeUninit::new(Self::new($val))
+            unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+                MaybeUninhabited::Inhabited(
+                    core::mem::MaybeUninit::new(Self::new($val))
+                )
             }
         }
 
@@ -110,23 +112,22 @@ macro_rules! impl_atomic_ptr_layout {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
-                inhabited: MaybeUninhabited::Inhabited(()),
                 structure: TypeStructure::Struct {
                     repr: concat!("C,align(", $align, ")"),
                     fields: &[
                         Field {
                             name: "v",
-                            offset: 0,
+                            offset: MaybeUninhabited::Inhabited(0),
                             ty: core::any::type_name::<core::cell::UnsafeCell<*mut T>>(),
                         },
                     ],
                 },
             };
 
-            unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-                core::mem::MaybeUninit::new(
+            unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+                MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(
                     Self::new(leak_uninit_ptr())
-                )
+                ))
             }
         }
 

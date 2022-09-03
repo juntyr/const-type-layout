@@ -8,15 +8,18 @@ unsafe impl<'a, T: ~const TypeLayout + 'a> const TypeLayout for &'a T {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
-        inhabited: MaybeUninhabited::Inhabited(()),
         structure: TypeStructure::Reference {
             inner: ::core::any::type_name::<T>(),
             mutability: Mutability::Immutable,
         },
     };
 
-    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-        core::mem::MaybeUninit::new(&*leak_uninit_ptr())
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        if let MaybeUninhabited::Uninhabited = <T as TypeLayout>::uninit() {
+            return MaybeUninhabited::Uninhabited;
+        }
+
+        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(&*leak_uninit_ptr()))
     }
 }
 
@@ -33,15 +36,18 @@ unsafe impl<'a, T: ~const TypeLayout + 'a> const TypeLayout for &'a mut T {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
-        inhabited: MaybeUninhabited::Inhabited(()),
         structure: TypeStructure::Reference {
             inner: ::core::any::type_name::<T>(),
             mutability: Mutability::Mutable,
         },
     };
 
-    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-        core::mem::MaybeUninit::new(&mut *leak_uninit_ptr())
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        if let MaybeUninhabited::Uninhabited = <T as TypeLayout>::uninit() {
+            return MaybeUninhabited::Uninhabited;
+        }
+
+        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(&mut *leak_uninit_ptr()))
     }
 }
 

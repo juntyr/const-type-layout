@@ -1,9 +1,10 @@
-use crate::TypeLayout;
+use crate::{MaybeUninhabited, TypeLayout};
 
 mod alloc;
 mod core;
 
-const unsafe fn leak_uninit_ptr<T: ~const TypeLayout>() -> *mut T {
+#[doc(hidden)]
+pub const unsafe fn leak_uninit_ptr<T: ~const TypeLayout>() -> *mut T {
     const fn alloc_comptime<T>() -> *mut T {
         unsafe {
             ::core::intrinsics::const_allocate(
@@ -20,7 +21,9 @@ const unsafe fn leak_uninit_ptr<T: ~const TypeLayout>() -> *mut T {
 
     let ptr = ::core::intrinsics::const_eval_select((), alloc_comptime, alloc_runtime);
 
-    ::core::ptr::write(ptr, <T as TypeLayout>::uninit().assume_init());
+    if let MaybeUninhabited::Inhabited(uninit) = <T as TypeLayout>::uninit() {
+        ::core::ptr::write(ptr, uninit.assume_init());
+    }
 
     ptr
 }

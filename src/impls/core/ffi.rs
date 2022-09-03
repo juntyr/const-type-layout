@@ -7,15 +7,14 @@ unsafe impl const TypeLayout for core::ffi::c_void {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
-        inhabited: MaybeUninhabited::Uninhabited,
         structure: TypeStructure::Enum {
             repr: "u8",
             variants: &[],
         },
     };
 
-    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-        panic!("cannot construct core::ffi::c_void")
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        MaybeUninhabited::Uninhabited
     }
 }
 

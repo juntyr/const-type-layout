@@ -36,12 +36,10 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     let Attributes {
         reprs,
         extra_bounds,
-        ground,
-    } = parse_attributes(&input.attrs, &mut type_params, &input.data);
+    } = parse_attributes(&input.attrs, &mut type_params);
 
-    let inhabited = inhabited_for_type(&input.data);
     let layout = layout_of_type(&ty_name, &ty_generics, &input.data, &reprs);
-    let uninit = uninit_for_type(&ty_name, &ty_generics, &input.data, ground.as_ref());
+    let uninit = uninit_for_type(&ty_name, &input.data);
 
     let inner_types = extract_inner_types(&input.data);
 
@@ -70,16 +68,14 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
                     name: ::core::any::type_name::<Self>(),
                     size: ::core::mem::size_of::<Self>(),
                     alignment: ::core::mem::align_of::<Self>(),
-                    inhabited: #inhabited,
                     structure: #layout,
                 }
             };
 
-            #[allow(unreachable_code)]
-            unsafe fn uninit() -> ::core::mem::MaybeUninit<Self> {
-                ::core::mem::MaybeUninit::new(
-                    #uninit
-                )
+            unsafe fn uninit() -> ::const_type_layout::MaybeUninhabited<
+                ::core::mem::MaybeUninit<Self>
+            > {
+                #uninit
             }
         }
 
@@ -99,21 +95,14 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
 struct Attributes {
     reprs: String,
     extra_bounds: Vec<syn::WherePredicate>,
-    ground: Option<syn::Ident>,
 }
 
 #[allow(clippy::too_many_lines)]
-fn parse_attributes(
-    attrs: &[syn::Attribute],
-    type_params: &mut Vec<&syn::Ident>,
-    data: &syn::Data,
-) -> Attributes {
+fn parse_attributes(attrs: &[syn::Attribute], type_params: &mut Vec<&syn::Ident>) -> Attributes {
     // Could parse based on https://github.com/rust-lang/rust/blob/d13e8dd41d44a73664943169d5b7fe39b22c449f/compiler/rustc_attr/src/builtin.rs#L772-L781 instead
     let mut reprs = Vec::new();
 
     let mut extra_bounds: Vec<syn::WherePredicate> = Vec::new();
-
-    let mut ground = None;
 
     for attr in attrs {
         if attr.path.is_ident("repr") {
@@ -172,60 +161,10 @@ fn parse_attributes(
                                     err
                                 ),
                             }
-                        } else if path.is_ident("ground") {
-                            match syn::parse_str(&s.value()) {
-                                Ok(g) => match data {
-                                    syn::Data::Struct(_) => emit_error!(
-                                        path.span(),
-                                        "[const-type-layout]: Invalid #[layout(ground)] \
-                                         attribute: structs do not have a ground layout."
-                                    ),
-                                    syn::Data::Union(_) => emit_error!(
-                                        path.span(),
-                                        "[const-type-layout]: Invalid #[layout(ground)] \
-                                         attribute: unions do not need an explicit ground layout."
-                                    ),
-                                    syn::Data::Enum(syn::DataEnum { variants, .. }) => {
-                                        let mut found = false;
-
-                                        for variant in variants {
-                                            if variant.ident == g {
-                                                found = true;
-                                            }
-                                        }
-
-                                        if found {
-                                            if ground.is_some() {
-                                                emit_error!(
-                                                    path.span(),
-                                                    "[const-type-layout]: Duplicate \
-                                                     #[layout(ground)] attribute."
-                                                );
-                                            } else {
-                                                ground = Some(g);
-                                            }
-                                        } else {
-                                            emit_error!(
-                                                path.span(),
-                                                "[const-type-layout]: Invalid #[layout(ground)] \
-                                                 attribute: \"{}\" is not a variant in this enum.",
-                                                g
-                                            );
-                                        }
-                                    },
-                                },
-                                Err(err) => emit_error!(
-                                    s.span(),
-                                    "[const-type-layout]: Invalid #[layout(bound = \"variant\")] \
-                                     attribute: {}.",
-                                    err
-                                ),
-                            }
                         } else {
                             emit_error!(
                                 path.span(),
-                                "[const-type-layout]: Unknown attribute, use `bound`, `free`, or \
-                                 `ground`."
+                                "[const-type-layout]: Unknown attribute, use `bound` or `free`."
                             );
                         }
                     } else {
@@ -244,37 +183,6 @@ fn parse_attributes(
         }
     }
 
-    if ground.is_none() {
-        match data {
-            syn::Data::Struct(_) | syn::Data::Union(_) => (),
-            syn::Data::Enum(syn::DataEnum {
-                enum_token,
-                variants,
-                ..
-            }) => {
-                if variants.len() == 1 {
-                    if let Some(variant) = variants.first() {
-                        ground = Some(variant.ident.clone());
-                    }
-                }
-
-                for variant in variants {
-                    if matches!(variant.fields, syn::Fields::Unit) {
-                        ground = Some(variant.ident.clone());
-                    }
-                }
-
-                if ground.is_none() && !variants.is_empty() {
-                    emit_error!(
-                        enum_token.span(),
-                        "[const-type-layout]: multi-variant enums without any unit variant \
-                         require an explicit #[layout(ground = \"variant\")] attribute."
-                    );
-                }
-            },
-        }
-    }
-
     proc_macro_error::abort_if_dirty();
 
     reprs.sort();
@@ -288,7 +196,6 @@ fn parse_attributes(
     Attributes {
         reprs,
         extra_bounds,
-        ground,
     }
 }
 
@@ -539,15 +446,13 @@ fn quote_enum_variants(
 
             let fields = quote_variant_fields(ty_name, ty_generics, variant_name, &variant.fields);
 
-            let discriminant_bytes =
-                quote_discriminant_bytes(ty_name, ty_generics, variant_name, &variant.fields);
+            let discriminant =
+                quote_discriminant(ty_name, ty_generics, variant_name, &variant.fields);
 
             quote! {
                 ::const_type_layout::Variant {
                     name: #variant_name_str,
-                    discriminant: ::const_type_layout::Discriminant {
-                        big_endian_bytes: #discriminant_bytes,
-                    },
+                    discriminant: #discriminant,
                     fields: &[#(#fields),*],
                 }
             }
@@ -599,11 +504,13 @@ fn quote_variant_fields(
         }) => {
             let field_descriptors = fields
                 .pairs()
-                .map(|pair| {
+                .enumerate()
+                .map(|(i, pair)| {
                     let syn::Field { ty: field_ty, .. } = pair.value();
+                    let field_name = quote::format_ident!("f_{}", i);
                     let field_comma = pair.punct();
 
-                    quote!(#field_ty #field_comma)
+                    quote!(#field_name: #field_ty #field_comma)
                 })
                 .collect::<Vec<_>>();
 
@@ -627,7 +534,7 @@ fn quote_variant_fields(
     }
 }
 
-fn quote_discriminant_bytes(
+fn quote_discriminant(
     ty_name: &syn::Ident,
     ty_generics: &syn::TypeGenerics,
     variant_name: &syn::Ident,
@@ -657,11 +564,13 @@ fn quote_discriminant_bytes(
         }) => {
             let field_descriptors = fields
                 .pairs()
-                .map(|pair| {
+                .enumerate()
+                .map(|(i, pair)| {
                     let syn::Field { ty: field_ty, .. } = pair.value();
+                    let field_name = quote::format_ident!("f_{}", i);
                     let field_comma = pair.punct();
 
-                    quote!(#field_ty #field_comma)
+                    quote!(#field_name: #field_ty #field_comma)
                 })
                 .collect::<Vec<_>>();
 
@@ -671,137 +580,73 @@ fn quote_discriminant_bytes(
     };
 
     quote! {
-        &::const_type_layout::struct_variant_discriminant!(
+        ::const_type_layout::struct_variant_discriminant!(
             #ty_name => #ty_name #ty_generics => #variant_descriptor
         )
     }
 }
 
-fn uninit_for_type(
-    ty_name: &syn::Ident,
-    ty_generics: &syn::TypeGenerics,
-    data: &syn::Data,
-    ground: Option<&syn::Ident>,
-) -> proc_macro2::TokenStream {
+#[allow(clippy::too_many_lines)]
+fn uninit_for_type(ty_name: &syn::Ident, data: &syn::Data) -> proc_macro2::TokenStream {
     match data {
         syn::Data::Struct(data) => {
             // Structs are uninhabited if any of their fields in uninhabited
-            let fields = match &data.fields {
-                syn::Fields::Named(syn::FieldsNamed { named: fields, .. })
-                | syn::Fields::Unnamed(syn::FieldsUnnamed {
-                    unnamed: fields, ..
-                }) => fields,
-                syn::Fields::Unit => return quote!(#ty_name),
-            };
 
-            let initialisers = fields
-                .pairs()
-                .map(|pair| {
-                    let syn::Field {
-                        ident: field_name,
-                        colon_token: field_colon,
-                        ty: field_ty,
-                        ..
-                    } = pair.value();
-                    let field_comma = pair.punct();
-
-                    quote! {
-                        #field_name #field_colon <
-                            #field_ty as ::const_type_layout::TypeLayout
-                        >::uninit().assume_init() #field_comma
-                    }
-                })
-                .collect::<Vec<_>>();
-
-            if let syn::Fields::Named(_) = &data.fields {
-                quote!(#ty_name { #(#initialisers)* })
-            } else {
-                quote!(#ty_name ( #(#initialisers)* ))
-            }
-        },
-        syn::Data::Enum(r#enum) => {
-            // Enums are uninhabited if
-            //  (a) they have no variants
-            //  (b) all their variants are uninhabited
-            //    (1) unit variants are always inhabited
-            //    (2) tuple and struct variants are uninhabited
-            //        if any of their fields are uninhabited
-            let Some(syn::Variant {
-                ident: variant_name,
-                fields,
-                ..
-            }) = &r#enum.variants.iter().find(|v| Some(&v.ident) == ground) else {
-                return quote!(panic!(concat!("cannot construct uninhabited enum ", stringify!(#ty_name))));
-            };
-
-            let variant_fields = match fields {
-                syn::Fields::Named(syn::FieldsNamed { named: fields, .. })
-                | syn::Fields::Unnamed(syn::FieldsUnnamed {
-                    unnamed: fields, ..
-                }) => fields,
-                syn::Fields::Unit => return quote!(#ty_name::#variant_name),
-            };
-
-            let initialisers = variant_fields
-                .pairs()
-                .map(|pair| {
-                    let syn::Field {
-                        ident: field_name,
-                        colon_token: field_colon,
-                        ty: field_ty,
-                        ..
-                    } = pair.value();
-                    let field_comma = pair.punct();
-
-                    quote! {
-                        #field_name #field_colon <
-                            #field_ty as ::const_type_layout::TypeLayout
-                        >::uninit().assume_init() #field_comma
-                    }
-                })
-                .collect::<Vec<_>>();
-
-            if let syn::Fields::Named(_) = fields {
-                quote!(#ty_name::#variant_name { #(#initialisers)* })
-            } else {
-                quote!(#ty_name::#variant_name ( #(#initialisers)* ))
-            }
-        },
-        syn::Data::Union(_) => {
-            // Unions are nieche-less blobs of bytes and all reads are unsafe
-            // Unions are uninhabited if all fields are uninhabited
-            quote!(::core::mem::transmute_copy(&[0x0_u8; ::core::mem::size_of::<#ty_name #ty_generics>()]))
-        },
-    }
-}
-
-fn inhabited_for_type(data: &syn::Data) -> proc_macro2::TokenStream {
-    match data {
-        syn::Data::Struct(data) => {
-            // Structs are uninhabited if any of their fields in uninhabited
             let fields = match &data.fields {
                 syn::Fields::Named(syn::FieldsNamed { named: fields, .. })
                 | syn::Fields::Unnamed(syn::FieldsUnnamed {
                     unnamed: fields, ..
                 }) => fields,
                 syn::Fields::Unit => {
-                    return quote!(::const_type_layout::MaybeUninhabited::Inhabited(()))
+                    return quote! {
+                        ::const_type_layout::MaybeUninhabited::Inhabited(
+                            ::core::mem::MaybeUninit::new(#ty_name)
+                        )
+                    }
                 },
             };
 
-            let mut inhabited = quote!(::const_type_layout::MaybeUninhabited::Inhabited(()));
+            let field_names = fields
+                .iter()
+                .enumerate()
+                .map(|(i, field)| match &field.ident {
+                    Some(name) => name.clone(),
+                    None => quote::format_ident!("f_{}", i),
+                })
+                .collect::<Vec<_>>();
 
-            for field in fields.iter() {
-                let field_ty = &field.ty;
+            let field_initialisers = fields
+                .iter()
+                .map(|syn::Field { ty: field_ty, .. }| {
+                    quote! {
+                        <
+                            #field_ty as ::const_type_layout::TypeLayout
+                        >::uninit()
+                    }
+                })
+                .collect::<Vec<_>>();
 
-                inhabited = quote! {
-                    #inhabited.and(
-                        <#field_ty as ::const_type_layout::TypeLayout>::TYPE_LAYOUT.inhabited
+            let struct_initialiser = if let syn::Fields::Named(_) = &data.fields {
+                quote!(#ty_name { #(#field_names: #field_names.assume_init()),* })
+            } else {
+                quote!(#ty_name ( #(#field_names.assume_init()),* ))
+            };
+
+            quote! {
+                if let (
+                    #(::const_type_layout::MaybeUninhabited::Inhabited(#field_names)),*
+                ) = (
+                    #(#field_initialisers),*
+                ) {
+                    ::const_type_layout::MaybeUninhabited::Inhabited(
+                        ::core::mem::MaybeUninit::new(
+                            #struct_initialiser
+                        )
                     )
+                } else {
+                    ::const_type_layout::MaybeUninhabited::Uninhabited
                 }
             }
-
-            inhabited
         },
         syn::Data::Enum(syn::DataEnum { variants, .. }) => {
             // Enums are uninhabited if
@@ -811,40 +656,75 @@ fn inhabited_for_type(data: &syn::Data) -> proc_macro2::TokenStream {
             //    (2) tuple and struct variants are uninhabited
             //        if any of their fields are uninhabited
 
-            let mut inhabited = quote!(::const_type_layout::MaybeUninhabited::Uninhabited);
-
-            for variant in variants {
-                let inner_inhabited = match &variant.fields {
+            let variant_initialisers = variants.iter().map(|syn::Variant {
+                ident: variant_name,
+                fields: variant_fields,
+                ..
+            }| {
+                let fields = match variant_fields {
                     syn::Fields::Named(syn::FieldsNamed { named: fields, .. })
                     | syn::Fields::Unnamed(syn::FieldsUnnamed {
                         unnamed: fields, ..
-                    }) => {
-                        let mut inner_inhabited =
-                            quote!(::const_type_layout::MaybeUninhabited::Inhabited(()));
-
-                        for field in fields.iter() {
-                            let field_ty = &field.ty;
-
-                            inner_inhabited = quote! {
-                                #inner_inhabited.and(
-                                    <#field_ty as ::const_type_layout::TypeLayout>::TYPE_LAYOUT.inhabited
-                                )
-                            }
-                        }
-
-                        inner_inhabited
-                    },
-                    syn::Fields::Unit => {
-                        quote!(::const_type_layout::MaybeUninhabited::Inhabited(()))
-                    },
+                    }) => fields,
+                    syn::Fields::Unit => return Err(quote! {
+                        ::const_type_layout::MaybeUninhabited::Inhabited(
+                            ::core::mem::MaybeUninit::new(
+                                #ty_name :: #variant_name
+                            )
+                        )
+                    }),
                 };
 
-                inhabited = quote! {
-                    #inhabited.or(#inner_inhabited)
-                }
-            }
+                let field_names = fields.iter().enumerate().map(|(i, field)| match &field.ident {
+                    Some(name) => name.clone(),
+                    None => quote::format_ident!("f_{}", i),
+                }).collect::<Vec<_>>();
 
-            inhabited
+                let field_initialisers = fields
+                    .iter()
+                    .map(|syn::Field {
+                        ty: field_ty,
+                        ..
+                    }| {
+                        quote! {
+                            <
+                                #field_ty as ::const_type_layout::TypeLayout
+                            >::uninit()
+                        }
+                    })
+                    .collect::<Vec<_>>();
+
+                let variant_initialiser = if let syn::Fields::Named(_) = variant_fields {
+                    quote!(#ty_name :: #variant_name { #(#field_names: #field_names.assume_init()),* })
+                } else {
+                    quote!(#ty_name :: #variant_name ( #(#field_names.assume_init()),* ))
+                };
+
+                Ok(quote!{
+                    if let (
+                        #(::const_type_layout::MaybeUninhabited::Inhabited(#field_names)),*
+                    ) = (
+                        #(#field_initialisers),*
+                    ) {
+                        return ::const_type_layout::MaybeUninhabited::Inhabited(
+                            ::core::mem::MaybeUninit::new(
+                                #variant_initialiser
+                            )
+                        );
+                    }
+                })
+            }).collect::<Result<Vec<proc_macro2::TokenStream>, proc_macro2::TokenStream>>();
+
+            match variant_initialisers {
+                Ok(variant_initialisers) => quote! {
+                    #(
+                        #variant_initialisers
+                    )*
+
+                    ::const_type_layout::MaybeUninhabited::Uninhabited
+                },
+                Err(unit_variant_initialiser) => unit_variant_initialiser,
+            }
         },
         syn::Data::Union(syn::DataUnion {
             fields: syn::FieldsNamed { named: fields, .. },
@@ -852,19 +732,41 @@ fn inhabited_for_type(data: &syn::Data) -> proc_macro2::TokenStream {
         }) => {
             // Unions are uninhabited if all fields are uninhabited
 
-            let mut inhabited = quote!(::const_type_layout::MaybeUninhabited::Uninhabited);
+            let (field_names, field_initialisers) = fields
+                .iter()
+                .map(
+                    |syn::Field {
+                         ident: field_name,
+                         ty: field_ty,
+                         ..
+                     }| {
+                        (
+                            field_name,
+                            quote! {
+                                <
+                                    #field_ty as ::const_type_layout::TypeLayout
+                                >::uninit()
+                            },
+                        )
+                    },
+                )
+                .unzip::<_, _, Vec<_>, Vec<_>>();
 
-            for field in fields.iter() {
-                let field_ty = &field.ty;
+            quote! {
+                #(
+                    if let ::const_type_layout::MaybeUninhabited::Inhabited(
+                        #field_names
+                    ) = #field_initialisers {
+                        return ::const_type_layout::MaybeUninhabited::Inhabited(
+                            ::core::mem::MaybeUninit::new(
+                                #ty_name { #field_names: #field_names.assume_init() }
+                            )
+                        );
+                    }
+                )*
 
-                inhabited = quote! {
-                    #inhabited.or(
-                        <#field_ty as ::const_type_layout::TypeLayout>::TYPE_LAYOUT.inhabited
-                    )
-                }
+                ::const_type_layout::MaybeUninhabited::Uninhabited
             }
-
-            inhabited
         },
     }
 }

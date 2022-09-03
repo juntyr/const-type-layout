@@ -104,28 +104,23 @@ pub const fn serialised_mutability_len(from: usize, _value: Mutability) -> usize
 pub const fn serialise_maybe_uninhabited(
     bytes: &mut [u8],
     from: usize,
-    value: MaybeUninhabited,
+    value: MaybeUninhabited<()>,
 ) -> usize {
-    match value {
-        MaybeUninhabited::Inhabited(()) => return from,
-        MaybeUninhabited::Uninhabited => (),
-    };
-
     assert!(
         from < bytes.len(),
         "bytes is not large enough to contain the serialised MaybeUninhabited."
     );
 
-    bytes[from] = b'!';
+    bytes[from] = match value {
+        MaybeUninhabited::Inhabited(()) => b'h',
+        MaybeUninhabited::Uninhabited => b'n',
+    };
 
     from + 1
 }
 
-pub const fn serialised_maybe_uninhabited_len(from: usize, value: MaybeUninhabited) -> usize {
-    match value {
-        MaybeUninhabited::Inhabited(()) => from,
-        MaybeUninhabited::Uninhabited => from + 1,
-    }
+pub const fn serialised_maybe_uninhabited_len(from: usize, _value: MaybeUninhabited<()>) -> usize {
+    from + 1
 }
 
 pub const fn serialise_discriminant<'a>(
@@ -183,13 +178,21 @@ pub const fn serialised_discriminant_len(from: usize, value: &Discriminant) -> u
 
 pub const fn serialise_field<'a>(bytes: &mut [u8], from: usize, value: &Field<'a>) -> usize {
     let from = serialise_str(bytes, from, value.name);
-    let from = serialise_usize(bytes, from, value.offset);
+    let from = serialise_maybe_uninhabited(bytes, from, value.offset.map(()));
+    let from = match value.offset {
+        MaybeUninhabited::Inhabited(offset) => serialise_usize(bytes, from, offset),
+        MaybeUninhabited::Uninhabited => from,
+    };
     serialise_str(bytes, from, value.ty)
 }
 
 pub const fn serialised_field_len(from: usize, value: &Field) -> usize {
     let from = serialised_str_len(from, value.name);
-    let from = serialised_usize_len(from, value.offset);
+    let from = serialised_maybe_uninhabited_len(from, value.offset.map(()));
+    let from = match value.offset {
+        MaybeUninhabited::Inhabited(offset) => serialised_usize_len(from, offset),
+        MaybeUninhabited::Uninhabited => from,
+    };
     serialised_str_len(from, value.ty)
 }
 
@@ -227,7 +230,13 @@ pub const fn serialise_variant<'a, F: ~const Deref<Target = [Field<'a>]>>(
     value: &Variant<'a, F>,
 ) -> usize {
     let from = serialise_str(bytes, from, value.name);
-    let from = serialise_discriminant(bytes, from, &value.discriminant);
+    let from = serialise_maybe_uninhabited(bytes, from, value.discriminant.map(()));
+    let from = match &value.discriminant {
+        MaybeUninhabited::Inhabited(discriminant) => {
+            serialise_discriminant(bytes, from, discriminant)
+        },
+        MaybeUninhabited::Uninhabited => from,
+    };
     serialise_fields(bytes, from, &value.fields)
 }
 
@@ -236,7 +245,13 @@ pub const fn serialised_variant_len<'a, F: ~const Deref<Target = [Field<'a>]>>(
     value: &Variant<'a, F>,
 ) -> usize {
     let from = serialised_str_len(from, value.name);
-    let from = serialised_discriminant_len(from, &value.discriminant);
+    let from = serialised_maybe_uninhabited_len(from, value.discriminant.map(()));
+    let from = match &value.discriminant {
+        MaybeUninhabited::Inhabited(discriminant) => {
+            serialised_discriminant_len(from, discriminant)
+        },
+        MaybeUninhabited::Uninhabited => from,
+    };
     serialised_fields_len(from, &value.fields)
 }
 
@@ -374,7 +389,6 @@ pub const fn serialise_type_layout_info<
     let from = serialise_str(bytes, from, value.name);
     let from = serialise_usize(bytes, from, value.size);
     let from = serialise_usize(bytes, from, value.alignment);
-    let from = serialise_maybe_uninhabited(bytes, from, value.inhabited);
     serialise_type_structure(bytes, from, &value.structure)
 }
 
@@ -389,7 +403,6 @@ pub const fn serialised_type_layout_info_len<
     let from = serialised_str_len(from, value.name);
     let from = serialised_usize_len(from, value.size);
     let from = serialised_usize_len(from, value.alignment);
-    let from = serialised_maybe_uninhabited_len(from, value.inhabited);
     serialised_type_structure_len(from, &value.structure)
 }
 

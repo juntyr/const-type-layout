@@ -76,6 +76,12 @@ enum Quo<T> {
     Struct { a: T, b: u16, c: T },
 }
 
+#[derive(TypeLayout)]
+enum NoUnit<T> {
+    A(T),
+    B(T),
+}
+
 #[repr(u8, C)]
 #[derive(TypeLayout)]
 enum List<T> {
@@ -83,15 +89,15 @@ enum List<T> {
     Tail,
 }
 
+// TODO: allow an arbitrary variant order
 #[derive(TypeLayout)]
-#[layout(ground = "Leaf")]
 enum Tree<T> {
+    Leaf {
+        item: T,
+    },
     Node {
         left: Box<Tree<T>>,
         right: Box<Tree<T>>,
-    },
-    Leaf {
-        item: T,
     },
 }
 
@@ -135,6 +141,7 @@ fn main() {
     println!("{:#?}", Double::TYPE_GRAPH);
     println!("{:#?}", WithDouble::TYPE_GRAPH);
     println!("{:#?}", Quo::<u32>::TYPE_GRAPH);
+    println!("{:#?}", NoUnit::<u32>::TYPE_GRAPH);
 
     println!("{:#?}", <()>::TYPE_GRAPH);
     println!("{:#?}", <[u32; 3]>::TYPE_GRAPH);
@@ -154,12 +161,13 @@ fn main() {
     println!("{:#?}", <std::convert::Infallible>::TYPE_GRAPH);
     println!("{:#?}", <!>::TYPE_GRAPH);
 
-    // TODO: will require optional uninits to represent uninhabited values
-    // println!("{:#?}", <Option<std::convert::Infallible>>::TYPE_GRAPH);
-    // println!("{:#?}", <Result<u8, std::convert::Infallible>>::TYPE_GRAPH);
-    // println!("{:#?}", <Result<std::convert::Infallible, u8>>::TYPE_GRAPH);
-    // println!("{:#?}", <Result<std::convert::Infallible,
-    // std::convert::Infallible>>::TYPE_GRAPH);
+    println!("{:#?}", <Option<std::convert::Infallible>>::TYPE_GRAPH);
+    println!("{:#?}", <Result<u8, std::convert::Infallible>>::TYPE_GRAPH);
+    println!("{:#?}", <Result<std::convert::Infallible, u8>>::TYPE_GRAPH);
+    println!(
+        "{:#?}",
+        <Result<std::convert::Infallible, std::convert::Infallible>>::TYPE_GRAPH
+    );
 
     println!("{:#?}", <*const u8>::TYPE_GRAPH);
     println!("{:#?}", <*mut u8>::TYPE_GRAPH);

@@ -8,18 +8,22 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for alloc::boxed::Box<T> {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
-        inhabited: MaybeUninhabited::Inhabited(()),
         structure: TypeStructure::Pointer {
             inner: ::core::any::type_name::<T>(),
             mutability: Mutability::Mutable,
         },
     };
 
-    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-        core::mem::MaybeUninit::new(alloc::boxed::Box::from_raw_in(
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        // TODO: Handle infinite recursion case
+        if let MaybeUninhabited::Uninhabited = <T as TypeLayout>::uninit() {
+            return MaybeUninhabited::Uninhabited;
+        }
+
+        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(alloc::boxed::Box::from_raw_in(
             leak_uninit_ptr(),
             alloc::alloc::Global,
-        ))
+        )))
     }
 }
 
@@ -36,7 +40,6 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for alloc::boxed::Box<[T]> {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
-        inhabited: MaybeUninhabited::Inhabited(()),
         structure: TypeStructure::Pointer {
             inner: ::core::any::type_name::<T>(),
             mutability: Mutability::Mutable,
@@ -44,11 +47,11 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for alloc::boxed::Box<[T]> {
     };
 
     #[allow(clippy::borrow_as_ptr)]
-    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-        core::mem::MaybeUninit::new(alloc::boxed::Box::from_raw_in(
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(alloc::boxed::Box::from_raw_in(
             &[] as *const [T] as *mut _,
             alloc::alloc::Global,
-        ))
+        )))
     }
 }
 

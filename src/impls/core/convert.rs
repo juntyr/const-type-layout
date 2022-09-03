@@ -7,15 +7,14 @@ unsafe impl const TypeLayout for core::convert::Infallible {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
-        inhabited: MaybeUninhabited::Uninhabited,
         structure: TypeStructure::Enum {
             repr: "",
             variants: &[],
         },
     };
 
-    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-        panic!("cannot construct core::convert::Infallible")
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        MaybeUninhabited::Uninhabited
     }
 }
 

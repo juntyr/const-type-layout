@@ -7,15 +7,14 @@ unsafe impl<T> const TypeLayout for core::marker::PhantomData<T> {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
-        inhabited: MaybeUninhabited::Inhabited(()),
         structure: TypeStructure::Struct {
             repr: "",
             fields: &[],
         },
     };
 
-    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-        core::mem::MaybeUninit::new(core::marker::PhantomData::<T>)
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(core::marker::PhantomData::<T>))
     }
 }
 
@@ -30,15 +29,14 @@ unsafe impl const TypeLayout for core::marker::PhantomPinned {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
-        inhabited: MaybeUninhabited::Inhabited(()),
         structure: TypeStructure::Struct {
             repr: "",
             fields: &[],
         },
     };
 
-    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-        core::mem::MaybeUninit::new(core::marker::PhantomPinned)
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(core::marker::PhantomPinned))
     }
 }
 

@@ -9,21 +9,22 @@ macro_rules! impl_nonzero_type_layout {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
-                inhabited: MaybeUninhabited::Inhabited(()),
                 structure: TypeStructure::Struct {
                     repr: "transparent",
                     fields: &[
                         Field {
                             name: "0",
-                            offset: 0,
+                            offset: MaybeUninhabited::Inhabited(0),
                             ty: ::core::any::type_name::<$ty>(),
                         },
                     ],
                 },
             };
 
-            unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-                core::mem::MaybeUninit::new(Self::new(1).unwrap())
+            unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+                MaybeUninhabited::Inhabited(
+                    core::mem::MaybeUninit::new(Self::new(1).unwrap())
+                )
             }
         }
 
@@ -52,19 +53,23 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::num::Wrapping<T> {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
-        inhabited: T::TYPE_LAYOUT.inhabited,
         structure: TypeStructure::Struct {
             repr: "transparent",
             fields: &[Field {
                 name: "0",
-                offset: 0,
+                offset: unsafe { <T as TypeLayout>::uninit() }.map(0),
                 ty: ::core::any::type_name::<T>(),
             }],
         },
     };
 
-    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-        core::mem::MaybeUninit::new(Self(T::uninit().assume_init()))
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        match <T as TypeLayout>::uninit() {
+            MaybeUninhabited::Uninhabited => MaybeUninhabited::Uninhabited,
+            MaybeUninhabited::Inhabited(uninit) => {
+                MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(Self(uninit.assume_init())))
+            },
+        }
     }
 }
 

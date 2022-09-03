@@ -8,15 +8,14 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for *const T {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
-        inhabited: MaybeUninhabited::Inhabited(()),
         structure: TypeStructure::Pointer {
             inner: ::core::any::type_name::<T>(),
             mutability: Mutability::Immutable,
         },
     };
 
-    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-        core::mem::MaybeUninit::new(leak_uninit_ptr())
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(leak_uninit_ptr()))
     }
 }
 
@@ -33,15 +32,14 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for *mut T {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
-        inhabited: MaybeUninhabited::Inhabited(()),
         structure: TypeStructure::Pointer {
             inner: ::core::any::type_name::<T>(),
             mutability: Mutability::Mutable,
         },
     };
 
-    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-        core::mem::MaybeUninit::new(leak_uninit_ptr())
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(leak_uninit_ptr()))
     }
 }
 
@@ -58,15 +56,16 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::ptr::NonNull<T> {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
-        inhabited: MaybeUninhabited::Inhabited(()),
         structure: TypeStructure::Pointer {
             inner: ::core::any::type_name::<T>(),
             mutability: Mutability::Mutable,
         },
     };
 
-    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-        core::mem::MaybeUninit::new(core::ptr::NonNull::new_unchecked(leak_uninit_ptr()))
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(
+            core::ptr::NonNull::new_unchecked(leak_uninit_ptr()),
+        ))
     }
 }
 
@@ -83,17 +82,17 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::ptr::NonNull<[T]> {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
-        inhabited: MaybeUninhabited::Inhabited(()),
         structure: TypeStructure::Pointer {
             inner: ::core::any::type_name::<T>(),
             mutability: Mutability::Mutable,
         },
     };
 
-    unsafe fn uninit() -> core::mem::MaybeUninit<Self> {
-        core::mem::MaybeUninit::new(core::ptr::NonNull::new_unchecked(alloc::boxed::Box::leak(
-            <alloc::boxed::Box<[T]> as TypeLayout>::uninit().assume_init(),
-        ) as *mut [T]))
+    #[allow(clippy::borrow_as_ptr)]
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(
+            core::ptr::NonNull::new_unchecked(&[] as *const [T] as *mut _),
+        ))
     }
 }
 
