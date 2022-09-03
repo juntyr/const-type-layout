@@ -1307,7 +1307,7 @@
             <span class="attribute">#[allow(clippy::cast_sign_loss)]
             </span><span class="kw">let </span>offset = <span class="kw">unsafe </span>{ field_ptr.cast::&lt;u8&gt;().offset_from(<span class="macro-nonterminal">$base</span>.cast()) <span class="kw">as </span>usize };
 
-            <span class="attribute">#[allow(clippy::forget_non_drop)]
+            <span class="attribute">#[allow(clippy::forget_non_drop, clippy::forget_copy)]
             </span>core::mem::forget(uninit);
 
             <span class="macro-nonterminal">$crate::MaybeUninhabited::Inhabited</span>(offset)
@@ -1329,7 +1329,7 @@
                         core::mem::transmute(core::mem::discriminant(<span class="kw-2">&amp;</span>uninit))
                     };
 
-                    <span class="attribute">#[allow(clippy::forget_non_drop)]
+                    <span class="attribute">#[allow(clippy::forget_non_drop, clippy::forget_copy)]
                     </span>core::mem::forget(uninit);
 
                     <span class="kw">let </span><span class="kw-2">mut </span>big_endian_bytes = [<span class="number">0_u8</span>; core::mem::size_of::&lt;core::mem::Discriminant&lt;<span class="macro-nonterminal">$ty</span>&gt;&gt;()];
@@ -1369,7 +1369,7 @@
                             core::mem::transmute(core::mem::discriminant(<span class="kw-2">&amp;</span>uninit))
                         };
 
-                        <span class="attribute">#[allow(clippy::forget_non_drop)]
+                        <span class="attribute">#[allow(clippy::forget_non_drop, clippy::forget_copy)]
                         </span>core::mem::forget(uninit);
 
                         <span class="kw">let </span>big_endian_bytes = <span class="kw">unsafe </span>{
@@ -1416,7 +1416,7 @@
                             core::mem::transmute(core::mem::discriminant(<span class="kw-2">&amp;</span>uninit))
                         };
 
-                        <span class="attribute">#[allow(clippy::forget_non_drop)]
+                        <span class="attribute">#[allow(clippy::forget_non_drop, clippy::forget_copy)]
                         </span>core::mem::forget(uninit);
 
                         <span class="kw">let </span>big_endian_bytes = <span class="kw">unsafe </span>{
@@ -1472,7 +1472,7 @@
             <span class="attribute">#[allow(clippy::cast_sign_loss)]
             </span><span class="kw">let </span>offset = <span class="kw">unsafe </span>{ field_ptr.cast::&lt;u8&gt;().offset_from(base_ptr.cast()) <span class="kw">as </span>usize };
 
-            <span class="attribute">#[allow(clippy::forget_non_drop)]
+            <span class="attribute">#[allow(clippy::forget_non_drop, clippy::forget_copy)]
             </span>core::mem::forget(uninit);
 
             <span class="macro-nonterminal">$crate::MaybeUninhabited::Inhabited</span>(offset)
@@ -1503,7 +1503,7 @@
             <span class="attribute">#[allow(clippy::cast_sign_loss)]
             </span><span class="kw">let </span>offset = <span class="kw">unsafe </span>{ field_ptr.cast::&lt;u8&gt;().offset_from(base_ptr.cast()) <span class="kw">as </span>usize };
 
-            <span class="attribute">#[allow(clippy::forget_non_drop)]
+            <span class="attribute">#[allow(clippy::forget_non_drop, clippy::forget_copy)]
             </span>core::mem::forget(uninit);
 
             <span class="macro-nonterminal">$crate::MaybeUninhabited::Inhabited</span>(offset)
