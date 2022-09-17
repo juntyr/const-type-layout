@@ -755,6 +755,8 @@
 <span id="755">755</span>
 <span id="756">756</span>
 <span id="757">757</span>
+<span id="758">758</span>
+<span id="759">759</span>
 </pre><pre class="rust"><code><span class="doccomment">//! [![CI Status]][workflow] [![Rust Doc]][docs] [![License Status]][fossa]
 //! [![Code Coverage]][codecov] [![Gitpod Ready-to-Code]][gitpod]
 //!
@@ -1129,7 +1131,9 @@
 
         <span class="kw">while </span>i &lt; <span class="self">self</span>.tys.len() {
             <span class="comment">// The first free slot can be used to insert the ty
-            </span><span class="kw">let </span><span class="prelude-val">Some</span>(cached_ty) = <span class="self">self</span>.tys[i] <span class="kw">else </span>{
+            </span><span class="kw">let </span>cached_ty = <span class="kw">if let </span><span class="prelude-val">Some</span>(cached_ty) = <span class="self">self</span>.tys[i] {
+                cached_ty
+            } <span class="kw">else </span>{
                 <span class="self">self</span>.tys[i] = <span class="prelude-val">Some</span>(ty);
 
                 <span class="kw">return </span><span class="bool-val">true</span>;
@@ -1513,4 +1517,4 @@
     }},
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="const_type_layout" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (8c6ce6b91 2022-09-02)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="const_type_layout" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.65.0-nightly (95a992a68 2022-09-16)" ></div></body></html>
