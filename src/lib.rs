@@ -133,7 +133,7 @@
 #![cfg_attr(not(version("1.65.0")), feature(const_ptr_offset_from))]
 #![feature(const_refs_to_cell)]
 #![feature(const_option)]
-#![feature(let_else)]
+#![cfg_attr(not(version("1.66.0")), feature(let_else))]
 #![feature(core_intrinsics)]
 #![feature(const_heap)]
 #![feature(allow_internal_unstable)]

@@ -1,6 +1,7 @@
 #![deny(clippy::pedantic)]
+#![feature(cfg_version)]
 #![feature(iter_intersperse)]
-#![feature(let_else)]
+#![cfg_attr(not(version("1.66.0")), feature(let_else))]
 
 extern crate proc_macro;
 
