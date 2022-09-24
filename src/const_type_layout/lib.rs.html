@@ -757,6 +757,9 @@
 <span id="757">757</span>
 <span id="758">758</span>
 <span id="759">759</span>
+<span id="760">760</span>
+<span id="761">761</span>
+<span id="762">762</span>
 </pre><pre class="rust"><code><span class="doccomment">//! [![CI Status]][workflow] [![Rust Doc]][docs] [![License Status]][fossa]
 //! [![Code Coverage]][codecov] [![Gitpod Ready-to-Code]][gitpod]
 //!
@@ -964,6 +967,7 @@
 ///
 /// It is only safe to implement this trait if it accurately describes the
 ///  type&#39;s layout. Use `#[derive(TypeLayout)]` instead.
+</span><span class="attribute">#[const_trait]
 </span><span class="kw">pub unsafe trait </span>TypeLayout: Sized {
     <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt;;
 
@@ -984,11 +988,13 @@
 ///
 /// It is only safe to implement this trait if it accurately populates the
 ///  type&#39;s layout graph. Use `#[derive(TypeLayout)]` instead.
+</span><span class="attribute">#[const_trait]
 </span><span class="kw">pub unsafe trait </span>TypeGraph: TypeLayout {
     <span class="kw">fn </span>populate_graph(graph: <span class="kw-2">&amp;mut </span>TypeLayoutGraph&lt;<span class="lifetime">&#39;static</span>&gt;);
 }
 
-<span class="kw">pub trait </span>TypeGraphLayout: TypeGraph {
+<span class="attribute">#[const_trait]
+</span><span class="kw">pub trait </span>TypeGraphLayout: TypeGraph {
     <span class="kw">const </span>TYPE_GRAPH: TypeLayoutGraph&lt;<span class="lifetime">&#39;static</span>&gt;;
 }
 
@@ -1517,4 +1523,4 @@
     }},
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="const_type_layout" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (a37499ae6 2022-09-18)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../" data-current-crate="const_type_layout" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (4a1467723 2022-09-23)" ></div></body></html>
