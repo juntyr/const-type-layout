@@ -1,6 +1,6 @@
 use crate::{Field, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
-unsafe impl<T> TypeLayout for core::cmp::Reverse<T> {
+unsafe impl<T> const TypeLayout for core::cmp::Reverse<T> {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),

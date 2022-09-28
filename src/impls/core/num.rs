@@ -2,7 +2,7 @@ use crate::{Field, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeS
 
 macro_rules! impl_nonzero_type_layout {
     (impl $nz:ident => $ty:ty) => {
-        unsafe impl TypeLayout for core::num::$nz {
+        unsafe impl const TypeLayout for core::num::$nz {
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
@@ -40,7 +40,7 @@ impl_nonzero_type_layout! {
     NonZeroU128 => u128, NonZeroUsize => usize
 }
 
-unsafe impl<T> TypeLayout for core::num::Wrapping<T> {
+unsafe impl<T> const TypeLayout for core::num::Wrapping<T> {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),

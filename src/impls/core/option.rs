@@ -70,7 +70,7 @@ where
     };
 }
 
-unsafe impl<T> TypeLayout for core::option::Option<T>
+unsafe impl<T> const TypeLayout for core::option::Option<T>
 where
     [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
 {

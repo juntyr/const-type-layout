@@ -1,6 +1,6 @@
 use crate::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
-unsafe impl<T> TypeLayout for core::marker::PhantomData<T> {
+unsafe impl<T> const TypeLayout for core::marker::PhantomData<T> {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -18,7 +18,7 @@ unsafe impl<T> const TypeGraph for core::marker::PhantomData<T> {
     }
 }
 
-unsafe impl TypeLayout for core::marker::PhantomPinned {
+unsafe impl const TypeLayout for core::marker::PhantomPinned {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),

@@ -78,7 +78,7 @@ where
     };
 }
 
-unsafe impl<T, E> TypeLayout for core::result::Result<T, E>
+unsafe impl<T, E> const TypeLayout for core::result::Result<T, E>
 where
     [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
 {

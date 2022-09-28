@@ -55,7 +55,7 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
         type_graph_input_generics.split_for_impl();
 
     quote! {
-        unsafe impl #type_layout_impl_generics ::const_type_layout::TypeLayout for
+        unsafe impl #type_layout_impl_generics const ::const_type_layout::TypeLayout for
             #ty_name #type_layout_ty_generics #type_layout_where_clause
         {
             const TYPE_LAYOUT: ::const_type_layout::TypeLayoutInfo<'static> = {

@@ -1,6 +1,6 @@
 use crate::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
-unsafe impl<T: TypeLayout> TypeLayout for *const T {
+unsafe impl<T: TypeLayout> const TypeLayout for *const T {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -20,7 +20,7 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for *const T {
     }
 }
 
-unsafe impl<T: TypeLayout> TypeLayout for *mut T {
+unsafe impl<T: TypeLayout> const TypeLayout for *mut T {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -40,7 +40,7 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for *mut T {
     }
 }
 
-unsafe impl<T: TypeLayout> TypeLayout for core::ptr::NonNull<T> {
+unsafe impl<T: TypeLayout> const TypeLayout for core::ptr::NonNull<T> {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -60,7 +60,7 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for core::ptr::NonNull<T> {
     }
 }
 
-unsafe impl<T: TypeLayout> TypeLayout for core::ptr::NonNull<[T]> {
+unsafe impl<T: TypeLayout> const TypeLayout for core::ptr::NonNull<[T]> {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),

@@ -188,11 +188,11 @@ pub unsafe trait TypeGraph: TypeLayout {
 }
 
 #[const_trait]
-pub trait TypeGraphLayout: TypeGraph {
+pub trait TypeGraphLayout: TypeLayout + TypeGraph {
     const TYPE_GRAPH: TypeLayoutGraph<'static>;
 }
 
-impl<T: ~const TypeGraph> const TypeGraphLayout for T {
+impl<T: ~const TypeLayout + ~const TypeGraph> const TypeGraphLayout for T {
     const TYPE_GRAPH: TypeLayoutGraph<'static> = {
         let mut graph = TypeLayoutGraph::new::<T>();
 
@@ -297,7 +297,7 @@ impl<'a> TypeLayoutGraph<'a> {
 
     #[must_use]
     #[doc(hidden)]
-    pub const fn new<T: TypeLayout>() -> Self {
+    pub const fn new<T: ~const TypeLayout>() -> Self {
         Self {
             ty: <T as TypeLayout>::TYPE_LAYOUT.name,
             tys: [None; Self::CAPACITY],
