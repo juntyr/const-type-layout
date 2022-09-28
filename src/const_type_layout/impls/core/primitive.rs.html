@@ -28,48 +28,17 @@
 <span id="28">28</span>
 <span id="29">29</span>
 <span id="30">30</span>
-<span id="31">31</span>
-<span id="32">32</span>
-<span id="33">33</span>
-<span id="34">34</span>
-<span id="35">35</span>
-<span id="36">36</span>
-<span id="37">37</span>
-<span id="38">38</span>
-<span id="39">39</span>
-<span id="40">40</span>
-<span id="41">41</span>
-<span id="42">42</span>
-<span id="43">43</span>
-<span id="44">44</span>
-<span id="45">45</span>
-<span id="46">46</span>
-<span id="47">47</span>
-<span id="48">48</span>
-<span id="49">49</span>
-<span id="50">50</span>
-<span id="51">51</span>
-<span id="52">52</span>
-<span id="53">53</span>
-<span id="54">54</span>
-<span id="55">55</span>
-</pre><pre class="rust"><code><span class="kw">use crate</span>::{
-    MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
-};
+</pre><pre class="rust"><code><span class="kw">use crate</span>::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
 <span class="macro">macro_rules! </span>impl_primitive_type_layout {
-    (<span class="kw">impl </span><span class="macro-nonterminal">$ty</span>:ty =&gt; <span class="macro-nonterminal">$val</span>:expr) =&gt; {
-        <span class="kw">unsafe impl const </span>TypeLayout <span class="kw">for </span><span class="macro-nonterminal">$ty </span>{
+    (<span class="kw">impl </span><span class="macro-nonterminal">$ty</span>:ty) =&gt; {
+        <span class="kw">unsafe impl </span>TypeLayout <span class="kw">for </span><span class="macro-nonterminal">$ty </span>{
             <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
                 name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
                 size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
                 alignment: ::core::mem::align_of::&lt;<span class="self">Self</span>&gt;(),
                 structure: TypeStructure::Primitive,
             };
-
-            <span class="kw">unsafe fn </span>uninit() -&gt; MaybeUninhabited&lt;core::mem::MaybeUninit&lt;<span class="self">Self</span>&gt;&gt; {
-                MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(<span class="macro-nonterminal">$val</span>))
-            }
         }
 
         <span class="kw">unsafe impl const </span>TypeGraph <span class="kw">for </span><span class="macro-nonterminal">$ty </span>{
@@ -78,35 +47,16 @@
             }
         }
     };
-    ($(<span class="macro-nonterminal">$ty</span>:ty =&gt; <span class="macro-nonterminal">$val</span>:expr),<span class="kw-2">*</span>) =&gt; {
-        $(<span class="macro">impl_primitive_type_layout!</span>{<span class="kw">impl </span><span class="macro-nonterminal">$ty </span>=&gt; <span class="macro-nonterminal">$val</span>})*
+    ($(<span class="macro-nonterminal">$ty</span>:ty),<span class="kw-2">*</span>) =&gt; {
+        $(<span class="macro">impl_primitive_type_layout!</span>{<span class="kw">impl </span><span class="macro-nonterminal">$ty</span>})*
     };
 }
 
 <span class="macro">impl_primitive_type_layout! </span>{
-    i8 =&gt; <span class="number">0</span>, i16 =&gt; <span class="number">0</span>, i32 =&gt; <span class="number">0</span>, i64 =&gt; <span class="number">0</span>, i128 =&gt; <span class="number">0</span>, isize =&gt; <span class="number">0</span>,
-    u8 =&gt; <span class="number">0</span>, u16 =&gt; <span class="number">0</span>, u32 =&gt; <span class="number">0</span>, u64 =&gt; <span class="number">0</span>, u128 =&gt; <span class="number">0</span>, usize =&gt; <span class="number">0</span>,
-    f32 =&gt; <span class="number">0.0</span>, f64 =&gt; <span class="number">0.0</span>,
-    char =&gt; <span class="string">&#39;\0&#39;</span>, bool =&gt; <span class="bool-val">false</span>, () =&gt; ()
-}
-
-<span class="kw">unsafe impl const </span>TypeLayout <span class="kw">for </span>! {
-    <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
-        name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
-        size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
-        alignment: ::core::mem::align_of::&lt;<span class="self">Self</span>&gt;(),
-        structure: TypeStructure::Primitive,
-    };
-
-    <span class="kw">unsafe fn </span>uninit() -&gt; MaybeUninhabited&lt;core::mem::MaybeUninit&lt;<span class="self">Self</span>&gt;&gt; {
-        MaybeUninhabited::Uninhabited
-    }
-}
-
-<span class="kw">unsafe impl const </span>TypeGraph <span class="kw">for </span>! {
-    <span class="kw">fn </span>populate_graph(graph: <span class="kw-2">&amp;mut </span>TypeLayoutGraph&lt;<span class="lifetime">&#39;static</span>&gt;) {
-        graph.insert(<span class="kw-2">&amp;</span><span class="self">Self</span>::TYPE_LAYOUT);
-    }
+    i8, i16, i32, i64, i128, isize,
+    u8, u16, u32, u64, u128, usize,
+    f32, f64,
+    char, bool, ()
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../../../" data-current-crate="const_type_layout" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (470e518c4 2022-09-27)" ></div></body></html>

@@ -39,51 +39,21 @@
 <span id="39">39</span>
 <span id="40">40</span>
 <span id="41">41</span>
-<span id="42">42</span>
-<span id="43">43</span>
-<span id="44">44</span>
-<span id="45">45</span>
-<span id="46">46</span>
-<span id="47">47</span>
-<span id="48">48</span>
-<span id="49">49</span>
-<span id="50">50</span>
-<span id="51">51</span>
-<span id="52">52</span>
-<span id="53">53</span>
-<span id="54">54</span>
-<span id="55">55</span>
-<span id="56">56</span>
-<span id="57">57</span>
-<span id="58">58</span>
-<span id="59">59</span>
-<span id="60">60</span>
-</pre><pre class="rust"><code><span class="kw">use crate</span>::{
-    impls::leak_uninit_ptr, MaybeUninhabited, Mutability, TypeGraph, TypeLayout, TypeLayoutGraph,
-    TypeLayoutInfo, TypeStructure,
-};
+</pre><pre class="rust"><code><span class="kw">use crate</span>::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
-<span class="kw">unsafe impl</span>&lt;<span class="lifetime">&#39;a</span>, T: ~<span class="kw">const </span>TypeLayout + <span class="lifetime">&#39;a</span>&gt; <span class="kw">const </span>TypeLayout <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T {
+<span class="kw">unsafe impl</span>&lt;<span class="lifetime">&#39;a</span>, T: TypeLayout + <span class="lifetime">&#39;static</span>&gt; TypeLayout <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T {
     <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
         name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
         size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
         alignment: ::core::mem::align_of::&lt;<span class="self">Self</span>&gt;(),
         structure: TypeStructure::Reference {
             inner: ::core::any::type_name::&lt;T&gt;(),
-            mutability: Mutability::Immutable,
+            mutability: <span class="bool-val">false</span>,
         },
     };
-
-    <span class="kw">unsafe fn </span>uninit() -&gt; MaybeUninhabited&lt;core::mem::MaybeUninit&lt;<span class="self">Self</span>&gt;&gt; {
-        <span class="kw">if let </span>MaybeUninhabited::Uninhabited = &lt;T <span class="kw">as </span>TypeLayout&gt;::uninit() {
-            <span class="kw">return </span>MaybeUninhabited::Uninhabited;
-        }
-
-        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(<span class="kw-2">&amp;*</span>leak_uninit_ptr()))
-    }
 }
 
-<span class="kw">unsafe impl</span>&lt;<span class="lifetime">&#39;a</span>, T: ~<span class="kw">const </span>TypeGraph + <span class="lifetime">&#39;a</span>&gt; <span class="kw">const </span>TypeGraph <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T {
+<span class="kw">unsafe impl</span>&lt;<span class="lifetime">&#39;a</span>, T: ~<span class="kw">const </span>TypeGraph + <span class="lifetime">&#39;static</span>&gt; <span class="kw">const </span>TypeGraph <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>T {
     <span class="kw">fn </span>populate_graph(graph: <span class="kw-2">&amp;mut </span>TypeLayoutGraph&lt;<span class="lifetime">&#39;static</span>&gt;) {
         <span class="kw">if </span>graph.insert(<span class="kw-2">&amp;</span><span class="self">Self</span>::TYPE_LAYOUT) {
             &lt;T <span class="kw">as </span>TypeGraph&gt;::populate_graph(graph);
@@ -91,27 +61,19 @@
     }
 }
 
-<span class="kw">unsafe impl</span>&lt;<span class="lifetime">&#39;a</span>, T: ~<span class="kw">const </span>TypeLayout + <span class="lifetime">&#39;a</span>&gt; <span class="kw">const </span>TypeLayout <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>T {
+<span class="kw">unsafe impl</span>&lt;<span class="lifetime">&#39;a</span>, T: TypeLayout + <span class="lifetime">&#39;static</span>&gt; TypeLayout <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>T {
     <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
         name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
         size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
         alignment: ::core::mem::align_of::&lt;<span class="self">Self</span>&gt;(),
         structure: TypeStructure::Reference {
             inner: ::core::any::type_name::&lt;T&gt;(),
-            mutability: Mutability::Mutable,
+            mutability: <span class="bool-val">true</span>,
         },
     };
-
-    <span class="kw">unsafe fn </span>uninit() -&gt; MaybeUninhabited&lt;core::mem::MaybeUninit&lt;<span class="self">Self</span>&gt;&gt; {
-        <span class="kw">if let </span>MaybeUninhabited::Uninhabited = &lt;T <span class="kw">as </span>TypeLayout&gt;::uninit() {
-            <span class="kw">return </span>MaybeUninhabited::Uninhabited;
-        }
-
-        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(<span class="kw-2">&amp;mut *</span>leak_uninit_ptr()))
-    }
 }
 
-<span class="kw">unsafe impl</span>&lt;<span class="lifetime">&#39;a</span>, T: ~<span class="kw">const </span>TypeGraph + <span class="lifetime">&#39;a</span>&gt; <span class="kw">const </span>TypeGraph <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>T {
+<span class="kw">unsafe impl</span>&lt;<span class="lifetime">&#39;a</span>, T: ~<span class="kw">const </span>TypeGraph + <span class="lifetime">&#39;static</span>&gt; <span class="kw">const </span>TypeGraph <span class="kw">for </span><span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>T {
     <span class="kw">fn </span>populate_graph(graph: <span class="kw-2">&amp;mut </span>TypeLayoutGraph&lt;<span class="lifetime">&#39;static</span>&gt;) {
         <span class="kw">if </span>graph.insert(<span class="kw-2">&amp;</span><span class="self">Self</span>::TYPE_LAYOUT) {
             &lt;T <span class="kw">as </span>TypeGraph&gt;::populate_graph(graph);

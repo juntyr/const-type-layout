@@ -23,22 +23,9 @@
 <span id="23">23</span>
 <span id="24">24</span>
 <span id="25">25</span>
-<span id="26">26</span>
-<span id="27">27</span>
-<span id="28">28</span>
-<span id="29">29</span>
-<span id="30">30</span>
-<span id="31">31</span>
-<span id="32">32</span>
-<span id="33">33</span>
-<span id="34">34</span>
-<span id="35">35</span>
-<span id="36">36</span>
-</pre><pre class="rust"><code><span class="kw">use crate</span>::{
-    Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
-};
+</pre><pre class="rust"><code><span class="kw">use crate</span>::{Field, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
-<span class="kw">unsafe impl</span>&lt;T: ~<span class="kw">const </span>TypeLayout + core::ops::Deref&gt; <span class="kw">const </span>TypeLayout <span class="kw">for </span>core::pin::Pin&lt;T&gt; {
+<span class="kw">unsafe impl</span>&lt;T: TypeLayout&gt; TypeLayout <span class="kw">for </span>core::pin::Pin&lt;T&gt; {
     <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
         name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
         size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
@@ -47,23 +34,14 @@
             repr: <span class="string">&quot;transparent&quot;</span>,
             fields: <span class="kw-2">&amp;</span>[Field {
                 name: <span class="string">&quot;pointer&quot;</span>,
-                offset: <span class="kw">unsafe </span>{ &lt;T <span class="kw">as </span>TypeLayout&gt;::uninit() }.map(<span class="number">0</span>),
+                offset: <span class="number">0</span>,
                 ty: ::core::any::type_name::&lt;T&gt;(),
             }],
         },
     };
-
-    <span class="kw">unsafe fn </span>uninit() -&gt; MaybeUninhabited&lt;core::mem::MaybeUninit&lt;<span class="self">Self</span>&gt;&gt; {
-        <span class="kw">match </span>&lt;T <span class="kw">as </span>TypeLayout&gt;::uninit() {
-            MaybeUninhabited::Uninhabited =&gt; MaybeUninhabited::Uninhabited,
-            MaybeUninhabited::Inhabited(uninit) =&gt; MaybeUninhabited::Inhabited(
-                core::mem::MaybeUninit::new(<span class="self">Self</span>::new_unchecked(uninit.assume_init())),
-            ),
-        }
-    }
 }
 
-<span class="kw">unsafe impl</span>&lt;T: ~<span class="kw">const </span>TypeGraph + core::ops::Deref&gt; <span class="kw">const </span>TypeGraph <span class="kw">for </span>core::pin::Pin&lt;T&gt; {
+<span class="kw">unsafe impl</span>&lt;T: ~<span class="kw">const </span>TypeGraph&gt; <span class="kw">const </span>TypeGraph <span class="kw">for </span>core::pin::Pin&lt;T&gt; {
     <span class="kw">fn </span>populate_graph(graph: <span class="kw-2">&amp;mut </span>TypeLayoutGraph&lt;<span class="lifetime">&#39;static</span>&gt;) {
         <span class="kw">if </span>graph.insert(<span class="kw-2">&amp;</span><span class="self">Self</span>::TYPE_LAYOUT) {
             &lt;T <span class="kw">as </span>TypeGraph&gt;::populate_graph(graph);

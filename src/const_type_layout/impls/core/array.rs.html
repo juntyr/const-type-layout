@@ -19,37 +19,9 @@
 <span id="19">19</span>
 <span id="20">20</span>
 <span id="21">21</span>
-<span id="22">22</span>
-<span id="23">23</span>
-<span id="24">24</span>
-<span id="25">25</span>
-<span id="26">26</span>
-<span id="27">27</span>
-<span id="28">28</span>
-<span id="29">29</span>
-<span id="30">30</span>
-<span id="31">31</span>
-<span id="32">32</span>
-<span id="33">33</span>
-<span id="34">34</span>
-<span id="35">35</span>
-<span id="36">36</span>
-<span id="37">37</span>
-<span id="38">38</span>
-<span id="39">39</span>
-<span id="40">40</span>
-<span id="41">41</span>
-<span id="42">42</span>
-<span id="43">43</span>
-<span id="44">44</span>
-<span id="45">45</span>
-<span id="46">46</span>
-<span id="47">47</span>
-</pre><pre class="rust"><code><span class="kw">use crate</span>::{
-    MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
-};
+</pre><pre class="rust"><code><span class="kw">use crate</span>::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
-<span class="kw">unsafe impl</span>&lt;T: ~<span class="kw">const </span>TypeLayout, <span class="kw">const </span>N: usize&gt; <span class="kw">const </span>TypeLayout <span class="kw">for </span>[T; N] {
+<span class="kw">unsafe impl</span>&lt;T: TypeLayout, <span class="kw">const </span>N: usize&gt; TypeLayout <span class="kw">for </span>[T; N] {
     <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
         name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
         size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
@@ -59,30 +31,6 @@
             len: N,
         },
     };
-
-    <span class="kw">unsafe fn </span>uninit() -&gt; MaybeUninhabited&lt;core::mem::MaybeUninit&lt;<span class="self">Self</span>&gt;&gt; {
-        <span class="kw">let </span><span class="kw-2">mut </span>uninit_array: [core::mem::MaybeUninit&lt;T&gt;; N] =
-            core::mem::MaybeUninit::uninit_array();
-
-        <span class="kw">let </span><span class="kw-2">mut </span>i = <span class="number">0</span>;
-
-        <span class="kw">while </span>i &lt; N {
-            uninit_array[i] = <span class="kw">match </span>&lt;T <span class="kw">as </span>TypeLayout&gt;::uninit() {
-                MaybeUninhabited::Uninhabited =&gt; {
-                    core::mem::forget(uninit_array);
-
-                    <span class="kw">return </span>MaybeUninhabited::Uninhabited;
-                },
-                MaybeUninhabited::Inhabited(uninit) =&gt; uninit,
-            };
-
-            i += <span class="number">1</span>;
-        }
-
-        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(
-            core::mem::MaybeUninit::array_assume_init(uninit_array),
-        ))
-    }
 }
 
 <span class="kw">unsafe impl</span>&lt;T: ~<span class="kw">const </span>TypeGraph, <span class="kw">const </span>N: usize&gt; <span class="kw">const </span>TypeGraph <span class="kw">for </span>[T; N] {

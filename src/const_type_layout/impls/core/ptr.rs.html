@@ -79,53 +79,18 @@
 <span id="79">79</span>
 <span id="80">80</span>
 <span id="81">81</span>
-<span id="82">82</span>
-<span id="83">83</span>
-<span id="84">84</span>
-<span id="85">85</span>
-<span id="86">86</span>
-<span id="87">87</span>
-<span id="88">88</span>
-<span id="89">89</span>
-<span id="90">90</span>
-<span id="91">91</span>
-<span id="92">92</span>
-<span id="93">93</span>
-<span id="94">94</span>
-<span id="95">95</span>
-<span id="96">96</span>
-<span id="97">97</span>
-<span id="98">98</span>
-<span id="99">99</span>
-<span id="100">100</span>
-<span id="101">101</span>
-<span id="102">102</span>
-<span id="103">103</span>
-<span id="104">104</span>
-<span id="105">105</span>
-<span id="106">106</span>
-<span id="107">107</span>
-</pre><pre class="rust"><code><span class="kw">use crate</span>::{
-    MaybeUninhabited, Mutability, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo,
-    TypeStructure,
-};
+</pre><pre class="rust"><code><span class="kw">use crate</span>::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
-<span class="kw">unsafe impl</span>&lt;T: ~<span class="kw">const </span>TypeLayout&gt; <span class="kw">const </span>TypeLayout <span class="kw">for </span><span class="kw-2">*const </span>T {
+<span class="kw">unsafe impl</span>&lt;T: TypeLayout&gt; TypeLayout <span class="kw">for </span><span class="kw-2">*const </span>T {
     <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
         name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
         size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
         alignment: ::core::mem::align_of::&lt;<span class="self">Self</span>&gt;(),
         structure: TypeStructure::Pointer {
             inner: ::core::any::type_name::&lt;T&gt;(),
-            mutability: Mutability::Immutable,
+            mutability: <span class="bool-val">false</span>,
         },
     };
-
-    <span class="kw">unsafe fn </span>uninit() -&gt; MaybeUninhabited&lt;core::mem::MaybeUninit&lt;<span class="self">Self</span>&gt;&gt; {
-        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(
-            core::ptr::NonNull::dangling().as_ptr(),
-        ))
-    }
 }
 
 <span class="kw">unsafe impl</span>&lt;T: ~<span class="kw">const </span>TypeGraph&gt; <span class="kw">const </span>TypeGraph <span class="kw">for </span><span class="kw-2">*const </span>T {
@@ -136,22 +101,16 @@
     }
 }
 
-<span class="kw">unsafe impl</span>&lt;T: ~<span class="kw">const </span>TypeLayout&gt; <span class="kw">const </span>TypeLayout <span class="kw">for </span><span class="kw-2">*mut </span>T {
+<span class="kw">unsafe impl</span>&lt;T: TypeLayout&gt; TypeLayout <span class="kw">for </span><span class="kw-2">*mut </span>T {
     <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
         name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
         size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
         alignment: ::core::mem::align_of::&lt;<span class="self">Self</span>&gt;(),
         structure: TypeStructure::Pointer {
             inner: ::core::any::type_name::&lt;T&gt;(),
-            mutability: Mutability::Mutable,
+            mutability: <span class="bool-val">true</span>,
         },
     };
-
-    <span class="kw">unsafe fn </span>uninit() -&gt; MaybeUninhabited&lt;core::mem::MaybeUninit&lt;<span class="self">Self</span>&gt;&gt; {
-        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(
-            core::ptr::NonNull::dangling().as_ptr(),
-        ))
-    }
 }
 
 <span class="kw">unsafe impl</span>&lt;T: ~<span class="kw">const </span>TypeGraph&gt; <span class="kw">const </span>TypeGraph <span class="kw">for </span><span class="kw-2">*mut </span>T {
@@ -162,20 +121,16 @@
     }
 }
 
-<span class="kw">unsafe impl</span>&lt;T: ~<span class="kw">const </span>TypeLayout&gt; <span class="kw">const </span>TypeLayout <span class="kw">for </span>core::ptr::NonNull&lt;T&gt; {
+<span class="kw">unsafe impl</span>&lt;T: TypeLayout&gt; TypeLayout <span class="kw">for </span>core::ptr::NonNull&lt;T&gt; {
     <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
         name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
         size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
         alignment: ::core::mem::align_of::&lt;<span class="self">Self</span>&gt;(),
         structure: TypeStructure::Pointer {
             inner: ::core::any::type_name::&lt;T&gt;(),
-            mutability: Mutability::Mutable,
+            mutability: <span class="bool-val">true</span>,
         },
     };
-
-    <span class="kw">unsafe fn </span>uninit() -&gt; MaybeUninhabited&lt;core::mem::MaybeUninit&lt;<span class="self">Self</span>&gt;&gt; {
-        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(core::ptr::NonNull::dangling()))
-    }
 }
 
 <span class="kw">unsafe impl</span>&lt;T: ~<span class="kw">const </span>TypeGraph&gt; <span class="kw">const </span>TypeGraph <span class="kw">for </span>core::ptr::NonNull&lt;T&gt; {
@@ -186,23 +141,16 @@
     }
 }
 
-<span class="kw">unsafe impl</span>&lt;T: ~<span class="kw">const </span>TypeLayout&gt; <span class="kw">const </span>TypeLayout <span class="kw">for </span>core::ptr::NonNull&lt;[T]&gt; {
+<span class="kw">unsafe impl</span>&lt;T: TypeLayout&gt; TypeLayout <span class="kw">for </span>core::ptr::NonNull&lt;[T]&gt; {
     <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
         name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
         size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
         alignment: ::core::mem::align_of::&lt;<span class="self">Self</span>&gt;(),
         structure: TypeStructure::Pointer {
             inner: ::core::any::type_name::&lt;T&gt;(),
-            mutability: Mutability::Mutable,
+            mutability: <span class="bool-val">true</span>,
         },
     };
-
-    <span class="attribute">#[allow(clippy::borrow_as_ptr)]
-    </span><span class="kw">unsafe fn </span>uninit() -&gt; MaybeUninhabited&lt;core::mem::MaybeUninit&lt;<span class="self">Self</span>&gt;&gt; {
-        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(
-            core::ptr::NonNull::new_unchecked(<span class="kw-2">&amp;</span>[] <span class="kw">as </span><span class="kw-2">*const </span>[T] <span class="kw">as </span><span class="kw-2">*mut </span><span class="kw">_</span>),
-        ))
-    }
 }
 
 <span class="kw">unsafe impl</span>&lt;T: ~<span class="kw">const </span>TypeGraph&gt; <span class="kw">const </span>TypeGraph <span class="kw">for </span>core::ptr::NonNull&lt;[T]&gt; {

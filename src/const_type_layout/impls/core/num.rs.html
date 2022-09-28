@@ -63,30 +63,11 @@
 <span id="63">63</span>
 <span id="64">64</span>
 <span id="65">65</span>
-<span id="66">66</span>
-<span id="67">67</span>
-<span id="68">68</span>
-<span id="69">69</span>
-<span id="70">70</span>
-<span id="71">71</span>
-<span id="72">72</span>
-<span id="73">73</span>
-<span id="74">74</span>
-<span id="75">75</span>
-<span id="76">76</span>
-<span id="77">77</span>
-<span id="78">78</span>
-<span id="79">79</span>
-<span id="80">80</span>
-<span id="81">81</span>
-<span id="82">82</span>
-</pre><pre class="rust"><code><span class="kw">use crate</span>::{
-    Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
-};
+</pre><pre class="rust"><code><span class="kw">use crate</span>::{Field, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
 <span class="macro">macro_rules! </span>impl_nonzero_type_layout {
     (<span class="kw">impl </span><span class="macro-nonterminal">$nz</span>:ident =&gt; <span class="macro-nonterminal">$ty</span>:ty) =&gt; {
-        <span class="kw">unsafe impl const </span>TypeLayout <span class="kw">for </span>core::num::<span class="macro-nonterminal">$nz </span>{
+        <span class="kw">unsafe impl </span>TypeLayout <span class="kw">for </span>core::num::<span class="macro-nonterminal">$nz </span>{
             <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
                 name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
                 size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
@@ -96,18 +77,12 @@
                     fields: <span class="kw-2">&amp;</span>[
                         Field {
                             name: <span class="string">&quot;0&quot;</span>,
-                            offset: MaybeUninhabited::Inhabited(<span class="number">0</span>),
+                            offset: <span class="number">0</span>,
                             ty: ::core::any::type_name::&lt;<span class="macro-nonterminal">$ty</span>&gt;(),
                         },
                     ],
                 },
             };
-
-            <span class="kw">unsafe fn </span>uninit() -&gt; MaybeUninhabited&lt;core::mem::MaybeUninit&lt;<span class="self">Self</span>&gt;&gt; {
-                MaybeUninhabited::Inhabited(
-                    core::mem::MaybeUninit::new(<span class="self">Self</span>::new(<span class="number">1</span>).unwrap())
-                )
-            }
         }
 
         <span class="kw">unsafe impl const </span>TypeGraph <span class="kw">for </span>core::num::<span class="macro-nonterminal">$nz </span>{
@@ -130,7 +105,7 @@
     NonZeroU128 =&gt; u128, NonZeroUsize =&gt; usize
 }
 
-<span class="kw">unsafe impl</span>&lt;T: ~<span class="kw">const </span>TypeLayout&gt; <span class="kw">const </span>TypeLayout <span class="kw">for </span>core::num::Wrapping&lt;T&gt; {
+<span class="kw">unsafe impl</span>&lt;T&gt; TypeLayout <span class="kw">for </span>core::num::Wrapping&lt;T&gt; {
     <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
         name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
         size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
@@ -139,20 +114,11 @@
             repr: <span class="string">&quot;transparent&quot;</span>,
             fields: <span class="kw-2">&amp;</span>[Field {
                 name: <span class="string">&quot;0&quot;</span>,
-                offset: <span class="kw">unsafe </span>{ &lt;T <span class="kw">as </span>TypeLayout&gt;::uninit() }.map(<span class="number">0</span>),
+                offset: <span class="number">0</span>,
                 ty: ::core::any::type_name::&lt;T&gt;(),
             }],
         },
     };
-
-    <span class="kw">unsafe fn </span>uninit() -&gt; MaybeUninhabited&lt;core::mem::MaybeUninit&lt;<span class="self">Self</span>&gt;&gt; {
-        <span class="kw">match </span>&lt;T <span class="kw">as </span>TypeLayout&gt;::uninit() {
-            MaybeUninhabited::Uninhabited =&gt; MaybeUninhabited::Uninhabited,
-            MaybeUninhabited::Inhabited(uninit) =&gt; {
-                MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(<span class="self">Self</span>(uninit.assume_init())))
-            },
-        }
-    }
 }
 
 <span class="kw">unsafe impl</span>&lt;T: ~<span class="kw">const </span>TypeGraph&gt; <span class="kw">const </span>TypeGraph <span class="kw">for </span>core::num::Wrapping&lt;T&gt; {

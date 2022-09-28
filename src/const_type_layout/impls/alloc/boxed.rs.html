@@ -39,54 +39,18 @@
 <span id="39">39</span>
 <span id="40">40</span>
 <span id="41">41</span>
-<span id="42">42</span>
-<span id="43">43</span>
-<span id="44">44</span>
-<span id="45">45</span>
-<span id="46">46</span>
-<span id="47">47</span>
-<span id="48">48</span>
-<span id="49">49</span>
-<span id="50">50</span>
-<span id="51">51</span>
-<span id="52">52</span>
-<span id="53">53</span>
-<span id="54">54</span>
-<span id="55">55</span>
-<span id="56">56</span>
-<span id="57">57</span>
-<span id="58">58</span>
-<span id="59">59</span>
-<span id="60">60</span>
-<span id="61">61</span>
-<span id="62">62</span>
-<span id="63">63</span>
-</pre><pre class="rust"><code><span class="kw">use crate</span>::{
-    impls::leak_uninit_ptr, MaybeUninhabited, Mutability, TypeGraph, TypeLayout, TypeLayoutGraph,
-    TypeLayoutInfo, TypeStructure,
-};
+</pre><pre class="rust"><code><span class="kw">use crate</span>::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
-<span class="kw">unsafe impl</span>&lt;T: ~<span class="kw">const </span>TypeLayout&gt; <span class="kw">const </span>TypeLayout <span class="kw">for </span>alloc::boxed::Box&lt;T&gt; {
+<span class="kw">unsafe impl</span>&lt;T: TypeLayout&gt; TypeLayout <span class="kw">for </span>alloc::boxed::Box&lt;T&gt; {
     <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
         name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
         size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
         alignment: ::core::mem::align_of::&lt;<span class="self">Self</span>&gt;(),
         structure: TypeStructure::Pointer {
             inner: ::core::any::type_name::&lt;T&gt;(),
-            mutability: Mutability::Mutable,
+            mutability: <span class="bool-val">true</span>,
         },
     };
-
-    <span class="kw">unsafe fn </span>uninit() -&gt; MaybeUninhabited&lt;core::mem::MaybeUninit&lt;<span class="self">Self</span>&gt;&gt; {
-        <span class="kw">if let </span>MaybeUninhabited::Uninhabited = &lt;T <span class="kw">as </span>TypeLayout&gt;::uninit() {
-            <span class="kw">return </span>MaybeUninhabited::Uninhabited;
-        }
-
-        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(alloc::boxed::Box::from_raw_in(
-            leak_uninit_ptr(),
-            alloc::alloc::Global,
-        )))
-    }
 }
 
 <span class="kw">unsafe impl</span>&lt;T: ~<span class="kw">const </span>TypeGraph&gt; <span class="kw">const </span>TypeGraph <span class="kw">for </span>alloc::boxed::Box&lt;T&gt; {
@@ -97,24 +61,16 @@
     }
 }
 
-<span class="kw">unsafe impl</span>&lt;T: ~<span class="kw">const </span>TypeLayout&gt; <span class="kw">const </span>TypeLayout <span class="kw">for </span>alloc::boxed::Box&lt;[T]&gt; {
+<span class="kw">unsafe impl</span>&lt;T: TypeLayout&gt; TypeLayout <span class="kw">for </span>alloc::boxed::Box&lt;[T]&gt; {
     <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
         name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
         size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
         alignment: ::core::mem::align_of::&lt;<span class="self">Self</span>&gt;(),
         structure: TypeStructure::Pointer {
             inner: ::core::any::type_name::&lt;T&gt;(),
-            mutability: Mutability::Mutable,
+            mutability: <span class="bool-val">true</span>,
         },
     };
-
-    <span class="attribute">#[allow(clippy::borrow_as_ptr)]
-    </span><span class="kw">unsafe fn </span>uninit() -&gt; MaybeUninhabited&lt;core::mem::MaybeUninit&lt;<span class="self">Self</span>&gt;&gt; {
-        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(alloc::boxed::Box::from_raw_in(
-            <span class="kw-2">&amp;</span>[] <span class="kw">as </span><span class="kw-2">*const </span>[T] <span class="kw">as </span><span class="kw-2">*mut </span><span class="kw">_</span>,
-            alloc::alloc::Global,
-        )))
-    }
 }
 
 <span class="kw">unsafe impl</span>&lt;T: ~<span class="kw">const </span>TypeGraph&gt; <span class="kw">const </span>TypeGraph <span class="kw">for </span>alloc::boxed::Box&lt;[T]&gt; {
