@@ -32,7 +32,7 @@
 
 <span class="macro">macro_rules! </span>impl_primitive_type_layout {
     (<span class="kw">impl </span><span class="macro-nonterminal">$ty</span>:ty) =&gt; {
-        <span class="kw">unsafe impl </span>TypeLayout <span class="kw">for </span><span class="macro-nonterminal">$ty </span>{
+        <span class="kw">unsafe impl const </span>TypeLayout <span class="kw">for </span><span class="macro-nonterminal">$ty </span>{
             <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
                 name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
                 size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),

@@ -19,7 +19,7 @@
 <span id="19">19</span>
 </pre><pre class="rust"><code><span class="kw">use crate</span>::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
-<span class="kw">unsafe impl </span>TypeLayout <span class="kw">for </span>core::convert::Infallible {
+<span class="kw">unsafe impl const </span>TypeLayout <span class="kw">for </span>core::convert::Infallible {
     <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
         name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
         size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),

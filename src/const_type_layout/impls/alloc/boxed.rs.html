@@ -41,7 +41,7 @@
 <span id="41">41</span>
 </pre><pre class="rust"><code><span class="kw">use crate</span>::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
-<span class="kw">unsafe impl</span>&lt;T: TypeLayout&gt; TypeLayout <span class="kw">for </span>alloc::boxed::Box&lt;T&gt; {
+<span class="kw">unsafe impl</span>&lt;T: TypeLayout&gt; <span class="kw">const </span>TypeLayout <span class="kw">for </span>alloc::boxed::Box&lt;T&gt; {
     <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
         name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
         size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
@@ -61,7 +61,7 @@
     }
 }
 
-<span class="kw">unsafe impl</span>&lt;T: TypeLayout&gt; TypeLayout <span class="kw">for </span>alloc::boxed::Box&lt;[T]&gt; {
+<span class="kw">unsafe impl</span>&lt;T: TypeLayout&gt; <span class="kw">const </span>TypeLayout <span class="kw">for </span>alloc::boxed::Box&lt;[T]&gt; {
     <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
         name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
         size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),

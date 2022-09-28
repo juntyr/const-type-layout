@@ -67,7 +67,7 @@
 
 <span class="macro">macro_rules! </span>impl_nonzero_type_layout {
     (<span class="kw">impl </span><span class="macro-nonterminal">$nz</span>:ident =&gt; <span class="macro-nonterminal">$ty</span>:ty) =&gt; {
-        <span class="kw">unsafe impl </span>TypeLayout <span class="kw">for </span>core::num::<span class="macro-nonterminal">$nz </span>{
+        <span class="kw">unsafe impl const </span>TypeLayout <span class="kw">for </span>core::num::<span class="macro-nonterminal">$nz </span>{
             <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
                 name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
                 size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
@@ -105,7 +105,7 @@
     NonZeroU128 =&gt; u128, NonZeroUsize =&gt; usize
 }
 
-<span class="kw">unsafe impl</span>&lt;T&gt; TypeLayout <span class="kw">for </span>core::num::Wrapping&lt;T&gt; {
+<span class="kw">unsafe impl</span>&lt;T&gt; <span class="kw">const </span>TypeLayout <span class="kw">for </span>core::num::Wrapping&lt;T&gt; {
     <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
         name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
         size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),

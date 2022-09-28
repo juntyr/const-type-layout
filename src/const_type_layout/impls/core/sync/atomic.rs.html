@@ -92,7 +92,7 @@
 <span class="macro">macro_rules! </span>impl_atomic_int_layout {
     (<span class="kw">impl </span><span class="macro-nonterminal">$at</span>:ident ( <span class="macro-nonterminal">$align</span>:literal : <span class="macro-nonterminal">$cfg</span>:literal ) =&gt; <span class="macro-nonterminal">$ty</span>:ty) =&gt; {
         <span class="attribute">#[cfg(target_has_atomic_load_store = <span class="macro-nonterminal">$cfg</span>)]
-        </span><span class="kw">unsafe impl </span>TypeLayout <span class="kw">for </span>core::sync::atomic::<span class="macro-nonterminal">$at </span>{
+        </span><span class="kw">unsafe impl const </span>TypeLayout <span class="kw">for </span>core::sync::atomic::<span class="macro-nonterminal">$at </span>{
             <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
                 name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
                 size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
@@ -137,7 +137,7 @@
     (<span class="kw">impl </span><span class="macro-nonterminal">$at</span>:ident ( <span class="macro-nonterminal">$align</span>:literal : <span class="macro-nonterminal">$cfg</span>:literal ) =&gt; <span class="macro-nonterminal">$ty</span>:ty) =&gt; {
         <span class="attribute">#[cfg(target_has_atomic_load_store = <span class="string">&quot;ptr&quot;</span>)]
         #[cfg(target_pointer_width = <span class="macro-nonterminal">$cfg</span>)]
-        </span><span class="kw">unsafe impl </span>TypeLayout <span class="kw">for </span>core::sync::atomic::<span class="macro-nonterminal">$at </span>{
+        </span><span class="kw">unsafe impl const </span>TypeLayout <span class="kw">for </span>core::sync::atomic::<span class="macro-nonterminal">$at </span>{
             <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
                 name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
                 size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),

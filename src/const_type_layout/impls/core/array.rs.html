@@ -21,7 +21,7 @@
 <span id="21">21</span>
 </pre><pre class="rust"><code><span class="kw">use crate</span>::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
 
-<span class="kw">unsafe impl</span>&lt;T: TypeLayout, <span class="kw">const </span>N: usize&gt; TypeLayout <span class="kw">for </span>[T; N] {
+<span class="kw">unsafe impl</span>&lt;T: TypeLayout, <span class="kw">const </span>N: usize&gt; <span class="kw">const </span>TypeLayout <span class="kw">for </span>[T; N] {
     <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
         name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
         size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
