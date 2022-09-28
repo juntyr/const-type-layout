@@ -469,6 +469,9 @@
 <span id="469">469</span>
 <span id="470">470</span>
 <span id="471">471</span>
+<span id="472">472</span>
+<span id="473">473</span>
+<span id="474">474</span>
 </pre><pre class="rust"><code><span class="doccomment">//! [![CI Status]][workflow] [![Rust Doc]][docs] [![License Status]][fossa]
 //! [![Code Coverage]][codecov] [![Gitpod Ready-to-Code]][gitpod]
 //!
@@ -510,7 +513,7 @@
 //! # #![cfg_attr(not(version(&quot;1.58.0&quot;)), feature(const_raw_ptr_deref))]
 //! # #![cfg_attr(not(version(&quot;1.59.0&quot;)), feature(const_maybe_uninit_as_ptr))]
 //! # #![cfg_attr(version(&quot;1.59.0&quot;), feature(const_maybe_uninit_as_mut_ptr))]
-//! # #![feature(const_ptr_offset_from)]
+//! # #![cfg_attr(not(version(&quot;1.65.0&quot;)), feature(const_ptr_offset_from))]
 //! # #![cfg_attr(not(version(&quot;1.57.0&quot;)), feature(const_panic))]
 //! # #![feature(const_refs_to_cell)]
 //! # #![feature(const_maybe_uninit_assume_init)]
@@ -563,7 +566,7 @@
 //! # #![cfg_attr(not(version(&quot;1.58.0&quot;)), feature(const_raw_ptr_deref))]
 //! # #![cfg_attr(not(version(&quot;1.59.0&quot;)), feature(const_maybe_uninit_as_ptr))]
 //! # #![cfg_attr(version(&quot;1.59.0&quot;), feature(const_maybe_uninit_as_mut_ptr))]
-//! # #![feature(const_ptr_offset_from)]
+//! # #![cfg_attr(not(version(&quot;1.65.0&quot;)), feature(const_ptr_offset_from))]
 //! # #![cfg_attr(not(version(&quot;1.57.0&quot;)), feature(const_panic))]
 //! # #![feature(const_refs_to_cell)]
 //! # #![feature(const_maybe_uninit_assume_init)]
@@ -615,12 +618,12 @@
 #![feature(cfg_target_has_atomic)]
 #![feature(const_discriminant)]
 #![feature(const_maybe_uninit_assume_init)]
-#![feature(const_ptr_offset_from)]
+#![cfg_attr(not(version(<span class="string">&quot;1.65.0&quot;</span>)), feature(const_ptr_offset_from))]
 #![feature(const_refs_to_cell)]
 #![cfg_attr(not(version(<span class="string">&quot;1.59.0&quot;</span>)), feature(const_maybe_uninit_as_ptr))]
 #![cfg_attr(version(<span class="string">&quot;1.59.0&quot;</span>), feature(const_maybe_uninit_as_mut_ptr))]
 #![feature(const_option)]
-#![feature(let_else)]
+#![cfg_attr(not(version(<span class="string">&quot;1.65.0&quot;</span>)), feature(let_else))]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 #![doc(html_root_url = <span class="string">&quot;https://momolangenstein.github.io/const-type-layout&quot;</span>)]
@@ -644,6 +647,7 @@
 ///
 /// It is only safe to implement this trait if it accurately describes the
 ///  type&#39;s layout. Use `#[derive(TypeLayout)]` instead.
+</span><span class="attribute">#[const_trait]
 </span><span class="kw">pub unsafe trait </span>TypeLayout: Sized {
     <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt;;
 }
@@ -652,11 +656,13 @@
 ///
 /// It is only safe to implement this trait if it accurately populates the
 ///  type&#39;s layout graph. Use `#[derive(TypeLayout)]` instead.
+</span><span class="attribute">#[const_trait]
 </span><span class="kw">pub unsafe trait </span>TypeGraph: TypeLayout {
     <span class="kw">fn </span>populate_graph(graph: <span class="kw-2">&amp;mut </span>TypeLayoutGraph&lt;<span class="lifetime">&#39;static</span>&gt;);
 }
 
-<span class="kw">pub trait </span>TypeGraphLayout: TypeGraph {
+<span class="attribute">#[const_trait]
+</span><span class="kw">pub trait </span>TypeGraphLayout: TypeGraph {
     <span class="kw">const </span>TYPE_GRAPH: TypeLayoutGraph&lt;<span class="lifetime">&#39;static</span>&gt;;
 }
 
