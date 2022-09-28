@@ -662,11 +662,11 @@
 }
 
 <span class="attribute">#[const_trait]
-</span><span class="kw">pub trait </span>TypeGraphLayout: TypeGraph {
+</span><span class="kw">pub trait </span>TypeGraphLayout: TypeLayout + TypeGraph {
     <span class="kw">const </span>TYPE_GRAPH: TypeLayoutGraph&lt;<span class="lifetime">&#39;static</span>&gt;;
 }
 
-<span class="kw">impl</span>&lt;T: ~<span class="kw">const </span>TypeGraph&gt; <span class="kw">const </span>TypeGraphLayout <span class="kw">for </span>T {
+<span class="kw">impl</span>&lt;T: ~<span class="kw">const </span>TypeLayout + ~<span class="kw">const </span>TypeGraph&gt; <span class="kw">const </span>TypeGraphLayout <span class="kw">for </span>T {
     <span class="kw">const </span>TYPE_GRAPH: TypeLayoutGraph&lt;<span class="lifetime">&#39;static</span>&gt; = {
         <span class="kw">let </span><span class="kw-2">mut </span>graph = TypeLayoutGraph::new::&lt;T&gt;();
 
@@ -771,7 +771,7 @@
 
     <span class="attribute">#[must_use]
     #[doc(hidden)]
-    </span><span class="kw">pub const fn </span>new&lt;T: TypeLayout&gt;() -&gt; <span class="self">Self </span>{
+    </span><span class="kw">pub const fn </span>new&lt;T: ~<span class="kw">const </span>TypeLayout&gt;() -&gt; <span class="self">Self </span>{
         <span class="self">Self </span>{
             ty: &lt;T <span class="kw">as </span>TypeLayout&gt;::TYPE_LAYOUT.name,
             tys: [<span class="prelude-val">None</span>; <span class="self">Self</span>::CAPACITY],
