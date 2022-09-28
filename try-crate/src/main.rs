@@ -4,7 +4,7 @@
 #![cfg_attr(not(version("1.58.0")), feature(const_raw_ptr_deref))]
 #![cfg_attr(not(version("1.59.0")), feature(const_maybe_uninit_as_ptr))]
 #![cfg_attr(version("1.59.0"), feature(const_maybe_uninit_as_mut_ptr))]
-#![feature(const_ptr_offset_from)]
+#![cfg_attr(not(version("1.65.0")), feature(const_ptr_offset_from))]
 #![cfg_attr(not(version("1.57.0")), feature(const_panic))]
 #![feature(const_refs_to_cell)]
 #![feature(const_maybe_uninit_assume_init)]

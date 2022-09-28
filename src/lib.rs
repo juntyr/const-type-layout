@@ -39,7 +39,7 @@
 //! # #![cfg_attr(not(version("1.58.0")), feature(const_raw_ptr_deref))]
 //! # #![cfg_attr(not(version("1.59.0")), feature(const_maybe_uninit_as_ptr))]
 //! # #![cfg_attr(version("1.59.0"), feature(const_maybe_uninit_as_mut_ptr))]
-//! # #![feature(const_ptr_offset_from)]
+//! # #![cfg_attr(not(version("1.65.0")), feature(const_ptr_offset_from))]
 //! # #![cfg_attr(not(version("1.57.0")), feature(const_panic))]
 //! # #![feature(const_refs_to_cell)]
 //! # #![feature(const_maybe_uninit_assume_init)]
@@ -92,7 +92,7 @@
 //! # #![cfg_attr(not(version("1.58.0")), feature(const_raw_ptr_deref))]
 //! # #![cfg_attr(not(version("1.59.0")), feature(const_maybe_uninit_as_ptr))]
 //! # #![cfg_attr(version("1.59.0"), feature(const_maybe_uninit_as_mut_ptr))]
-//! # #![feature(const_ptr_offset_from)]
+//! # #![cfg_attr(not(version("1.65.0")), feature(const_ptr_offset_from))]
 //! # #![cfg_attr(not(version("1.57.0")), feature(const_panic))]
 //! # #![feature(const_refs_to_cell)]
 //! # #![feature(const_maybe_uninit_assume_init)]
@@ -144,12 +144,12 @@
 #![feature(cfg_target_has_atomic)]
 #![feature(const_discriminant)]
 #![feature(const_maybe_uninit_assume_init)]
-#![feature(const_ptr_offset_from)]
+#![cfg_attr(not(version("1.65.0")), feature(const_ptr_offset_from))]
 #![feature(const_refs_to_cell)]
 #![cfg_attr(not(version("1.59.0")), feature(const_maybe_uninit_as_ptr))]
 #![cfg_attr(version("1.59.0"), feature(const_maybe_uninit_as_mut_ptr))]
 #![feature(const_option)]
-#![feature(let_else)]
+#![cfg_attr(not(version("1.65.0")), feature(let_else))]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 #![doc(html_root_url = "https://momolangenstein.github.io/const-type-layout")]
@@ -173,6 +173,7 @@ mod serde;
 ///
 /// It is only safe to implement this trait if it accurately describes the
 ///  type's layout. Use `#[derive(TypeLayout)]` instead.
+#[const_trait]
 pub unsafe trait TypeLayout: Sized {
     const TYPE_LAYOUT: TypeLayoutInfo<'static>;
 }
@@ -181,10 +182,12 @@ pub unsafe trait TypeLayout: Sized {
 ///
 /// It is only safe to implement this trait if it accurately populates the
 ///  type's layout graph. Use `#[derive(TypeLayout)]` instead.
+#[const_trait]
 pub unsafe trait TypeGraph: TypeLayout {
     fn populate_graph(graph: &mut TypeLayoutGraph<'static>);
 }
 
+#[const_trait]
 pub trait TypeGraphLayout: TypeGraph {
     const TYPE_GRAPH: TypeLayoutGraph<'static>;
 }
