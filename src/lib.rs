@@ -232,7 +232,7 @@ pub unsafe trait TypeGraph: TypeLayout {
 }
 
 #[const_trait]
-pub trait TypeGraphLayout: TypeGraph {
+pub trait TypeGraphLayout: ~const TypeLayout + ~const TypeGraph {
     const TYPE_GRAPH: TypeLayoutGraph<'static>;
 }
 
