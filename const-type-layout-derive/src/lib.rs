@@ -452,9 +452,9 @@ fn quote_fields(
 
     let ident = syn::Ident::new(
         &(if let Some(qualifier) = qualifier {
-            format!("__{}_{}_fields", ty_name, qualifier)
+            format!("__{ty_name}_{qualifier}_fields")
         } else {
-            format!("__{}_fields", ty_name)
+            format!("__{ty_name}_fields")
         })
         .to_uppercase(),
         ty_name.span(),
@@ -681,7 +681,7 @@ fn quote_discriminant_bytes(
     consts: &mut Vec<proc_macro2::TokenStream>,
 ) -> proc_macro2::TokenStream {
     let ident = syn::Ident::new(
-        &format!("__{}_{}_discriminant", ty_name, variant_name).to_uppercase(),
+        &format!("__{ty_name}_{variant_name}_discriminant").to_uppercase(),
         ty_name.span(),
     );
 
@@ -722,7 +722,7 @@ fn quote_variants(
     let variants_len = variants.len();
 
     let ident = syn::Ident::new(
-        &format!("__{}_variants", ty_name).to_uppercase(),
+        &format!("__{ty_name}_variants").to_uppercase(),
         ty_name.span(),
     );
 

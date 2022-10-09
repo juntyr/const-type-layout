@@ -441,7 +441,7 @@ impl<'a> fmt::Debug for Discriminant<'a> {
             if byte != 0_u8 {
                 is_zero = false;
 
-                write!(fmt, "{:x}", byte)?;
+                write!(fmt, "{byte:x}")?;
             }
         }
 

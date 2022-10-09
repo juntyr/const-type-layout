@@ -110,10 +110,10 @@ fn main() {
         let part: Vec<u8> = std::ascii::escape_default(b).collect();
         ascii_escaped_layout.push_str(std::str::from_utf8(&part).unwrap());
     }
-    println!("{}", ascii_escaped_layout);
+    println!("{ascii_escaped_layout}");
 
     let ron_layout = ron::to_string(&<List<u8>>::TYPE_GRAPH).unwrap();
-    println!("{}", ron_layout);
+    println!("{ron_layout}");
 }
 
 const SERIALISED_LIST_U8_LAYOUT: [u8; const_type_layout::serialised_type_graph_len::<List<u8>>()] =
