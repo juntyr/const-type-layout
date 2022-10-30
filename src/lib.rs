@@ -227,7 +227,7 @@ pub unsafe trait TypeLayout: Sized {
 /// It is only safe to implement this trait if it accurately populates the
 ///  type's layout graph. Use `#[derive(TypeLayout)]` instead.
 #[const_trait]
-pub unsafe trait TypeGraph: TypeLayout {
+pub unsafe trait TypeGraph: ~const TypeLayout {
     fn populate_graph(graph: &mut TypeLayoutGraph<'static>);
 }
 
