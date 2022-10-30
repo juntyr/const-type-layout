@@ -1,15 +1,24 @@
-use crate::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
+use crate::{
+    MaybeUninhabited, Mutability, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo,
+    TypeStructure,
+};
 
-unsafe impl<T: TypeLayout> const TypeLayout for *const T {
+unsafe impl<T: ~const TypeLayout> const TypeLayout for *const T {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Pointer {
             inner: ::core::any::type_name::<T>(),
-            mutability: false,
+            mutability: Mutability::Immutable,
         },
     };
+
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(
+            core::ptr::NonNull::dangling().as_ptr(),
+        ))
+    }
 }
 
 unsafe impl<T: ~const TypeGraph> const TypeGraph for *const T {
@@ -20,16 +29,22 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for *const T {
     }
 }
 
-unsafe impl<T: TypeLayout> const TypeLayout for *mut T {
+unsafe impl<T: ~const TypeLayout> const TypeLayout for *mut T {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Pointer {
             inner: ::core::any::type_name::<T>(),
-            mutability: true,
+            mutability: Mutability::Mutable,
         },
     };
+
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(
+            core::ptr::NonNull::dangling().as_ptr(),
+        ))
+    }
 }
 
 unsafe impl<T: ~const TypeGraph> const TypeGraph for *mut T {
@@ -40,16 +55,20 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for *mut T {
     }
 }
 
-unsafe impl<T: TypeLayout> const TypeLayout for core::ptr::NonNull<T> {
+unsafe impl<T: ~const TypeLayout> const TypeLayout for core::ptr::NonNull<T> {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Pointer {
             inner: ::core::any::type_name::<T>(),
-            mutability: true,
+            mutability: Mutability::Mutable,
         },
     };
+
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(core::ptr::NonNull::dangling()))
+    }
 }
 
 unsafe impl<T: ~const TypeGraph> const TypeGraph for core::ptr::NonNull<T> {
@@ -60,16 +79,23 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for core::ptr::NonNull<T> {
     }
 }
 
-unsafe impl<T: TypeLayout> const TypeLayout for core::ptr::NonNull<[T]> {
+unsafe impl<T: ~const TypeLayout> const TypeLayout for core::ptr::NonNull<[T]> {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Pointer {
             inner: ::core::any::type_name::<T>(),
-            mutability: true,
+            mutability: Mutability::Mutable,
         },
     };
+
+    #[allow(clippy::borrow_as_ptr)]
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(
+            core::ptr::NonNull::new_unchecked(&[] as *const [T] as *mut _),
+        ))
+    }
 }
 
 unsafe impl<T: ~const TypeGraph> const TypeGraph for core::ptr::NonNull<[T]> {

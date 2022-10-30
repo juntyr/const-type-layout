@@ -36,17 +36,12 @@
 //! ```rust
 //! # #![feature(cfg_version)]
 //! # #![feature(const_type_name)]
-//! # #![cfg_attr(not(version("1.58.0")), feature(const_raw_ptr_deref))]
-//! # #![cfg_attr(not(version("1.59.0")), feature(const_maybe_uninit_as_ptr))]
-//! # #![cfg_attr(version("1.59.0"), feature(const_maybe_uninit_as_mut_ptr))]
-//! # #![cfg_attr(not(version("1.65.0")), feature(const_ptr_offset_from))]
-//! # #![cfg_attr(not(version("1.57.0")), feature(const_panic))]
 //! # #![feature(const_refs_to_cell)]
-//! # #![feature(const_maybe_uninit_assume_init)]
-//! # #![feature(const_discriminant)]
 //! # #![feature(const_trait_impl)]
 //! # #![feature(const_mut_refs)]
+//! # #![feature(const_transmute_copy)]
 //! # #![cfg_attr(not(version("1.61.0")), feature(const_fn_trait_bound))]
+//! # #![cfg_attr(not(version("1.61.0")), feature(const_ptr_offset))]
 //! # #![allow(incomplete_features)]
 //! # #![feature(generic_const_exprs)]
 //! use const_type_layout::TypeLayout;
@@ -54,8 +49,8 @@
 //! #[derive(TypeLayout)]
 //! #[repr(C)]
 //! struct Foo {
-//! a: u8,
-//! b: u32,
+//!     a: u8,
+//!     b: u32,
 //! }
 //!
 //! println!("{:#?}", Foo::TYPE_LAYOUT);
@@ -89,17 +84,12 @@
 //! ```rust
 //! # #![feature(cfg_version)]
 //! # #![feature(const_type_name)]
-//! # #![cfg_attr(not(version("1.58.0")), feature(const_raw_ptr_deref))]
-//! # #![cfg_attr(not(version("1.59.0")), feature(const_maybe_uninit_as_ptr))]
-//! # #![cfg_attr(version("1.59.0"), feature(const_maybe_uninit_as_mut_ptr))]
-//! # #![cfg_attr(not(version("1.65.0")), feature(const_ptr_offset_from))]
-//! # #![cfg_attr(not(version("1.57.0")), feature(const_panic))]
 //! # #![feature(const_refs_to_cell)]
-//! # #![feature(const_maybe_uninit_assume_init)]
-//! # #![feature(const_discriminant)]
 //! # #![feature(const_trait_impl)]
 //! # #![feature(const_mut_refs)]
+//! # #![feature(const_transmute_copy)]
 //! # #![cfg_attr(not(version("1.61.0")), feature(const_fn_trait_bound))]
+//! # #![cfg_attr(not(version("1.61.0")), feature(const_ptr_offset))]
 //! # #![allow(incomplete_features)]
 //! # #![feature(generic_const_exprs)]
 //! use const_type_layout::TypeLayout;
@@ -107,7 +97,7 @@
 //! #[derive(TypeLayout)]
 //! #[repr(C, align(128))]
 //! struct OverAligned {
-//! value: u8,
+//!     value: u8,
 //! }
 //!
 //! println!("{:#?}", OverAligned::TYPE_LAYOUT);
@@ -134,22 +124,31 @@
 #![no_std]
 #![feature(cfg_version)]
 #![feature(const_type_name)]
-#![cfg_attr(not(version("1.58.0")), feature(const_raw_ptr_deref))]
 #![cfg_attr(not(version("1.61.0")), feature(const_ptr_offset))]
 #![feature(const_mut_refs)]
-#![feature(const_raw_ptr_comparison)]
 #![feature(const_trait_impl)]
 #![cfg_attr(not(version("1.61.0")), feature(const_fn_trait_bound))]
-#![cfg_attr(not(version("1.57.0")), feature(const_panic))]
 #![feature(cfg_target_has_atomic)]
 #![feature(const_discriminant)]
-#![feature(const_maybe_uninit_assume_init)]
 #![cfg_attr(not(version("1.65.0")), feature(const_ptr_offset_from))]
 #![feature(const_refs_to_cell)]
-#![cfg_attr(not(version("1.59.0")), feature(const_maybe_uninit_as_ptr))]
-#![cfg_attr(version("1.59.0"), feature(const_maybe_uninit_as_mut_ptr))]
 #![feature(const_option)]
-#![cfg_attr(not(version("1.65.0")), feature(let_else))]
+#![cfg_attr(not(version("1.66.0")), feature(let_else))]
+#![feature(core_intrinsics)]
+#![feature(const_heap)]
+#![feature(allow_internal_unstable)]
+#![feature(decl_macro)]
+#![feature(allocator_api)]
+#![feature(const_box)]
+#![feature(const_pin)]
+#![feature(const_ptr_write)]
+#![feature(inline_const)]
+#![feature(const_eval_select)]
+#![feature(never_type)]
+#![feature(maybe_uninit_uninit_array)]
+#![feature(const_maybe_uninit_uninit_array)]
+#![feature(maybe_uninit_array_assume_init)]
+#![feature(const_maybe_uninit_array_assume_init)]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 #![doc(html_root_url = "https://momolangenstein.github.io/const-type-layout")]
@@ -158,16 +157,49 @@
 #[doc(hidden)]
 pub extern crate alloc;
 
-use core::ops::Deref;
+use core::{marker::Destruct, ops::Deref};
 
 use alloc::fmt;
 
 pub use const_type_layout_derive::TypeLayout;
 
-mod impls;
+#[doc(hidden)]
+pub mod impls;
 mod ser;
 #[cfg(feature = "serde")]
 mod serde;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize))]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
+pub enum MaybeUninhabited<T> {
+    Uninhabited,
+    Inhabited(T),
+}
+
+impl<T: Default> Default for MaybeUninhabited<T> {
+    fn default() -> Self {
+        Self::Inhabited(T::default())
+    }
+}
+
+impl<T> MaybeUninhabited<T> {
+    #[must_use]
+    pub const fn map<U: ~const Destruct>(&self, value: U) -> MaybeUninhabited<U> {
+        match self {
+            Self::Inhabited(_) => MaybeUninhabited::Inhabited(value),
+            Self::Uninhabited => MaybeUninhabited::Uninhabited,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize))]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
+pub enum Mutability {
+    Immutable,
+    Mutable,
+}
 
 /// # Safety
 ///
@@ -176,6 +208,18 @@ mod serde;
 #[const_trait]
 pub unsafe trait TypeLayout: Sized {
     const TYPE_LAYOUT: TypeLayoutInfo<'static>;
+
+    #[must_use]
+    /// # Safety
+    ///
+    /// 1. The returned value is not safe to be used in any other way than
+    ///    to calculate field offsets and discriminants.
+    ///
+    /// 2. The value and any value built with it must NOT be dropped.
+    ///
+    /// 3. Must return `MaybeUninhabited::Uninhabited` iff the type is
+    ///    uninhabited.
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>>;
 }
 
 /// # Safety
@@ -183,12 +227,12 @@ pub unsafe trait TypeLayout: Sized {
 /// It is only safe to implement this trait if it accurately populates the
 ///  type's layout graph. Use `#[derive(TypeLayout)]` instead.
 #[const_trait]
-pub unsafe trait TypeGraph: TypeLayout {
+pub unsafe trait TypeGraph: ~const TypeLayout {
     fn populate_graph(graph: &mut TypeLayoutGraph<'static>);
 }
 
 #[const_trait]
-pub trait TypeGraphLayout: TypeLayout + TypeGraph {
+pub trait TypeGraphLayout: ~const TypeLayout + ~const TypeGraph {
     const TYPE_GRAPH: TypeLayoutGraph<'static>;
 }
 
@@ -261,25 +305,44 @@ pub enum TypeStructure<
     F: Deref<Target = [Field<'a>]> = &'a [Field<'a>],
     V: Deref<Target = [Variant<'a, F>]> = &'a [Variant<'a, F>],
 > {
-    Struct { repr: &'a str, fields: F },
-    Union { repr: &'a str, fields: F },
-    Enum { repr: &'a str, variants: V },
+    Struct {
+        repr: &'a str,
+        fields: F,
+    },
+    Union {
+        repr: &'a str,
+        fields: F,
+    },
+    Enum {
+        repr: &'a str,
+        variants: V,
+    },
     Primitive,
-    Array { item: &'a str, len: usize },
-    Reference { inner: &'a str, mutability: bool },
-    Pointer { inner: &'a str, mutability: bool },
+    Array {
+        item: &'a str,
+        len: usize,
+    },
+    Reference {
+        inner: &'a str,
+        mutability: Mutability,
+    },
+    Pointer {
+        inner: &'a str,
+        mutability: Mutability,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub struct Variant<'a, F: Deref<Target = [Field<'a>]> = &'a [Field<'a>]> {
     pub name: &'a str,
-    pub discriminant: Discriminant<'a>,
+    pub discriminant: MaybeUninhabited<Discriminant<'a>>,
     pub fields: F,
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
+#[repr(transparent)]
 pub struct Discriminant<'a> {
     pub big_endian_bytes: &'a [u8],
 }
@@ -288,7 +351,7 @@ pub struct Discriminant<'a> {
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub struct Field<'a> {
     pub name: &'a str,
-    pub offset: usize,
+    pub offset: MaybeUninhabited<usize>,
     pub ty: &'a str,
 }
 
@@ -312,7 +375,9 @@ impl<'a> TypeLayoutGraph<'a> {
 
         while i < self.tys.len() {
             // The first free slot can be used to insert the ty
-            let Some(cached_ty) = self.tys[i] else {
+            let cached_ty = if let Some(cached_ty) = self.tys[i] {
+                cached_ty
+            } else {
                 self.tys[i] = Some(ty);
 
                 return true;
@@ -471,4 +536,227 @@ impl<'a> PartialOrd for Field<'a> {
     fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
         Some(self.cmp(other))
     }
+}
+
+#[allow_internal_unstable(const_ptr_offset_from)]
+pub macro struct_field_offset($ty_name:ident => $ty:ty => (*$base:ident).$field:tt => $($extra_fields:tt)?) {
+    {
+        #[allow(clippy::unneeded_field_pattern)]
+        let $ty_name { $field: _, $($extra_fields)? }: $ty;
+
+        if let $crate::MaybeUninhabited::Inhabited(uninit) = unsafe { <$ty as $crate::TypeLayout>::uninit() } {
+            let $base: *const $ty = ::core::ptr::addr_of!(uninit).cast();
+
+            #[allow(unused_unsafe)]
+            let field_ptr = unsafe {
+                ::core::ptr::addr_of!((*$base).$field)
+            };
+
+            #[allow(clippy::cast_sign_loss)]
+            let offset = unsafe { field_ptr.cast::<u8>().offset_from($base.cast()) as usize };
+
+            #[allow(clippy::forget_non_drop, clippy::forget_copy)]
+            core::mem::forget(uninit);
+
+            $crate::MaybeUninhabited::Inhabited(offset)
+        } else {
+            $crate::MaybeUninhabited::Uninhabited
+        }
+    }
+}
+
+#[allow_internal_unstable(const_discriminant)]
+pub macro struct_variant_discriminant {
+    ($ty_name:ident => $ty:ty => $variant_name:ident) => {
+        $crate::MaybeUninhabited::Inhabited {
+            0: $crate::Discriminant {
+                big_endian_bytes: &{
+                    let uninit: $ty = $ty_name::$variant_name;
+
+                    let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<$ty>>()] = unsafe {
+                        core::mem::transmute(core::mem::discriminant(&uninit))
+                    };
+
+                    #[allow(clippy::forget_non_drop, clippy::forget_copy)]
+                    core::mem::forget(uninit);
+
+                    let mut big_endian_bytes = [0_u8; core::mem::size_of::<core::mem::Discriminant<$ty>>()];
+
+                    let mut i = 0;
+
+                    while i < system_endian_bytes.len() {
+                        big_endian_bytes[i] = system_endian_bytes[if cfg!(target_endian = "big") {
+                            i
+                        } else {
+                            system_endian_bytes.len() - i - 1
+                        }];
+
+                        i += 1;
+                    }
+
+                    big_endian_bytes
+                },
+            },
+        }
+    },
+    ($ty_name:ident => $ty:ty => $variant_name:ident($($field_name:ident: $field_ty:ty),* $(,)?)) => {{
+        #[allow(unused_parens)]
+        if let (
+            $($crate::MaybeUninhabited::Inhabited($field_name)),*
+        ) = (
+            $(unsafe { <$field_ty as $crate::TypeLayout>::uninit() }),*
+        ) {
+            $crate::MaybeUninhabited::Inhabited {
+                0: $crate::Discriminant {
+                    big_endian_bytes: {
+                        let uninit: $ty = $ty_name::$variant_name(
+                            $(unsafe { $field_name.assume_init() }),*
+                        );
+
+                        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<$ty>>()] = unsafe {
+                            core::mem::transmute(core::mem::discriminant(&uninit))
+                        };
+
+                        #[allow(clippy::forget_non_drop, clippy::forget_copy)]
+                        core::mem::forget(uninit);
+
+                        let big_endian_bytes = unsafe {
+                            &mut *$crate::impls::leak_uninit_ptr::<
+                                [u8; core::mem::size_of::<core::mem::Discriminant<$ty>>()]
+                            >()
+                        };
+
+                        let mut i = 0;
+
+                        while i < system_endian_bytes.len() {
+                            (*big_endian_bytes)[i] = system_endian_bytes[if cfg!(target_endian = "big") {
+                                i
+                            } else {
+                                system_endian_bytes.len() - i - 1
+                            }];
+
+                            i += 1;
+                        }
+
+                        big_endian_bytes
+                    }
+                },
+            }
+        } else {
+            $crate::MaybeUninhabited::Uninhabited
+        }
+    }},
+    ($ty_name:ident => $ty:ty => $variant_name:ident { $($field_name:ident: $field_ty:ty),* $(,)? }) => {{
+        #[allow(unused_parens)]
+        if let (
+            $($crate::MaybeUninhabited::Inhabited($field_name)),*
+        ) = (
+            $(unsafe { <$field_ty as $crate::TypeLayout>::uninit() }),*
+        ) {
+            $crate::MaybeUninhabited::Inhabited {
+                0: $crate::Discriminant {
+                    big_endian_bytes: {
+                        let uninit: $ty = $ty_name::$variant_name {
+                            $($field_name: unsafe { $field_name.assume_init() }),*
+                        };
+
+                        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<$ty>>()] = unsafe {
+                            core::mem::transmute(core::mem::discriminant(&uninit))
+                        };
+
+                        #[allow(clippy::forget_non_drop, clippy::forget_copy)]
+                        core::mem::forget(uninit);
+
+                        let big_endian_bytes = unsafe {
+                            &mut *$crate::impls::leak_uninit_ptr::<
+                                [u8; core::mem::size_of::<core::mem::Discriminant<$ty>>()]
+                            >()
+                        };
+
+                        let mut i = 0;
+
+                        while i < system_endian_bytes.len() {
+                            (*big_endian_bytes)[i] = system_endian_bytes[if cfg!(target_endian = "big") {
+                                i
+                            } else {
+                                system_endian_bytes.len() - i - 1
+                            }];
+
+                            i += 1;
+                        }
+
+                        big_endian_bytes
+                    }
+                },
+            }
+        } else {
+            $crate::MaybeUninhabited::Uninhabited
+        }
+    }},
+}
+
+#[allow_internal_unstable(const_ptr_offset_from)]
+pub macro struct_variant_field_offset {
+    ($ty_name:ident => $ty:ty => $variant_name:ident($($field_name:ident: $field_ty:ty),* $(,)?) => $field_index:tt) => {{
+        #[allow(unused_parens)]
+        if let (
+            $($crate::MaybeUninhabited::Inhabited($field_name)),*
+        ) = (
+            $(unsafe { <$field_ty as $crate::TypeLayout>::uninit() }),*
+        ) {
+            let uninit: $ty = $ty_name::$variant_name(
+                $(unsafe { $field_name.assume_init() }),*
+            );
+            let base_ptr: *const $ty = ::core::ptr::addr_of!(uninit).cast();
+
+            let field_ptr: *const u8 = match &uninit {
+                #[allow(clippy::unneeded_field_pattern, clippy::ptr_as_ptr)]
+                $ty_name::$variant_name { $field_index: field, .. } => {
+                    field as *const _ as *const u8
+                },
+                _ => unreachable!(),
+            };
+
+            #[allow(clippy::cast_sign_loss)]
+            let offset = unsafe { field_ptr.cast::<u8>().offset_from(base_ptr.cast()) as usize };
+
+            #[allow(clippy::forget_non_drop, clippy::forget_copy)]
+            core::mem::forget(uninit);
+
+            $crate::MaybeUninhabited::Inhabited(offset)
+        } else {
+            $crate::MaybeUninhabited::Uninhabited
+        }
+    }},
+    ($ty_name:ident => $ty:ty => $variant_name:ident { $($field_name:ident: $field_ty:ty),* $(,)? } => $field_index:ident) => {{
+        #[allow(unused_parens)]
+        if let (
+            $($crate::MaybeUninhabited::Inhabited($field_name)),*
+        ) = (
+            $(unsafe { <$field_ty as $crate::TypeLayout>::uninit() }),*
+        ) {
+            let uninit: $ty = $ty_name::$variant_name {
+                $($field_name: unsafe { $field_name.assume_init() }),*
+            };
+            let base_ptr: *const $ty = ::core::ptr::addr_of!(uninit).cast();
+
+            let field_ptr: *const u8 = match &uninit {
+                #[allow(clippy::unneeded_field_pattern)]
+                $ty_name::$variant_name { $field_index: field, .. } => {
+                    field as *const _ as *const u8
+                },
+                _ => unreachable!(),
+            };
+
+            #[allow(clippy::cast_sign_loss)]
+            let offset = unsafe { field_ptr.cast::<u8>().offset_from(base_ptr.cast()) as usize };
+
+            #[allow(clippy::forget_non_drop, clippy::forget_copy)]
+            core::mem::forget(uninit);
+
+            $crate::MaybeUninhabited::Inhabited(offset)
+        } else {
+            $crate::MaybeUninhabited::Uninhabited
+        }
+    }},
 }

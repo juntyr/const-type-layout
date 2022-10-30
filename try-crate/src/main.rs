@@ -1,18 +1,13 @@
 #![deny(clippy::pedantic)]
 #![feature(cfg_version)]
 #![feature(const_type_name)]
-#![cfg_attr(not(version("1.58.0")), feature(const_raw_ptr_deref))]
-#![cfg_attr(not(version("1.59.0")), feature(const_maybe_uninit_as_ptr))]
-#![cfg_attr(version("1.59.0"), feature(const_maybe_uninit_as_mut_ptr))]
-#![cfg_attr(not(version("1.65.0")), feature(const_ptr_offset_from))]
-#![cfg_attr(not(version("1.57.0")), feature(const_panic))]
 #![feature(const_refs_to_cell)]
-#![feature(const_maybe_uninit_assume_init)]
-#![feature(const_discriminant)]
 #![feature(const_trait_impl)]
 #![feature(const_mut_refs)]
+#![feature(const_transmute_copy)]
 #![cfg_attr(not(version("1.61.0")), feature(const_fn_trait_bound))]
 #![cfg_attr(not(version("1.61.0")), feature(const_ptr_offset))]
+#![feature(never_type)]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 
@@ -43,15 +38,45 @@ struct Foo4<T>(T);
 #[derive(TypeLayout)]
 union Bar {
     a: u8,
-    b: u16,
+    b: bool,
 }
 
+#[repr(C)]
+#[derive(TypeLayout)]
+union SingleUnion {
+    a: u8,
+}
+
+#[derive(TypeLayout)]
+#[layout(ground = "b")]
+union RecursiveRef<'a> {
+    a: &'a RecursiveRef<'a>,
+    b: (),
+}
+
+#[derive(TypeLayout)]
+union RecursivePtr {
+    a: *const RecursivePtr,
+}
+
+#[allow(clippy::empty_enum)]
 #[derive(TypeLayout)]
 enum Never {}
 
 #[derive(TypeLayout)]
 enum Single {
     Single,
+}
+
+#[derive(TypeLayout)]
+enum Double {
+    A = 2,
+    B = 3,
+}
+
+#[derive(TypeLayout)]
+enum WithDouble {
+    A(Double),
 }
 
 #[repr(C)]
@@ -63,13 +88,29 @@ enum Quo<T> {
     Struct { a: T, b: u16, c: T },
 }
 
+#[derive(TypeLayout)]
+enum NoUnit<T> {
+    A(T),
+    B(T),
+}
+
 #[repr(u8, C)]
 #[derive(TypeLayout)]
-#[layout(free = "Box<List<T>>")]
-#[layout(bound = "T: ::const_type_layout::TypeLayout")]
 enum List<T> {
     Cons { item: T, next: Box<List<T>> },
     Tail,
+}
+
+#[derive(TypeLayout)]
+#[layout(ground = "Leaf")]
+enum Tree<T> {
+    Node {
+        left: Box<Tree<T>>,
+        right: Box<Tree<T>>,
+    },
+    Leaf {
+        item: T,
+    },
 }
 
 #[repr(transparent)]
@@ -79,6 +120,36 @@ pub struct Reference<'r, T: 'r> {
     reference: std::marker::PhantomData<&'r T>,
 }
 
+#[repr(transparent)]
+#[derive(TypeLayout)]
+pub struct MutReference<'r, T: 'r> {
+    pointer: *mut T,
+    reference: std::marker::PhantomData<&'r mut T>,
+}
+
+#[derive(TypeLayout)]
+pub struct Referencing<'r, T: 'r> {
+    c: &'r T,
+    m: &'r mut T,
+}
+
+#[derive(TypeLayout)]
+#[layout(free = "T")]
+pub struct MyPhantomData<T> {
+    marker: std::marker::PhantomData<T>,
+}
+
+#[derive(TypeLayout)]
+#[repr(transparent)]
+pub struct Wrapper(f64);
+
+// FIXME: move bound from where clause to impl bound
+//        https://github.com/dtolnay/syn/issues/1238
+#[derive(TypeLayout)]
+pub struct Bounded<T>(T)
+where
+    T: std::fmt::Debug + ~const TypeGraphLayout;
+
 fn main() {
     println!("{:#?}", Foo1::TYPE_GRAPH);
     println!("{:#?}", Foo2::TYPE_GRAPH);
@@ -86,24 +157,59 @@ fn main() {
     println!("{:#?}", Foo4::<u8>::TYPE_GRAPH);
 
     println!("{:#?}", Bar::TYPE_GRAPH);
+    println!("{:#?}", SingleUnion::TYPE_GRAPH);
+    println!("{:#?}", RecursiveRef::<'static>::TYPE_GRAPH);
+    println!("{:#?}", RecursivePtr::TYPE_GRAPH);
 
     println!("{:#?}", Never::TYPE_GRAPH);
     println!("{:#?}", Single::TYPE_GRAPH);
+    println!("{:#?}", Double::TYPE_GRAPH);
+    println!("{:#?}", WithDouble::TYPE_GRAPH);
     println!("{:#?}", Quo::<u32>::TYPE_GRAPH);
+    println!("{:#?}", NoUnit::<u32>::TYPE_GRAPH);
 
     println!("{:#?}", <()>::TYPE_GRAPH);
     println!("{:#?}", <[u32; 3]>::TYPE_GRAPH);
-    println!("{:#?}", <std::marker::PhantomData<String>>::TYPE_GRAPH);
     println!("{:#?}", <std::mem::MaybeUninit<Box<i8>>>::TYPE_GRAPH);
     println!("{:#?}", <Box<u8>>::TYPE_GRAPH);
     println!("{:#?}", <Box<[u8]>>::TYPE_GRAPH);
+    println!("{:#?}", <Box<&'static u8>>::TYPE_GRAPH);
+
+    println!("{:#?}", <std::marker::PhantomData<bool>>::TYPE_GRAPH);
+    println!("{:#?}", <std::marker::PhantomData<String>>::TYPE_GRAPH);
+    println!("{:#?}", <MyPhantomData<bool>>::TYPE_GRAPH);
+    println!("{:#?}", <MyPhantomData<String>>::TYPE_GRAPH);
 
     println!("{:#?}", <Option<std::num::NonZeroU64>>::TYPE_GRAPH);
     println!("{:#?}", <Result<bool, u8>>::TYPE_GRAPH);
 
+    println!("{:#?}", <std::convert::Infallible>::TYPE_GRAPH);
+    println!("{:#?}", <!>::TYPE_GRAPH);
+
+    println!("{:#?}", <Option<std::convert::Infallible>>::TYPE_GRAPH);
+    println!("{:#?}", <Result<u8, std::convert::Infallible>>::TYPE_GRAPH);
+    println!("{:#?}", <Result<std::convert::Infallible, u8>>::TYPE_GRAPH);
+    println!(
+        "{:#?}",
+        <Result<std::convert::Infallible, std::convert::Infallible>>::TYPE_GRAPH
+    );
+
+    println!("{:#?}", <*const u8>::TYPE_GRAPH);
+    println!("{:#?}", <*mut u8>::TYPE_GRAPH);
+    println!("{:#?}", <&u8>::TYPE_GRAPH);
+    println!("{:#?}", <&mut u8>::TYPE_GRAPH);
+
     println!("{:#?}", <Reference<i32>>::TYPE_GRAPH);
+    println!("{:#?}", <MutReference<u32>>::TYPE_GRAPH);
+    println!("{:#?}", <Referencing<&'static u8>>::TYPE_GRAPH);
+
+    println!("{:#?}", <Wrapper>::TYPE_GRAPH);
+    println!("{:#?}", <Bounded<bool>>::TYPE_GRAPH);
+
+    non_static_ref(&0);
 
     println!("{:#?}", <List<u8>>::TYPE_GRAPH);
+    println!("{:#?}", <Tree<u8>>::TYPE_GRAPH);
 
     let mut ascii_escaped_layout = String::new();
     for b in SERIALISED_LIST_U8_LAYOUT {
@@ -114,6 +220,10 @@ fn main() {
 
     let ron_layout = ron::to_string(&<List<u8>>::TYPE_GRAPH).unwrap();
     println!("{ron_layout}");
+}
+
+fn non_static_ref<'a>(_val: &'a u128) {
+    println!("{:#?}", <Referencing<&'a u8>>::TYPE_GRAPH);
 }
 
 const SERIALISED_LIST_U8_LAYOUT: [u8; const_type_layout::serialised_type_graph_len::<List<u8>>()] =

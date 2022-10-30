@@ -2,7 +2,7 @@
 name = "try-crate"
 publish = false
 version = "0.1.0"
-authors = ["Momo Langenstein <momo.langenstein@helsinki.fi>", "Lucien Greathouse <me@lpghatguy.com>"]
+authors = ["Juniper Langenstein <juniper.langenstein@helsinki.fi>", "Lucien Greathouse <me@lpghatguy.com>"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -11,4 +11,4 @@ edition = "2021"
 const-type-layout = { path = "..", features = ["serde"] }
 
 serde = "1.0"
-ron = "0.7"
+ron = "0.8"

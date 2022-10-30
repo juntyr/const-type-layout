@@ -1,4 +1,6 @@
-use crate::{TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
+use crate::{
+    MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+};
 
 unsafe impl const TypeLayout for core::ffi::c_void {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
@@ -10,6 +12,10 @@ unsafe impl const TypeLayout for core::ffi::c_void {
             variants: &[],
         },
     };
+
+    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
+        MaybeUninhabited::Uninhabited
+    }
 }
 
 unsafe impl const TypeGraph for core::ffi::c_void {

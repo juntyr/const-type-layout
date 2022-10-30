@@ -1,6 +1,9 @@
 use core::ops::Deref;
 
-use crate::{Discriminant, Field, TypeLayoutGraph, TypeLayoutInfo, TypeStructure, Variant};
+use crate::{
+    Discriminant, Field, MaybeUninhabited, Mutability, TypeLayoutGraph, TypeLayoutInfo,
+    TypeStructure, Variant,
+};
 
 pub const fn serialise_str(bytes: &mut [u8], from: usize, value: &str) -> usize {
     let value_bytes = value.as_bytes();
@@ -80,18 +83,43 @@ pub const fn serialised_byte_len(from: usize, _value: u8) -> usize {
     from + 1
 }
 
-pub const fn serialise_bool(bytes: &mut [u8], from: usize, value: bool) -> usize {
+pub const fn serialise_mutability(bytes: &mut [u8], from: usize, value: Mutability) -> usize {
     assert!(
         from < bytes.len(),
-        "bytes is not large enough to contain the serialised bool."
+        "bytes is not large enough to contain the serialised Mutability."
     );
 
-    bytes[from] = if value { b'T' } else { b'F' };
+    bytes[from] = match value {
+        Mutability::Immutable => b'i',
+        Mutability::Mutable => b'm',
+    };
 
     from + 1
 }
 
-pub const fn serialised_bool_len(from: usize, _value: bool) -> usize {
+pub const fn serialised_mutability_len(from: usize, _value: Mutability) -> usize {
+    from + 1
+}
+
+pub const fn serialise_maybe_uninhabited(
+    bytes: &mut [u8],
+    from: usize,
+    value: MaybeUninhabited<()>,
+) -> usize {
+    assert!(
+        from < bytes.len(),
+        "bytes is not large enough to contain the serialised MaybeUninhabited."
+    );
+
+    bytes[from] = match value {
+        MaybeUninhabited::Inhabited(()) => b'h',
+        MaybeUninhabited::Uninhabited => b'n',
+    };
+
+    from + 1
+}
+
+pub const fn serialised_maybe_uninhabited_len(from: usize, _value: MaybeUninhabited<()>) -> usize {
     from + 1
 }
 
@@ -150,13 +178,21 @@ pub const fn serialised_discriminant_len(from: usize, value: &Discriminant) -> u
 
 pub const fn serialise_field<'a>(bytes: &mut [u8], from: usize, value: &Field<'a>) -> usize {
     let from = serialise_str(bytes, from, value.name);
-    let from = serialise_usize(bytes, from, value.offset);
+    let from = serialise_maybe_uninhabited(bytes, from, value.offset.map(()));
+    let from = match value.offset {
+        MaybeUninhabited::Inhabited(offset) => serialise_usize(bytes, from, offset),
+        MaybeUninhabited::Uninhabited => from,
+    };
     serialise_str(bytes, from, value.ty)
 }
 
 pub const fn serialised_field_len(from: usize, value: &Field) -> usize {
     let from = serialised_str_len(from, value.name);
-    let from = serialised_usize_len(from, value.offset);
+    let from = serialised_maybe_uninhabited_len(from, value.offset.map(()));
+    let from = match value.offset {
+        MaybeUninhabited::Inhabited(offset) => serialised_usize_len(from, offset),
+        MaybeUninhabited::Uninhabited => from,
+    };
     serialised_str_len(from, value.ty)
 }
 
@@ -194,7 +230,13 @@ pub const fn serialise_variant<'a, F: ~const Deref<Target = [Field<'a>]>>(
     value: &Variant<'a, F>,
 ) -> usize {
     let from = serialise_str(bytes, from, value.name);
-    let from = serialise_discriminant(bytes, from, &value.discriminant);
+    let from = serialise_maybe_uninhabited(bytes, from, value.discriminant.map(()));
+    let from = match &value.discriminant {
+        MaybeUninhabited::Inhabited(discriminant) => {
+            serialise_discriminant(bytes, from, discriminant)
+        },
+        MaybeUninhabited::Uninhabited => from,
+    };
     serialise_fields(bytes, from, &value.fields)
 }
 
@@ -203,7 +245,13 @@ pub const fn serialised_variant_len<'a, F: ~const Deref<Target = [Field<'a>]>>(
     value: &Variant<'a, F>,
 ) -> usize {
     let from = serialised_str_len(from, value.name);
-    let from = serialised_discriminant_len(from, &value.discriminant);
+    let from = serialised_maybe_uninhabited_len(from, value.discriminant.map(()));
+    let from = match &value.discriminant {
+        MaybeUninhabited::Inhabited(discriminant) => {
+            serialised_discriminant_len(from, discriminant)
+        },
+        MaybeUninhabited::Uninhabited => from,
+    };
     serialised_fields_len(from, &value.fields)
 }
 
@@ -276,12 +324,12 @@ pub const fn serialise_type_structure<
         TypeStructure::Reference { inner, mutability } => {
             let from = serialise_byte(bytes, from, b'r');
             let from = serialise_str(bytes, from, inner);
-            serialise_bool(bytes, from, *mutability)
+            serialise_mutability(bytes, from, *mutability)
         },
         TypeStructure::Pointer { inner, mutability } => {
             let from = serialise_byte(bytes, from, b'p');
             let from = serialise_str(bytes, from, inner);
-            serialise_bool(bytes, from, *mutability)
+            serialise_mutability(bytes, from, *mutability)
         },
     }
 }
@@ -319,12 +367,12 @@ pub const fn serialised_type_structure_len<
         TypeStructure::Reference { inner, mutability } => {
             let from = serialised_byte_len(from, b'r');
             let from = serialised_str_len(from, inner);
-            serialised_bool_len(from, *mutability)
+            serialised_mutability_len(from, *mutability)
         },
         TypeStructure::Pointer { inner, mutability } => {
             let from = serialised_byte_len(from, b'p');
             let from = serialised_str_len(from, inner);
-            serialised_bool_len(from, *mutability)
+            serialised_mutability_len(from, *mutability)
         },
     }
 }

@@ -1,7 +1,10 @@
-# const-type-layout &emsp; [![CI Status]][workflow] [![Rust Doc]][docs] [![License Status]][fossa] [![Code Coverage]][codecov] [![Gitpod Ready-to-Code]][gitpod]
+# const-type-layout &emsp; [![CI Status]][workflow] [![MSRV]][repo] [![Rust Doc]][docs] [![License Status]][fossa] [![Code Coverage]][codecov] [![Gitpod Ready-to-Code]][gitpod]
 
 [CI Status]: https://img.shields.io/github/workflow/status/MomoLangenstein/const-type-layout/CI/main?label=CI
 [workflow]: https://github.com/MomoLangenstein/const-type-layout/actions/workflows/ci.yml?query=branch%3Amain
+
+[MSRV]: https://img.shields.io/badge/MSRV-1.60.0-orange
+[repo]: https://github.com/ron-rs/ron
 
 [Rust Doc]: https://img.shields.io/badge/docs-main-blue
 [docs]: https://momolangenstein.github.io/const-type-layout/const_type_layout
@@ -32,7 +35,7 @@ The layout of types is only defined if they're `#[repr(C)]`. This crate works on
 non-`#[repr(C)]` types, but their layout is unpredictable.
 
 ```rust
-use type_layout::TypeLayout;
+use const_type_layout::TypeLayout;
 
 #[derive(TypeLayout)]
 #[repr(C)]
@@ -70,7 +73,7 @@ Over-aligned types have trailing padding, which can be a source of bugs in some
 FFI scenarios:
 
 ```rust
-use type_layout::TypeLayout;
+use const_type_layout::TypeLayout;
 
 #[derive(TypeLayout)]
 #[repr(C, align(128))]
