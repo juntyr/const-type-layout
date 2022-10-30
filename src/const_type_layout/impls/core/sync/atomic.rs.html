@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/impls/core/sync/atomic.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>atomic.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../../../normalize.css"><link rel="stylesheet" href="../../../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../../../ayu.css" disabled><link rel="stylesheet" href="../../../../../dark.css" disabled><link rel="stylesheet" href="../../../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../../../storage.js"></script><script defer src="../../../../../source-script.js"></script><script defer src="../../../../../source-files.js"></script><script defer src="../../../../../main.js"></script><noscript><link rel="stylesheet" href="../../../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="mobile-topbar"><button class="sidebar-menu-toggle">&#9776;</button><a class="sidebar-logo" href="../../../../../const_type_layout/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../../rust-logo.svg" alt="logo"></div></a><h2 class="location"></h2></nav><nav class="sidebar"><a class="sidebar-logo" href="../../../../../const_type_layout/index.html"><div class="logo-container"><img class="rust-logo" src="../../../../../rust-logo.svg" alt="logo"></div></a></nav><main><div class="width-limiter"><div class="sub-container"><a class="sub-logo-container" href="../../../../../const_type_layout/index.html"><img class="rust-logo" src="../../../../../rust-logo.svg" alt="logo"></a><nav class="sub"><form class="search-form"><div class="search-container"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><button type="button">?</button></div><div id="settings-menu" tabindex="-1"><a href="../../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../../wheel.svg"></a></div></div></form></nav></div><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/impls/core/sync/atomic.rs`."><meta name="keywords" content="rust, rustlang, rust-lang"><title>atomic.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../SourceSerif4-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../FiraSans-Regular.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../FiraSans-Medium.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../SourceCodePro-Regular.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../SourceSerif4-Bold.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../../SourceCodePro-Semibold.ttf.woff2"><link rel="stylesheet" href="../../../../../normalize.css"><link rel="stylesheet" href="../../../../../rustdoc.css" id="mainThemeStyle"><link rel="stylesheet" href="../../../../../ayu.css" disabled><link rel="stylesheet" href="../../../../../dark.css" disabled><link rel="stylesheet" href="../../../../../light.css" id="themeStyle"><script id="default-settings" ></script><script src="../../../../../storage.js"></script><script defer src="../../../../../source-script.js"></script><script defer src="../../../../../source-files.js"></script><script defer src="../../../../../main.js"></script><noscript><link rel="stylesheet" href="../../../../../noscript.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../../favicon-16x16.png"><link rel="alternate icon" type="image/png" href="../../../../../favicon-32x32.png"><link rel="icon" type="image/svg+xml" href="../../../../../favicon.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><div class="width-limiter"><nav class="sub"><a class="sub-logo-container" href="../../../../../const_type_layout/index.html"><img class="rust-logo" src="../../../../../rust-logo.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../../wheel.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><pre class="src-line-numbers"><span id="1">1</span>
 <span id="2">2</span>
 <span id="3">3</span>
 <span id="4">4</span>
@@ -87,10 +87,75 @@
 <span id="87">87</span>
 <span id="88">88</span>
 <span id="89">89</span>
-</pre><pre class="rust"><code><span class="kw">use crate</span>::{Field, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure};
+<span id="90">90</span>
+<span id="91">91</span>
+<span id="92">92</span>
+<span id="93">93</span>
+<span id="94">94</span>
+<span id="95">95</span>
+<span id="96">96</span>
+<span id="97">97</span>
+<span id="98">98</span>
+<span id="99">99</span>
+<span id="100">100</span>
+<span id="101">101</span>
+<span id="102">102</span>
+<span id="103">103</span>
+<span id="104">104</span>
+<span id="105">105</span>
+<span id="106">106</span>
+<span id="107">107</span>
+<span id="108">108</span>
+<span id="109">109</span>
+<span id="110">110</span>
+<span id="111">111</span>
+<span id="112">112</span>
+<span id="113">113</span>
+<span id="114">114</span>
+<span id="115">115</span>
+<span id="116">116</span>
+<span id="117">117</span>
+<span id="118">118</span>
+<span id="119">119</span>
+<span id="120">120</span>
+<span id="121">121</span>
+<span id="122">122</span>
+<span id="123">123</span>
+<span id="124">124</span>
+<span id="125">125</span>
+<span id="126">126</span>
+<span id="127">127</span>
+<span id="128">128</span>
+<span id="129">129</span>
+<span id="130">130</span>
+<span id="131">131</span>
+<span id="132">132</span>
+<span id="133">133</span>
+<span id="134">134</span>
+<span id="135">135</span>
+<span id="136">136</span>
+<span id="137">137</span>
+<span id="138">138</span>
+<span id="139">139</span>
+<span id="140">140</span>
+<span id="141">141</span>
+<span id="142">142</span>
+<span id="143">143</span>
+<span id="144">144</span>
+<span id="145">145</span>
+<span id="146">146</span>
+<span id="147">147</span>
+<span id="148">148</span>
+<span id="149">149</span>
+<span id="150">150</span>
+<span id="151">151</span>
+</pre><pre class="rust"><code><span class="kw">use crate</span>::{
+    impls::leak_uninit_ptr, Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph,
+    TypeLayoutInfo, TypeStructure,
+};
 
 <span class="macro">macro_rules! </span>impl_atomic_int_layout {
-    (<span class="kw">impl </span><span class="macro-nonterminal">$at</span>:ident ( <span class="macro-nonterminal">$align</span>:literal : <span class="macro-nonterminal">$cfg</span>:literal ) =&gt; <span class="macro-nonterminal">$ty</span>:ty) =&gt; {
+    (<span class="kw">impl </span><span class="macro-nonterminal">$at</span>:ident ( <span class="macro-nonterminal">$align</span>:literal : <span class="macro-nonterminal">$cfg</span>:literal ) =&gt; <span class="macro-nonterminal">$ty</span>:ty =&gt; <span class="macro-nonterminal">$val</span>:literal) =&gt; {
         <span class="attribute">#[cfg(target_has_atomic_load_store = <span class="macro-nonterminal">$cfg</span>)]
         </span><span class="kw">unsafe impl const </span>TypeLayout <span class="kw">for </span>core::sync::atomic::<span class="macro-nonterminal">$at </span>{
             <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
@@ -102,12 +167,18 @@
                     fields: <span class="kw-2">&amp;</span>[
                         Field {
                             name: <span class="string">&quot;v&quot;</span>,
-                            offset: <span class="number">0</span>,
+                            offset: MaybeUninhabited::Inhabited(<span class="number">0</span>),
                             ty: core::any::type_name::&lt;core::cell::UnsafeCell&lt;<span class="macro-nonterminal">$ty</span>&gt;&gt;(),
                         },
                     ],
                 },
             };
+
+            <span class="kw">unsafe fn </span>uninit() -&gt; MaybeUninhabited&lt;core::mem::MaybeUninit&lt;<span class="self">Self</span>&gt;&gt; {
+                MaybeUninhabited::Inhabited(
+                    core::mem::MaybeUninit::new(<span class="self">Self</span>::new(<span class="macro-nonterminal">$val</span>))
+                )
+            }
         }
 
         <span class="attribute">#[cfg(target_has_atomic_load_store = <span class="macro-nonterminal">$cfg</span>)]
@@ -119,22 +190,22 @@
             }
         }
     };
-    ($(<span class="macro-nonterminal">$at</span>:ident ( <span class="macro-nonterminal">$align</span>:literal : <span class="macro-nonterminal">$cfg</span>:literal ) =&gt; <span class="macro-nonterminal">$ty</span>:ty),<span class="kw-2">*</span>) =&gt; {
-        $(<span class="macro">impl_atomic_int_layout!</span>{<span class="kw">impl </span><span class="macro-nonterminal">$at </span>(<span class="macro-nonterminal">$align </span>: <span class="macro-nonterminal">$cfg</span>) =&gt; <span class="macro-nonterminal">$ty</span>})*
+    ($(<span class="macro-nonterminal">$at</span>:ident ( <span class="macro-nonterminal">$align</span>:literal : <span class="macro-nonterminal">$cfg</span>:literal ) =&gt; <span class="macro-nonterminal">$ty</span>:ty =&gt; <span class="macro-nonterminal">$val</span>:literal),<span class="kw-2">*</span>) =&gt; {
+        $(<span class="macro">impl_atomic_int_layout!</span>{<span class="kw">impl </span><span class="macro-nonterminal">$at </span>(<span class="macro-nonterminal">$align </span>: <span class="macro-nonterminal">$cfg</span>) =&gt; <span class="macro-nonterminal">$ty </span>=&gt; <span class="macro-nonterminal">$val</span>})*
     };
 }
 
 <span class="macro">impl_atomic_int_layout! </span>{
-    AtomicBool (<span class="number">1</span>:<span class="string">&quot;8&quot;</span>) =&gt; u8,
-    AtomicI8 (<span class="number">1</span>:<span class="string">&quot;8&quot;</span>) =&gt; i8, AtomicI16 (<span class="number">2</span>:<span class="string">&quot;16&quot;</span>) =&gt; i16,
-    AtomicI32 (<span class="number">4</span>:<span class="string">&quot;32&quot;</span>) =&gt; i32, AtomicI64 (<span class="number">8</span>:<span class="string">&quot;64&quot;</span>) =&gt; i64,
-    AtomicU8 (<span class="number">1</span>:<span class="string">&quot;8&quot;</span>) =&gt; u8, AtomicU16 (<span class="number">2</span>:<span class="string">&quot;16&quot;</span>) =&gt; u16,
-    AtomicU32 (<span class="number">4</span>:<span class="string">&quot;32&quot;</span>) =&gt; u32, AtomicU64 (<span class="number">8</span>:<span class="string">&quot;64&quot;</span>) =&gt; u64,
-    AtomicI128 (<span class="number">16</span>:<span class="string">&quot;128&quot;</span>) =&gt; i128, AtomicU128 (<span class="number">16</span>:<span class="string">&quot;128&quot;</span>) =&gt; u128
-}
+    AtomicBool (<span class="number">1</span>:<span class="string">&quot;8&quot;</span>) =&gt; u8 =&gt; <span class="bool-val">false</span>,
+    AtomicI8 (<span class="number">1</span>:<span class="string">&quot;8&quot;</span>) =&gt; i8 =&gt; <span class="number">0</span>, AtomicI16 (<span class="number">2</span>:<span class="string">&quot;16&quot;</span>) =&gt; i16 =&gt; <span class="number">0</span>,
+    AtomicI32 (<span class="number">4</span>:<span class="string">&quot;32&quot;</span>) =&gt; i32 =&gt; <span class="number">0</span>, AtomicI64 (<span class="number">8</span>:<span class="string">&quot;64&quot;</span>) =&gt; i64 =&gt; <span class="number">0</span>,
+    AtomicU8 (<span class="number">1</span>:<span class="string">&quot;8&quot;</span>) =&gt; u8 =&gt; <span class="number">0</span>, AtomicU16 (<span class="number">2</span>:<span class="string">&quot;16&quot;</span>) =&gt; u16 =&gt; <span class="number">0</span>,
+    AtomicU32 (<span class="number">4</span>:<span class="string">&quot;32&quot;</span>) =&gt; u32 =&gt; <span class="number">0</span>, AtomicU64 (<span class="number">8</span>:<span class="string">&quot;64&quot;</span>) =&gt; u64 =&gt; <span class="number">0</span>,
+    AtomicI128 (<span class="number">16</span>:<span class="string">&quot;128&quot;</span>) =&gt; i128 =&gt; <span class="number">0</span>, AtomicU128 (<span class="number">16</span>:<span class="string">&quot;128&quot;</span>) =&gt; u128 =&gt; <span class="number">0
+</span>}
 
-<span class="macro">macro_rules! </span>impl_atomic_ptr_layout {
-    (<span class="kw">impl </span><span class="macro-nonterminal">$at</span>:ident ( <span class="macro-nonterminal">$align</span>:literal : <span class="macro-nonterminal">$cfg</span>:literal ) =&gt; <span class="macro-nonterminal">$ty</span>:ty) =&gt; {
+<span class="macro">macro_rules! </span>impl_atomic_int_ptr_sized_layout {
+    (<span class="kw">impl </span><span class="macro-nonterminal">$at</span>:ident ( <span class="macro-nonterminal">$align</span>:literal : <span class="macro-nonterminal">$cfg</span>:literal ) =&gt; <span class="macro-nonterminal">$ty</span>:ty =&gt; <span class="macro-nonterminal">$val</span>:literal) =&gt; {
         <span class="attribute">#[cfg(target_has_atomic_load_store = <span class="string">&quot;ptr&quot;</span>)]
         #[cfg(target_pointer_width = <span class="macro-nonterminal">$cfg</span>)]
         </span><span class="kw">unsafe impl const </span>TypeLayout <span class="kw">for </span>core::sync::atomic::<span class="macro-nonterminal">$at </span>{
@@ -147,12 +218,18 @@
                     fields: <span class="kw-2">&amp;</span>[
                         Field {
                             name: <span class="string">&quot;v&quot;</span>,
-                            offset: <span class="number">0</span>,
+                            offset: MaybeUninhabited::Inhabited(<span class="number">0</span>),
                             ty: core::any::type_name::&lt;core::cell::UnsafeCell&lt;<span class="macro-nonterminal">$ty</span>&gt;&gt;(),
                         },
                     ],
                 },
             };
+
+            <span class="kw">unsafe fn </span>uninit() -&gt; MaybeUninhabited&lt;core::mem::MaybeUninit&lt;<span class="self">Self</span>&gt;&gt; {
+                MaybeUninhabited::Inhabited(
+                    core::mem::MaybeUninit::new(<span class="self">Self</span>::new(<span class="macro-nonterminal">$val</span>))
+                )
+            }
         }
 
         <span class="attribute">#[cfg(target_has_atomic_load_store = <span class="string">&quot;ptr&quot;</span>)]
@@ -165,16 +242,63 @@
             }
         }
     };
-    ($(<span class="macro-nonterminal">$at</span>:ident ( <span class="macro-nonterminal">$align</span>:literal : <span class="macro-nonterminal">$cfg</span>:literal ) =&gt; <span class="macro-nonterminal">$ty</span>:ty),<span class="kw-2">*</span>) =&gt; {
-        $(<span class="macro">impl_atomic_ptr_layout!</span>{<span class="kw">impl </span><span class="macro-nonterminal">$at </span>(<span class="macro-nonterminal">$align </span>: <span class="macro-nonterminal">$cfg</span>) =&gt; <span class="macro-nonterminal">$ty</span>})*
+    ($(<span class="macro-nonterminal">$at</span>:ident ( <span class="macro-nonterminal">$align</span>:literal : <span class="macro-nonterminal">$cfg</span>:literal ) =&gt; <span class="macro-nonterminal">$ty</span>:ty =&gt; <span class="macro-nonterminal">$val</span>:literal),<span class="kw-2">*</span>) =&gt; {
+        $(<span class="macro">impl_atomic_int_ptr_sized_layout!</span>{<span class="kw">impl </span><span class="macro-nonterminal">$at </span>(<span class="macro-nonterminal">$align </span>: <span class="macro-nonterminal">$cfg</span>) =&gt; <span class="macro-nonterminal">$ty </span>=&gt; <span class="macro-nonterminal">$val</span>})*
+    };
+}
+
+<span class="macro">impl_atomic_int_ptr_sized_layout! </span>{
+    AtomicIsize (<span class="number">2</span>:<span class="string">&quot;16&quot;</span>) =&gt; isize =&gt; <span class="number">0</span>, AtomicIsize (<span class="number">4</span>:<span class="string">&quot;32&quot;</span>) =&gt; isize =&gt; <span class="number">0</span>,
+    AtomicIsize (<span class="number">8</span>:<span class="string">&quot;64&quot;</span>) =&gt; isize =&gt; <span class="number">0</span>,
+    AtomicUsize (<span class="number">2</span>:<span class="string">&quot;16&quot;</span>) =&gt; usize =&gt; <span class="number">0</span>, AtomicUsize (<span class="number">4</span>:<span class="string">&quot;32&quot;</span>) =&gt; usize =&gt; <span class="number">0</span>,
+    AtomicUsize (<span class="number">8</span>:<span class="string">&quot;64&quot;</span>) =&gt; usize =&gt; <span class="number">0
+</span>}
+
+<span class="macro">macro_rules! </span>impl_atomic_ptr_layout {
+    (<span class="kw">impl </span>( <span class="macro-nonterminal">$align</span>:literal : <span class="macro-nonterminal">$cfg</span>:literal )) =&gt; {
+        <span class="attribute">#[cfg(target_has_atomic_load_store = <span class="string">&quot;ptr&quot;</span>)]
+        #[cfg(target_pointer_width = <span class="macro-nonterminal">$cfg</span>)]
+        </span><span class="kw">unsafe impl</span>&lt;T: ~<span class="kw">const </span>TypeLayout&gt; <span class="kw">const </span>TypeLayout <span class="kw">for </span>core::sync::atomic::AtomicPtr&lt;T&gt; {
+            <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
+                name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
+                size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
+                alignment: ::core::mem::align_of::&lt;<span class="self">Self</span>&gt;(),
+                structure: TypeStructure::Struct {
+                    repr: <span class="macro">concat!</span>(<span class="string">&quot;C,align(&quot;</span>, <span class="macro-nonterminal">$align</span>, <span class="string">&quot;)&quot;</span>),
+                    fields: <span class="kw-2">&amp;</span>[
+                        Field {
+                            name: <span class="string">&quot;v&quot;</span>,
+                            offset: MaybeUninhabited::Inhabited(<span class="number">0</span>),
+                            ty: core::any::type_name::&lt;core::cell::UnsafeCell&lt;<span class="kw-2">*mut </span>T&gt;&gt;(),
+                        },
+                    ],
+                },
+            };
+
+            <span class="kw">unsafe fn </span>uninit() -&gt; MaybeUninhabited&lt;core::mem::MaybeUninit&lt;<span class="self">Self</span>&gt;&gt; {
+                MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(
+                    <span class="self">Self</span>::new(leak_uninit_ptr())
+                ))
+            }
+        }
+
+        <span class="attribute">#[cfg(target_has_atomic_load_store = <span class="string">&quot;ptr&quot;</span>)]
+        #[cfg(target_pointer_width = <span class="macro-nonterminal">$cfg</span>)]
+        </span><span class="kw">unsafe impl</span>&lt;T: ~<span class="kw">const </span>TypeGraph&gt; <span class="kw">const </span>TypeGraph <span class="kw">for </span>core::sync::atomic::AtomicPtr&lt;T&gt; {
+            <span class="kw">fn </span>populate_graph(graph: <span class="kw-2">&amp;mut </span>TypeLayoutGraph&lt;<span class="lifetime">&#39;static</span>&gt;) {
+                <span class="kw">if </span>graph.insert(<span class="kw-2">&amp;</span><span class="self">Self</span>::TYPE_LAYOUT) {
+                    &lt;core::cell::UnsafeCell&lt;<span class="kw-2">*mut </span>T&gt; <span class="kw">as </span>TypeGraph&gt;::populate_graph(graph);
+                }
+            }
+        }
+    };
+    ($(( <span class="macro-nonterminal">$align</span>:literal : <span class="macro-nonterminal">$cfg</span>:literal )),<span class="kw-2">*</span>) =&gt; {
+        $(<span class="macro">impl_atomic_ptr_layout!</span>{<span class="kw">impl </span>(<span class="macro-nonterminal">$align </span>: <span class="macro-nonterminal">$cfg</span>)})*
     };
 }
 
 <span class="macro">impl_atomic_ptr_layout! </span>{
-    AtomicIsize (<span class="number">2</span>:<span class="string">&quot;16&quot;</span>) =&gt; isize, AtomicIsize (<span class="number">4</span>:<span class="string">&quot;32&quot;</span>) =&gt; isize,
-    AtomicIsize (<span class="number">8</span>:<span class="string">&quot;64&quot;</span>) =&gt; isize,
-    AtomicUsize (<span class="number">2</span>:<span class="string">&quot;16&quot;</span>) =&gt; usize, AtomicUsize (<span class="number">4</span>:<span class="string">&quot;32&quot;</span>) =&gt; usize,
-    AtomicUsize (<span class="number">8</span>:<span class="string">&quot;64&quot;</span>) =&gt; usize
+    (<span class="number">2</span>:<span class="string">&quot;16&quot;</span>), (<span class="number">4</span>:<span class="string">&quot;32&quot;</span>), (<span class="number">8</span>:<span class="string">&quot;64&quot;</span>)
 }
 </code></pre></div>
-</section></div></main><div id="rustdoc-vars" data-root-path="../../../../../" data-current-crate="const_type_layout" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (8796e7a9c 2022-10-08)" ></div></body></html>
+</section></div></main><div id="rustdoc-vars" data-root-path="../../../../../" data-current-crate="const_type_layout" data-themes="ayu,dark,light" data-resource-suffix="" data-rustdoc-version="1.66.0-nightly (5e9772042 2022-10-29)" ></div></body></html>
