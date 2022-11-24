@@ -375,9 +375,7 @@ impl<'a> TypeLayoutGraph<'a> {
 
         while i < self.tys.len() {
             // The first free slot can be used to insert the ty
-            let cached_ty = if let Some(cached_ty) = self.tys[i] {
-                cached_ty
-            } else {
+            let Some(cached_ty) = self.tys[i] else {
                 self.tys[i] = Some(ty);
 
                 return true;

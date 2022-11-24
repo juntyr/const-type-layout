@@ -123,11 +123,7 @@ pub const fn serialised_maybe_uninhabited_len(from: usize, _value: MaybeUninhabi
     from + 1
 }
 
-pub const fn serialise_discriminant<'a>(
-    bytes: &mut [u8],
-    from: usize,
-    value: &Discriminant<'a>,
-) -> usize {
+pub const fn serialise_discriminant(bytes: &mut [u8], from: usize, value: &Discriminant) -> usize {
     let value_bytes = value.big_endian_bytes;
 
     let mut leading_zeroes = 0;
@@ -176,7 +172,7 @@ pub const fn serialised_discriminant_len(from: usize, value: &Discriminant) -> u
     from + value_bytes.len() - leading_zeroes
 }
 
-pub const fn serialise_field<'a>(bytes: &mut [u8], from: usize, value: &Field<'a>) -> usize {
+pub const fn serialise_field(bytes: &mut [u8], from: usize, value: &Field) -> usize {
     let from = serialise_str(bytes, from, value.name);
     let from = serialise_maybe_uninhabited(bytes, from, value.offset.map(()));
     let from = match value.offset {
@@ -196,7 +192,7 @@ pub const fn serialised_field_len(from: usize, value: &Field) -> usize {
     serialised_str_len(from, value.ty)
 }
 
-pub const fn serialise_fields<'a>(bytes: &mut [u8], from: usize, value: &[Field<'a>]) -> usize {
+pub const fn serialise_fields(bytes: &mut [u8], from: usize, value: &[Field]) -> usize {
     let mut from = serialise_usize(bytes, from, value.len());
 
     let mut i = 0;
