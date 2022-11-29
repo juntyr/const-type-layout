@@ -38,10 +38,11 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
         reprs,
         extra_bounds,
         ground,
+        crate_path,
     } = parse_attributes(&input.attrs, &mut type_params, &input.data);
 
-    let layout = layout_of_type(&ty_name, &ty_generics, &input.data, &reprs);
-    let uninit = uninit_for_type(&ty_name, &input.data, &ground);
+    let layout = layout_of_type(&crate_path, &ty_name, &ty_generics, &input.data, &reprs);
+    let uninit = uninit_for_type(&crate_path, &ty_name, &input.data, &ground);
 
     let inner_types = extract_inner_types(&input.data);
 
@@ -49,6 +50,7 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
         type_layout_input_generics,
         type_graph_input_generics,
     } = generate_generics(
+        &crate_path,
         &ty_name,
         &ty_generics,
         &input.generics,
@@ -62,11 +64,11 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
         type_graph_input_generics.split_for_impl();
 
     quote! {
-        unsafe impl #type_layout_impl_generics const ::const_type_layout::TypeLayout for
+        unsafe impl #type_layout_impl_generics const #crate_path::TypeLayout for
             #ty_name #type_layout_ty_generics #type_layout_where_clause
         {
-            const TYPE_LAYOUT: ::const_type_layout::TypeLayoutInfo<'static> = {
-                ::const_type_layout::TypeLayoutInfo {
+            const TYPE_LAYOUT: #crate_path::TypeLayoutInfo<'static> = {
+                #crate_path::TypeLayoutInfo {
                     name: ::core::any::type_name::<Self>(),
                     size: ::core::mem::size_of::<Self>(),
                     alignment: ::core::mem::align_of::<Self>(),
@@ -74,19 +76,19 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
                 }
             };
 
-            unsafe fn uninit() -> ::const_type_layout::MaybeUninhabited<
+            unsafe fn uninit() -> #crate_path::MaybeUninhabited<
                 ::core::mem::MaybeUninit<Self>
             > {
                 #uninit
             }
         }
 
-        unsafe impl #type_graph_impl_generics const ::const_type_layout::TypeGraph for
+        unsafe impl #type_graph_impl_generics const #crate_path::TypeGraph for
             #ty_name #type_graph_ty_generics #type_graph_where_clause
         {
-            fn populate_graph(graph: &mut ::const_type_layout::TypeLayoutGraph<'static>) {
-                if graph.insert(&<Self as ::const_type_layout::TypeLayout>::TYPE_LAYOUT) {
-                    #(<#inner_types as ::const_type_layout::TypeGraph>::populate_graph(graph);)*
+            fn populate_graph(graph: &mut #crate_path::TypeLayoutGraph<'static>) {
+                if graph.insert(&<Self as #crate_path::TypeLayout>::TYPE_LAYOUT) {
+                    #(<#inner_types as #crate_path::TypeGraph>::populate_graph(graph);)*
                 }
             }
         }
@@ -98,6 +100,7 @@ struct Attributes {
     reprs: String,
     extra_bounds: Vec<syn::WherePredicate>,
     ground: Vec<syn::Ident>,
+    crate_path: syn::Path,
 }
 
 #[allow(clippy::too_many_lines)]
@@ -139,6 +142,8 @@ fn parse_attributes(
             .collect(),
     };
     let mut groundier = Vec::with_capacity(ground.len());
+
+    let mut crate_path = None;
 
     for attr in attrs {
         if attr.path.is_ident("repr") {
@@ -249,11 +254,34 @@ fn parse_attributes(
                                     err
                                 ),
                             }
+                        } else if path.is_ident("crate") {
+                            match syn::parse_str::<syn::Path>(&s.value()) {
+                                Ok(new_crate_path) => {
+                                    if crate_path.is_none() {
+                                        crate_path = Some(
+                                            syn::parse_quote_spanned! { s.span() => #new_crate_path },
+                                        );
+                                    } else {
+                                        emit_error!(
+                                            s.span(),
+                                            "[const-type-layout]: Duplicate #[layout(crate)] \
+                                             attribute: the crate path for `const-type-layout` \
+                                             can only be set once per `derive`.",
+                                        );
+                                    }
+                                },
+                                Err(err) => emit_error!(
+                                    s.span(),
+                                    "[const-type-layout]: Invalid #[layout(crate = \
+                                     \"<crate-path>\")] attribute: {}.",
+                                    err
+                                ),
+                            }
                         } else {
                             emit_error!(
                                 path.span(),
-                                "[const-type-layout]: Unknown attribute, use `bound`, `free`, or \
-                                 `ground`."
+                                "[const-type-layout]: Unknown attribute, use `bound`, `crate`, \
+                                 `free`, or `ground`."
                             );
                         }
                     } else {
@@ -288,6 +316,7 @@ fn parse_attributes(
         reprs,
         extra_bounds,
         ground: groundier,
+        crate_path: crate_path.unwrap_or_else(|| syn::parse_quote!(::const_type_layout)),
     }
 }
 
@@ -358,6 +387,7 @@ struct Generics {
 }
 
 fn generate_generics(
+    crate_path: &syn::Path,
     ty_name: &syn::Ident,
     ty_generics: &syn::TypeGenerics,
     generics: &syn::Generics,
@@ -389,21 +419,21 @@ fn generate_generics(
             .make_where_clause()
             .predicates
             .push(syn::parse_quote! {
-                #ty: ~const ::const_type_layout::TypeLayout
+                #ty: ~const #crate_path::TypeLayout
             });
 
         type_graph_input_generics
             .make_where_clause()
             .predicates
             .push(syn::parse_quote! {
-                #ty: ~const ::const_type_layout::TypeLayout
+                #ty: ~const #crate_path::TypeLayout
             });
 
         type_graph_input_generics
             .make_where_clause()
             .predicates
             .push(syn::parse_quote! {
-                #ty: ~const ::const_type_layout::TypeGraph
+                #ty: ~const #crate_path::TypeGraph
             });
     }
 
@@ -426,6 +456,7 @@ fn generate_generics(
 }
 
 fn layout_of_type(
+    crate_path: &syn::Path,
     ty_name: &syn::Ident,
     ty_generics: &syn::TypeGenerics,
     data: &syn::Data,
@@ -433,21 +464,23 @@ fn layout_of_type(
 ) -> proc_macro2::TokenStream {
     match data {
         syn::Data::Struct(data) => {
-            let fields = quote_structlike_fields(ty_name, ty_generics, &data.fields, false);
+            let fields =
+                quote_structlike_fields(crate_path, ty_name, ty_generics, &data.fields, false);
 
             quote! {
-                ::const_type_layout::TypeStructure::Struct { repr: #reprs, fields: &[#(#fields),*] }
+                #crate_path::TypeStructure::Struct { repr: #reprs, fields: &[#(#fields),*] }
             }
         },
         syn::Data::Enum(r#enum) => {
-            let variants = quote_enum_variants(ty_name, ty_generics, r#enum);
+            let variants = quote_enum_variants(crate_path, ty_name, ty_generics, r#enum);
 
             quote! {
-                ::const_type_layout::TypeStructure::Enum { repr: #reprs, variants: &[#(#variants),*] }
+                #crate_path::TypeStructure::Enum { repr: #reprs, variants: &[#(#variants),*] }
             }
         },
         syn::Data::Union(union) => {
             let fields = quote_structlike_fields(
+                crate_path,
                 ty_name,
                 ty_generics,
                 &syn::Fields::Named(union.fields.clone()),
@@ -455,13 +488,14 @@ fn layout_of_type(
             );
 
             quote! {
-                ::const_type_layout::TypeStructure::Union { repr: #reprs, fields: &[#(#fields),*] }
+                #crate_path::TypeStructure::Union { repr: #reprs, fields: &[#(#fields),*] }
             }
         },
     }
 }
 
 fn quote_structlike_fields(
+    crate_path: &syn::Path,
     ty_name: &syn::Ident,
     ty_generics: &syn::TypeGenerics,
     fields: &syn::Fields,
@@ -475,11 +509,16 @@ fn quote_structlike_fields(
                 let field_name = field.ident.as_ref().unwrap();
                 let field_name_str = Literal::string(&field_name.to_string());
                 let field_ty = &field.ty;
-                let field_offset =
-                    quote_structlike_field_offset(ty_name, ty_generics, &field_name, is_union);
+                let field_offset = quote_structlike_field_offset(
+                    crate_path,
+                    ty_name,
+                    ty_generics,
+                    &field_name,
+                    is_union,
+                );
 
                 quote_spanned! { field.span() =>
-                    ::const_type_layout::Field {
+                    #crate_path::Field {
                         name: #field_name_str,
                         offset: { #field_offset },
                         ty: ::core::any::type_name::<#field_ty>(),
@@ -495,11 +534,16 @@ fn quote_structlike_fields(
                 let field_name = syn::Index::from(field_index);
                 let field_name_str = Literal::string(&field_index.to_string());
                 let field_ty = &field.ty;
-                let field_offset =
-                    quote_structlike_field_offset(ty_name, ty_generics, &field_name, is_union);
+                let field_offset = quote_structlike_field_offset(
+                    crate_path,
+                    ty_name,
+                    ty_generics,
+                    &field_name,
+                    is_union,
+                );
 
                 quote_spanned! { field.span() =>
-                    ::const_type_layout::Field {
+                    #crate_path::Field {
                         name: #field_name_str,
                         offset: { #field_offset },
                         ty: ::core::any::type_name::<#field_ty>(),
@@ -512,6 +556,7 @@ fn quote_structlike_fields(
 }
 
 fn quote_structlike_field_offset(
+    crate_path: &syn::Path,
     ty_name: &syn::Ident,
     ty_generics: &syn::TypeGenerics,
     field_name: &impl quote::ToTokens,
@@ -520,11 +565,12 @@ fn quote_structlike_field_offset(
     let extra_fields = if is_union { quote!() } else { quote!(..) };
 
     quote! {
-        ::const_type_layout::struct_field_offset!(#ty_name => #ty_name #ty_generics => (*base_ptr).#field_name => #extra_fields)
+        #crate_path::struct_field_offset!(#ty_name => #ty_name #ty_generics => (*base_ptr).#field_name => #extra_fields)
     }
 }
 
 fn quote_enum_variants(
+    crate_path: &syn::Path,
     ty_name: &syn::Ident,
     ty_generics: &syn::TypeGenerics,
     r#enum: &syn::DataEnum,
@@ -536,13 +582,24 @@ fn quote_enum_variants(
             let variant_name = &variant.ident;
             let variant_name_str = Literal::string(&variant_name.to_string());
 
-            let fields = quote_variant_fields(ty_name, ty_generics, variant_name, &variant.fields);
+            let fields = quote_variant_fields(
+                crate_path,
+                ty_name,
+                ty_generics,
+                variant_name,
+                &variant.fields,
+            );
 
-            let discriminant =
-                quote_discriminant(ty_name, ty_generics, variant_name, &variant.fields);
+            let discriminant = quote_discriminant(
+                crate_path,
+                ty_name,
+                ty_generics,
+                variant_name,
+                &variant.fields,
+            );
 
             quote! {
-                ::const_type_layout::Variant {
+                #crate_path::Variant {
                     name: #variant_name_str,
                     discriminant: #discriminant,
                     fields: &[#(#fields),*],
@@ -553,6 +610,7 @@ fn quote_enum_variants(
 }
 
 fn quote_variant_fields(
+    crate_path: &syn::Path,
     ty_name: &syn::Ident,
     ty_generics: &syn::TypeGenerics,
     variant_name: &syn::Ident,
@@ -581,9 +639,9 @@ fn quote_variant_fields(
                 let field_ty = &field.ty;
 
                 quote_spanned! { field.span() =>
-                    ::const_type_layout::Field {
+                    #crate_path::Field {
                         name: #field_name_str,
-                        offset: ::const_type_layout::struct_variant_field_offset!(
+                        offset: #crate_path::struct_variant_field_offset!(
                             #ty_name => #ty_name #ty_generics => #variant_name { #(#field_descriptors)* } => #field_index
                         ),
                         ty: ::core::any::type_name::<#field_ty>(),
@@ -612,9 +670,9 @@ fn quote_variant_fields(
                 let field_ty = &field.ty;
 
                 quote_spanned! { field.span() =>
-                    ::const_type_layout::Field {
+                    #crate_path::Field {
                         name: #field_name_str,
-                        offset: ::const_type_layout::struct_variant_field_offset!(
+                        offset: #crate_path::struct_variant_field_offset!(
                             #ty_name => #ty_name #ty_generics => #variant_name(#(#field_descriptors)*) => #field_index
                         ),
                         ty: ::core::any::type_name::<#field_ty>(),
@@ -627,6 +685,7 @@ fn quote_variant_fields(
 }
 
 fn quote_discriminant(
+    crate_path: &syn::Path,
     ty_name: &syn::Ident,
     ty_generics: &syn::TypeGenerics,
     variant_name: &syn::Ident,
@@ -672,7 +731,7 @@ fn quote_discriminant(
     };
 
     quote! {
-        ::const_type_layout::struct_variant_discriminant!(
+        #crate_path::struct_variant_discriminant!(
             #ty_name => #ty_name #ty_generics => #variant_descriptor
         )
     }
@@ -680,6 +739,7 @@ fn quote_discriminant(
 
 #[allow(clippy::too_many_lines)]
 fn uninit_for_type(
+    crate_path: &syn::Path,
     ty_name: &syn::Ident,
     data: &syn::Data,
     ground: &[syn::Ident],
@@ -695,7 +755,7 @@ fn uninit_for_type(
                 }) => fields,
                 syn::Fields::Unit => {
                     return quote! {
-                        ::const_type_layout::MaybeUninhabited::Inhabited(
+                        #crate_path::MaybeUninhabited::Inhabited(
                             ::core::mem::MaybeUninit::new(#ty_name)
                         )
                     }
@@ -716,7 +776,7 @@ fn uninit_for_type(
                 .map(|syn::Field { ty: field_ty, .. }| {
                     quote! {
                         <
-                            #field_ty as ::const_type_layout::TypeLayout
+                            #field_ty as #crate_path::TypeLayout
                         >::uninit()
                     }
                 })
@@ -730,17 +790,17 @@ fn uninit_for_type(
 
             quote! {
                 if let (
-                    #(::const_type_layout::MaybeUninhabited::Inhabited(#field_names)),*
+                    #(#crate_path::MaybeUninhabited::Inhabited(#field_names)),*
                 ) = (
                     #(#field_initialisers),*
                 ) {
-                    ::const_type_layout::MaybeUninhabited::Inhabited(
+                    #crate_path::MaybeUninhabited::Inhabited(
                         ::core::mem::MaybeUninit::new(
                             #struct_initialiser
                         )
                     )
                 } else {
-                    ::const_type_layout::MaybeUninhabited::Uninhabited
+                    #crate_path::MaybeUninhabited::Uninhabited
                 }
             }
         },
@@ -763,7 +823,7 @@ fn uninit_for_type(
                         unnamed: fields, ..
                     }) => fields,
                     syn::Fields::Unit => return Err(quote! {
-                        ::const_type_layout::MaybeUninhabited::Inhabited(
+                        #crate_path::MaybeUninhabited::Inhabited(
                             ::core::mem::MaybeUninit::new(
                                 #ty_name :: #variant_name
                             )
@@ -784,7 +844,7 @@ fn uninit_for_type(
                     }| {
                         quote! {
                             <
-                                #field_ty as ::const_type_layout::TypeLayout
+                                #field_ty as #crate_path::TypeLayout
                             >::uninit()
                         }
                     })
@@ -798,11 +858,11 @@ fn uninit_for_type(
 
                 Ok(quote!{
                     if let (
-                        #(::const_type_layout::MaybeUninhabited::Inhabited(#field_names)),*
+                        #(#crate_path::MaybeUninhabited::Inhabited(#field_names)),*
                     ) = (
                         #(#field_initialisers),*
                     ) {
-                        return ::const_type_layout::MaybeUninhabited::Inhabited(
+                        return #crate_path::MaybeUninhabited::Inhabited(
                             ::core::mem::MaybeUninit::new(
                                 #variant_initialiser
                             )
@@ -817,7 +877,7 @@ fn uninit_for_type(
                         #variant_initialisers
                     )*
 
-                    ::const_type_layout::MaybeUninhabited::Uninhabited
+                    #crate_path::MaybeUninhabited::Uninhabited
                 },
                 Err(unit_variant_initialiser) => unit_variant_initialiser,
             }
@@ -841,7 +901,7 @@ fn uninit_for_type(
                             field_name,
                             quote! {
                                 <
-                                    #field_ty as ::const_type_layout::TypeLayout
+                                    #field_ty as #crate_path::TypeLayout
                                 >::uninit()
                             },
                         )
@@ -851,10 +911,10 @@ fn uninit_for_type(
 
             quote! {
                 #(
-                    if let ::const_type_layout::MaybeUninhabited::Inhabited(
+                    if let #crate_path::MaybeUninhabited::Inhabited(
                         #field_names
                     ) = #field_initialisers {
-                        return ::const_type_layout::MaybeUninhabited::Inhabited(
+                        return #crate_path::MaybeUninhabited::Inhabited(
                             ::core::mem::MaybeUninit::new(
                                 #ty_name { #field_names: #field_names.assume_init() }
                             )
@@ -862,7 +922,7 @@ fn uninit_for_type(
                     }
                 )*
 
-                ::const_type_layout::MaybeUninhabited::Uninhabited
+                #crate_path::MaybeUninhabited::Uninhabited
             }
         },
     }

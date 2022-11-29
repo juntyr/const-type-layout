@@ -15,8 +15,11 @@ use std::{borrow::Cow, ops::Deref};
 
 use const_type_layout::{TypeGraphLayout, TypeLayout};
 
+pub use const_type_layout as ctl;
+
 #[repr(C)]
 #[derive(TypeLayout)]
+#[layout(crate = "crate::ctl")]
 struct Foo1;
 
 #[repr(C)]
