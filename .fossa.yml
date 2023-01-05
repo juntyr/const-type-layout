@@ -3,7 +3,7 @@ version: 2
 cli:
   server: https://app.fossa.com
   fetcher: git
-  project: https://github.com/MomoLangenstein/const-type-layout.git
+  project: https://github.com/juntyr/const-type-layout.git
 
 analyze:
   modules:

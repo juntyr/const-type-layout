@@ -1,20 +1,23 @@
 //! [![CI Status]][workflow] [![Rust Doc]][docs] [![License Status]][fossa]
 //! [![Code Coverage]][codecov] [![Gitpod Ready-to-Code]][gitpod]
 //!
-//! [CI Status]: https://img.shields.io/github/workflow/status/MomoLangenstein/const-type-layout/CI/main?label=CI
-//! [workflow]: https://github.com/MomoLangenstein/const-type-layout/actions/workflows/ci.yml?query=branch%3Amain
+//! [CI Status]: https://img.shields.io/github/actions/workflow/status/juntyr/const-type-layout/ci.yml?branch=main
+//! [workflow]: https://github.com/juntyr/const-type-layout/actions/workflows/ci.yml?query=branch%3Amain
+//!
+//! [MSRV]: https://img.shields.io/badge/MSRV-1.60.0-orange
+//! [repo]: https://github.com/ron-rs/ron
 //!
 //! [Rust Doc]: https://img.shields.io/badge/docs-main-blue
-//! [docs]: https://momolangenstein.github.io/const-type-layout/const_type_layout
+//! [docs]: https://juntyr.github.io/const-type-layout/const_type_layout
 //!
-//! [License Status]: https://app.fossa.com/api/projects/git%2Bgithub.com%2FMomoLangenstein%2Fconst-type-layout.svg?type=shield
-//! [fossa]: https://app.fossa.com/projects/git%2Bgithub.com%2FMomoLangenstein%2Fconst-type-layout?ref=badge_shield
+//! [License Status]: https://app.fossa.com/api/projects/git%2Bgithub.com%2Fjuntyr%2Fconst-type-layout.svg?type=shield
+//! [fossa]: https://app.fossa.com/projects/git%2Bgithub.com%2Fjuntyr%2Fconst-type-layout?ref=badge_shield
 //!
-//! [Code Coverage]: https://img.shields.io/codecov/c/github/MomoLangenstein/const-type-layout?token=J39WVBIMZX
-//! [codecov]: https://codecov.io/gh/MomoLangenstein/const-type-layout
+//! [Code Coverage]: https://img.shields.io/codecov/c/github/juntyr/const-type-layout?token=J39WVBIMZX
+//! [codecov]: https://codecov.io/gh/juntyr/const-type-layout
 //!
 //! [Gitpod Ready-to-Code]: https://img.shields.io/badge/Gitpod-ready-blue?logo=gitpod
-//! [gitpod]: https://gitpod.io/#https://github.com/MomoLangenstein/const-type-layout
+//! [gitpod]: https://gitpod.io/#https://github.com/juntyr/const-type-layout
 //!
 //! `const-type-layout` is a type layout comparison aid, providing a
 //! `#[derive]`able `TypeLayout` trait that reports:
@@ -151,7 +154,7 @@
 #![feature(const_maybe_uninit_array_assume_init)]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
-#![doc(html_root_url = "https://momolangenstein.github.io/const-type-layout")]
+#![doc(html_root_url = "https://juntyr.github.io/const-type-layout")]
 #![cfg_attr(feature = "serde", allow(clippy::type_repetition_in_bounds))]
 
 #[doc(hidden)]
