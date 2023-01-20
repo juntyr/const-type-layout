@@ -1,15 +1,16 @@
 [package]
 name = "const-type-layout"
-description = "Derivable trait to view the layout of a struct, useful for debugging."
+description = "Derivable const trait to view and compare the layout of a struct, union, or enum."
 version = "0.1.0"
 edition = "2021"
-authors = ["Juniper Tyree <juniper.langenstein@helsinki.fi>", "Lucien Greathouse <me@lpghatguy.com>"]
-documentation = "https://juntyr.github.io/const-type-layout/const_type_layout/"
+authors = ["Juniper Tyree <juniper.tyree@helsinki.fi>", "Lucien Greathouse <me@lpghatguy.com>"]
+documentation = "https://docs.rs/const-type-layout/"
 homepage = "https://github.com/juntyr/const-type-layout"
 repository = "https://github.com/juntyr/const-type-layout"
 readme = "README.md"
 keywords = ["layout", "type", "const"]
 license = "MIT OR Apache-2.0"
+rust-version = "1.60" # nightly
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -20,3 +21,6 @@ members = ["const-type-layout-derive", "try-crate"]
 const-type-layout-derive = { version = "0.1.0", path = "const-type-layout-derive" }
 
 serde = { version = "1.0", features = ["derive"], optional = true }
+
+[package.metadata.docs.rs]
+rustc-args = ["--cfg", "docsrs"]

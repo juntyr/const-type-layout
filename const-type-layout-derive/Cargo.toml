@@ -3,9 +3,12 @@ name = "const-type-layout-derive"
 description = "Derive macro implementation for const-type-layout crate"
 version = "0.1.0"
 edition = "2021"
-authors = ["Juniper Tyree <juniper.langenstein@helsinki.fi>", "Lucien Greathouse <me@lpghatguy.com>"]
+authors = ["Juniper Tyree <juniper.tyree@helsinki.fi>", "Lucien Greathouse <me@lpghatguy.com>"]
+documentation = "https://docs.rs/const-type-layout-derive/"
 homepage = "https://github.com/juntyr/const-type-layout"
+repository = "https://github.com/juntyr/const-type-layout"
 license = "MIT OR Apache-2.0"
+rust-version = "1.60" # nightly
 
 [lib]
 proc-macro = true

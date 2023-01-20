@@ -1,13 +1,17 @@
-//! [![CI Status]][workflow] [![Rust Doc]][docs] [![License Status]][fossa]
+//! [![CI Status]][workflow] [![Rust Doc Crate]][docs.rs]
+//! [![Rust Doc Main]][docs] [![License Status]][fossa]
 //! [![Code Coverage]][codecov] [![Gitpod Ready-to-Code]][gitpod]
 //!
 //! [CI Status]: https://img.shields.io/github/actions/workflow/status/juntyr/const-type-layout/ci.yml?branch=main
 //! [workflow]: https://github.com/juntyr/const-type-layout/actions/workflows/ci.yml?query=branch%3Amain
 //!
 //! [MSRV]: https://img.shields.io/badge/MSRV-1.60.0-orange
-//! [repo]: https://github.com/ron-rs/ron
+//! [repo]: https://github.com/juntyr/const-type-layout
 //!
-//! [Rust Doc]: https://img.shields.io/badge/docs-main-blue
+//! [Rust Doc Crate]: https://img.shields.io/docsrs/const-type-layout
+//! [docs.rs]: https://docs.rs/const-type-layout/
+//!
+//! [Rust Doc Main]: https://img.shields.io/badge/docs-main-blue
 //! [docs]: https://juntyr.github.io/const-type-layout/const_type_layout
 //!
 //! [License Status]: https://app.fossa.com/api/projects/custom%2B26490%2Fgithub.com%2Fjuntyr%2Fconst-type-layout.svg?type=shield
@@ -154,7 +158,10 @@
 #![feature(const_maybe_uninit_array_assume_init)]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
-#![doc(html_root_url = "https://juntyr.github.io/const-type-layout")]
+#![cfg_attr(
+    all(doc, not(docsrs)),
+    doc(html_root_url = "https://juntyr.github.io/const-type-layout")
+)]
 #![cfg_attr(feature = "serde", allow(clippy::type_repetition_in_bounds))]
 
 #[doc(hidden)]
@@ -539,6 +546,7 @@ impl<'a> PartialOrd for Field<'a> {
     }
 }
 
+#[doc(hidden)]
 #[allow_internal_unstable(const_ptr_offset_from)]
 pub macro struct_field_offset($ty_name:ident => $ty:ty => (*$base:ident).$field:tt => $($extra_fields:tt)?) {
     {
@@ -566,6 +574,7 @@ pub macro struct_field_offset($ty_name:ident => $ty:ty => (*$base:ident).$field:
     }
 }
 
+#[doc(hidden)]
 #[allow_internal_unstable(const_discriminant)]
 pub macro struct_variant_discriminant {
     ($ty_name:ident => $ty:ty => $variant_name:ident) => {
@@ -696,6 +705,7 @@ pub macro struct_variant_discriminant {
     }},
 }
 
+#[doc(hidden)]
 #[allow_internal_unstable(const_ptr_offset_from)]
 pub macro struct_variant_field_offset {
     ($ty_name:ident => $ty:ty => $variant_name:ident($($field_name:ident: $field_ty:ty),* $(,)?) => $field_index:tt) => {{

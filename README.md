@@ -1,12 +1,15 @@
-# const-type-layout &emsp; [![CI Status]][workflow] [![MSRV]][repo] [![Rust Doc]][docs] [![License Status]][fossa] [![Code Coverage]][codecov] [![Gitpod Ready-to-Code]][gitpod]
+[![CI Status]][workflow] [![Rust Doc Crate]][docs.rs] [![Rust Doc Main]][docs] [![License Status]][fossa] [![Code Coverage]][codecov] [![Gitpod Ready-to-Code]][gitpod]
 
 [CI Status]: https://img.shields.io/github/actions/workflow/status/juntyr/const-type-layout/ci.yml?branch=main
 [workflow]: https://github.com/juntyr/const-type-layout/actions/workflows/ci.yml?query=branch%3Amain
 
 [MSRV]: https://img.shields.io/badge/MSRV-1.60.0-orange
-[repo]: https://github.com/ron-rs/ron
+[repo]: https://github.com/juntyr/const-type-layout
 
-[Rust Doc]: https://img.shields.io/badge/docs-main-blue
+[Rust Doc Crate]: https://img.shields.io/docsrs/const-type-layout
+[docs.rs]: https://docs.rs/const-type-layout/
+
+[Rust Doc Main]: https://img.shields.io/badge/docs-main-blue
 [docs]: https://juntyr.github.io/const-type-layout/const_type_layout
 
 [License Status]: https://app.fossa.com/api/projects/custom%2B26490%2Fgithub.com%2Fjuntyr%2Fconst-type-layout.svg?type=shield
