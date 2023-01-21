@@ -46,7 +46,6 @@
 //! # #![feature(const_refs_to_cell)]
 //! # #![feature(const_trait_impl)]
 //! # #![feature(const_mut_refs)]
-//! # #![feature(const_transmute_copy)]
 //! # #![cfg_attr(not(version("1.61.0")), feature(const_fn_trait_bound))]
 //! # #![cfg_attr(not(version("1.61.0")), feature(const_ptr_offset))]
 //! # #![allow(incomplete_features)]
@@ -60,29 +59,33 @@
 //!     b: u32,
 //! }
 //!
-//! println!("{:#?}", Foo::TYPE_LAYOUT);
-//! // prints:
-//!
-//! // TypeLayoutInfo {
-//! //     name: "Foo",
-//! //     size: 8,
-//! //     alignment: 4,
-//! //     structure: Struct {
-//! //         repr: "C",
-//! //         fields: [
-//! //             Field {
-//! //                 name: "a",
-//! //                 offset: 0,
-//! //                 ty: "u8",
-//! //             },
-//! //             Field {
-//! //                 name: "b",
-//! //                 offset: 4,
-//! //                 ty: "u32",
-//! //             },
-//! //         ],
-//! //     },
-//! // }
+//! assert_eq!(
+//!     format!("{:#?}", Foo::TYPE_LAYOUT),
+//! r#"TypeLayoutInfo {
+//!     name: "rust_out::main::_doctest_main_src_lib_rs_43_0::Foo",
+//!     size: 8,
+//!     alignment: 4,
+//!     structure: Struct {
+//!         repr: "C",
+//!         fields: [
+//!             Field {
+//!                 name: "a",
+//!                 offset: Inhabited(
+//!                     0,
+//!                 ),
+//!                 ty: "u8",
+//!             },
+//!             Field {
+//!                 name: "b",
+//!                 offset: Inhabited(
+//!                     4,
+//!                 ),
+//!                 ty: "u32",
+//!             },
+//!         ],
+//!     },
+//! }"#
+//! )
 //! ```
 //!
 //! Over-aligned types have trailing padding, which can be a source of bugs in
@@ -94,7 +97,6 @@
 //! # #![feature(const_refs_to_cell)]
 //! # #![feature(const_trait_impl)]
 //! # #![feature(const_mut_refs)]
-//! # #![feature(const_transmute_copy)]
 //! # #![cfg_attr(not(version("1.61.0")), feature(const_fn_trait_bound))]
 //! # #![cfg_attr(not(version("1.61.0")), feature(const_ptr_offset))]
 //! # #![allow(incomplete_features)]
@@ -107,24 +109,26 @@
 //!     value: u8,
 //! }
 //!
-//! println!("{:#?}", OverAligned::TYPE_LAYOUT);
-//! // prints:
-//!
-//! // TypeLayoutInfo {
-//! //     name: "OverAligned",
-//! //     size: 128,
-//! //     alignment: 128,
-//! //     structure: Struct {
-//! //         repr: "C,align(128)",
-//! //         fields: [
-//! //             Field {
-//! //                 name: "value",
-//! //                 offset: 0,
-//! //                 ty: "u8",
-//! //             },
-//! //         ],
-//! //     },
-//! // }
+//! assert_eq!(
+//!     format!("{:#?}", OverAligned::TYPE_LAYOUT),
+//! r#"TypeLayoutInfo {
+//!     name: "rust_out::main::_doctest_main_src_lib_rs_94_0::OverAligned",
+//!     size: 128,
+//!     alignment: 128,
+//!     structure: Struct {
+//!         repr: "C,align(128)",
+//!         fields: [
+//!             Field {
+//!                 name: "value",
+//!                 offset: Inhabited(
+//!                     0,
+//!                 ),
+//!                 ty: "u8",
+//!             },
+//!         ],
+//!     },
+//! }"#
+//! )
 //! ```
 
 #![deny(clippy::pedantic)]
