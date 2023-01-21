@@ -771,6 +771,10 @@
 <a href="#771" id="771">771</a>
 <a href="#772" id="772">772</a>
 <a href="#773" id="773">773</a>
+<a href="#774" id="774">774</a>
+<a href="#775" id="775">775</a>
+<a href="#776" id="776">776</a>
+<a href="#777" id="777">777</a>
 </pre><pre class="rust"><code><span class="doccomment">//! [![CI Status]][workflow] [![Rust Doc Crate]][docs.rs]
 //! [![Rust Doc Main]][docs] [![License Status]][fossa]
 //! [![Code Coverage]][codecov] [![Gitpod Ready-to-Code]][gitpod]
@@ -819,7 +823,6 @@
 //! # #![feature(const_refs_to_cell)]
 //! # #![feature(const_trait_impl)]
 //! # #![feature(const_mut_refs)]
-//! # #![feature(const_transmute_copy)]
 //! # #![cfg_attr(not(version(&quot;1.61.0&quot;)), feature(const_fn_trait_bound))]
 //! # #![cfg_attr(not(version(&quot;1.61.0&quot;)), feature(const_ptr_offset))]
 //! # #![allow(incomplete_features)]
@@ -833,29 +836,33 @@
 //!     b: u32,
 //! }
 //!
-//! println!(&quot;{:#?}&quot;, Foo::TYPE_LAYOUT);
-//! // prints:
-//!
-//! // TypeLayoutInfo {
-//! //     name: &quot;Foo&quot;,
-//! //     size: 8,
-//! //     alignment: 4,
-//! //     structure: Struct {
-//! //         repr: &quot;C&quot;,
-//! //         fields: [
-//! //             Field {
-//! //                 name: &quot;a&quot;,
-//! //                 offset: 0,
-//! //                 ty: &quot;u8&quot;,
-//! //             },
-//! //             Field {
-//! //                 name: &quot;b&quot;,
-//! //                 offset: 4,
-//! //                 ty: &quot;u32&quot;,
-//! //             },
-//! //         ],
-//! //     },
-//! // }
+//! assert_eq!(
+//!     format!(&quot;{:#?}&quot;, Foo::TYPE_LAYOUT),
+//! r#&quot;TypeLayoutInfo {
+//!     name: &quot;rust_out::main::_doctest_main_src_lib_rs_43_0::Foo&quot;,
+//!     size: 8,
+//!     alignment: 4,
+//!     structure: Struct {
+//!         repr: &quot;C&quot;,
+//!         fields: [
+//!             Field {
+//!                 name: &quot;a&quot;,
+//!                 offset: Inhabited(
+//!                     0,
+//!                 ),
+//!                 ty: &quot;u8&quot;,
+//!             },
+//!             Field {
+//!                 name: &quot;b&quot;,
+//!                 offset: Inhabited(
+//!                     4,
+//!                 ),
+//!                 ty: &quot;u32&quot;,
+//!             },
+//!         ],
+//!     },
+//! }&quot;#
+//! )
 //! ```
 //!
 //! Over-aligned types have trailing padding, which can be a source of bugs in
@@ -867,7 +874,6 @@
 //! # #![feature(const_refs_to_cell)]
 //! # #![feature(const_trait_impl)]
 //! # #![feature(const_mut_refs)]
-//! # #![feature(const_transmute_copy)]
 //! # #![cfg_attr(not(version(&quot;1.61.0&quot;)), feature(const_fn_trait_bound))]
 //! # #![cfg_attr(not(version(&quot;1.61.0&quot;)), feature(const_ptr_offset))]
 //! # #![allow(incomplete_features)]
@@ -880,24 +886,26 @@
 //!     value: u8,
 //! }
 //!
-//! println!(&quot;{:#?}&quot;, OverAligned::TYPE_LAYOUT);
-//! // prints:
-//!
-//! // TypeLayoutInfo {
-//! //     name: &quot;OverAligned&quot;,
-//! //     size: 128,
-//! //     alignment: 128,
-//! //     structure: Struct {
-//! //         repr: &quot;C,align(128)&quot;,
-//! //         fields: [
-//! //             Field {
-//! //                 name: &quot;value&quot;,
-//! //                 offset: 0,
-//! //                 ty: &quot;u8&quot;,
-//! //             },
-//! //         ],
-//! //     },
-//! // }
+//! assert_eq!(
+//!     format!(&quot;{:#?}&quot;, OverAligned::TYPE_LAYOUT),
+//! r#&quot;TypeLayoutInfo {
+//!     name: &quot;rust_out::main::_doctest_main_src_lib_rs_94_0::OverAligned&quot;,
+//!     size: 128,
+//!     alignment: 128,
+//!     structure: Struct {
+//!         repr: &quot;C,align(128)&quot;,
+//!         fields: [
+//!             Field {
+//!                 name: &quot;value&quot;,
+//!                 offset: Inhabited(
+//!                     0,
+//!                 ),
+//!                 ty: &quot;u8&quot;,
+//!             },
+//!         ],
+//!     },
+//! }&quot;#
+//! )
 //! ```
 
 </span><span class="attr">#![deny(clippy::pedantic)]
@@ -1545,4 +1553,4 @@
     }},
 }
 </code></pre></div>
-</section></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="const_type_layout" data-themes="" data-resource-suffix="" data-rustdoc-version="1.68.0-nightly (4c83bd03a 2023-01-19)" data-search-js="search-98d53477a794af0b.js" data-settings-js="settings-c3c521c753752a1a.js" data-settings-css="settings-ab1d4ae2ec52020e.css" ></div></body></html>
+</section></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="const_type_layout" data-themes="" data-resource-suffix="" data-rustdoc-version="1.68.0-nightly (5ce39f42b 2023-01-20)" data-search-js="search-98d53477a794af0b.js" data-settings-js="settings-c3c521c753752a1a.js" data-settings-css="settings-ab1d4ae2ec52020e.css" ></div></body></html>
