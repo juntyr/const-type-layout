@@ -66,7 +66,7 @@
 //! assert_eq!(
 //!     format!("{:#?}", Foo::TYPE_LAYOUT),
 //! r#"TypeLayoutInfo {
-//!     name: "rust_out::main::_doctest_main_src_lib_rs_43_0::Foo",
+//!     name: "rust_out::main::_doctest_main_src_lib_rs_47_0::Foo",
 //!     size: 8,
 //!     alignment: 4,
 //!     structure: Struct {
@@ -116,7 +116,7 @@
 //! assert_eq!(
 //!     format!("{:#?}", OverAligned::TYPE_LAYOUT),
 //! r#"TypeLayoutInfo {
-//!     name: "rust_out::main::_doctest_main_src_lib_rs_94_0::OverAligned",
+//!     name: "rust_out::main::_doctest_main_src_lib_rs_98_0::OverAligned",
 //!     size: 128,
 //!     alignment: 128,
 //!     structure: Struct {
