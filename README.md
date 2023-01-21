@@ -1,10 +1,13 @@
-[![CI Status]][workflow] [![Rust Doc Crate]][docs.rs] [![Rust Doc Main]][docs] [![License Status]][fossa] [![Code Coverage]][codecov] [![Gitpod Ready-to-Code]][gitpod]
+[![CI Status]][workflow] [![MSRV]][repo] [![Latest Version]][crates.io] [![Rust Doc Crate]][docs.rs] [![Rust Doc Main]][docs] [![License Status]][fossa] [![Code Coverage]][codecov] [![Gitpod Ready-to-Code]][gitpod]
 
 [CI Status]: https://img.shields.io/github/actions/workflow/status/juntyr/const-type-layout/ci.yml?branch=main
 [workflow]: https://github.com/juntyr/const-type-layout/actions/workflows/ci.yml?query=branch%3Amain
 
 [MSRV]: https://img.shields.io/badge/MSRV-1.60.0-orange
 [repo]: https://github.com/juntyr/const-type-layout
+
+[Latest Version]: https://img.shields.io/crates/v/const-type-layout
+[crates.io]: https://crates.io/crates/const-type-layout
 
 [Rust Doc Crate]: https://img.shields.io/docsrs/const-type-layout
 [docs.rs]: https://docs.rs/const-type-layout/
@@ -47,29 +50,33 @@ struct Foo {
     b: u32,
 }
 
-println!("{:#?}", Foo::TYPE_LAYOUT);
-// prints:
-//
-// TypeLayoutInfo {
-//     name: "Foo",
-//     size: 8,
-//     alignment: 4,
-//     structure: Struct {
-//         repr: "C",
-//         fields: [
-//             Field {
-//                 name: "a",
-//                 offset: 0,
-//                 ty: "u8",
-//             },
-//             Field {
-//                 name: "b",
-//                 offset: 4,
-//                 ty: "u32",
-//             },
-//         ],
-//     },
-// }
+assert_eq!(
+    format!("{:#?}", Foo::TYPE_LAYOUT),
+r#"TypeLayoutInfo {
+    name: "mycrate::mymodule::Foo",
+    size: 8,
+    alignment: 4,
+    structure: Struct {
+        repr: "C",
+        fields: [
+            Field {
+                name: "a",
+                offset: Inhabited(
+                    0,
+                ),
+                ty: "u8",
+            },
+            Field {
+                name: "b",
+                offset: Inhabited(
+                    4,
+                ),
+                ty: "u32",
+            },
+        ],
+    },
+}"#
+);
 ```
 
 Over-aligned types have trailing padding, which can be a source of bugs in some
@@ -84,24 +91,26 @@ struct OverAligned {
     value: u8,
 }
 
-println!("{:#?}", OverAligned::TYPE_LAYOUT);
-// prints:
-//
-// TypeLayoutInfo {
-//     name: "OverAligned",
-//     size: 128,
-//     alignment: 128,
-//     structure: Struct {
-//         repr: "C,align(128)",
-//         fields: [
-//             Field {
-//                 name: "value",
-//                 offset: 0,
-//                 ty: "u8",
-//             },
-//         ],
-//     },
-// }
+assert_eq!(
+    format!("{:#?}", OverAligned::TYPE_LAYOUT),
+r#"TypeLayoutInfo {
+    name: "mycrate::mymodule::OverAligned",
+    size: 128,
+    alignment: 128,
+    structure: Struct {
+        repr: "C,align(128)",
+        fields: [
+            Field {
+                name: "value",
+                offset: Inhabited(
+                    0,
+                ),
+                ty: "u8",
+            },
+        ],
+    },
+}"#
+)
 ```
 
 ## License
