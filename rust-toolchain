@@ -1,0 +1,4 @@
+[toolchain]
+# Pin version pin until const traits are back
+channel = "nightly-2023-04-19"
+components = [ "cargo", "rustfmt", "clippy", "miri" ]
