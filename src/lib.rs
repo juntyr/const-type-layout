@@ -573,7 +573,7 @@ pub macro struct_field_offset($ty_name:ident => $ty:ty => (*$base:ident).$field:
             let offset = unsafe { field_ptr.cast::<u8>().offset_from($base.cast()) as usize };
 
             #[allow(clippy::forget_non_drop, clippy::forget_copy)]
-            core::mem::forget(uninit);
+            ::core::mem::forget(uninit);
 
             $crate::MaybeUninhabited::Inhabited(offset)
         } else {
@@ -591,14 +591,14 @@ pub macro struct_variant_discriminant {
                 big_endian_bytes: &{
                     let uninit: $ty = $ty_name::$variant_name;
 
-                    let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<$ty>>()] = unsafe {
-                        core::mem::transmute(core::mem::discriminant(&uninit))
+                    let system_endian_bytes: [u8; ::core::mem::size_of::<::core::mem::Discriminant<$ty>>()] = unsafe {
+                        ::core::mem::transmute(::core::mem::discriminant(&uninit))
                     };
 
                     #[allow(clippy::forget_non_drop, clippy::forget_copy)]
-                    core::mem::forget(uninit);
+                    ::core::mem::forget(uninit);
 
-                    let mut big_endian_bytes = [0_u8; core::mem::size_of::<core::mem::Discriminant<$ty>>()];
+                    let mut big_endian_bytes = [0_u8; ::core::mem::size_of::<::core::mem::Discriminant<$ty>>()];
 
                     let mut i = 0;
 
@@ -631,16 +631,16 @@ pub macro struct_variant_discriminant {
                             $(unsafe { $field_name.assume_init() }),*
                         );
 
-                        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<$ty>>()] = unsafe {
-                            core::mem::transmute(core::mem::discriminant(&uninit))
+                        let system_endian_bytes: [u8; ::core::mem::size_of::<::core::mem::Discriminant<$ty>>()] = unsafe {
+                            ::core::mem::transmute(::core::mem::discriminant(&uninit))
                         };
 
                         #[allow(clippy::forget_non_drop, clippy::forget_copy)]
-                        core::mem::forget(uninit);
+                        ::core::mem::forget(uninit);
 
                         let big_endian_bytes = unsafe {
                             &mut *$crate::impls::leak_uninit_ptr::<
-                                [u8; core::mem::size_of::<core::mem::Discriminant<$ty>>()]
+                                [u8; ::core::mem::size_of::<::core::mem::Discriminant<$ty>>()]
                             >()
                         };
 
@@ -678,16 +678,16 @@ pub macro struct_variant_discriminant {
                             $($field_name: unsafe { $field_name.assume_init() }),*
                         };
 
-                        let system_endian_bytes: [u8; core::mem::size_of::<core::mem::Discriminant<$ty>>()] = unsafe {
-                            core::mem::transmute(core::mem::discriminant(&uninit))
+                        let system_endian_bytes: [u8; ::core::mem::size_of::<::core::mem::Discriminant<$ty>>()] = unsafe {
+                            ::core::mem::transmute(::core::mem::discriminant(&uninit))
                         };
 
                         #[allow(clippy::forget_non_drop, clippy::forget_copy)]
-                        core::mem::forget(uninit);
+                        ::core::mem::forget(uninit);
 
                         let big_endian_bytes = unsafe {
                             &mut *$crate::impls::leak_uninit_ptr::<
-                                [u8; core::mem::size_of::<core::mem::Discriminant<$ty>>()]
+                                [u8; ::core::mem::size_of::<::core::mem::Discriminant<$ty>>()]
                             >()
                         };
 
@@ -740,7 +740,7 @@ pub macro struct_variant_field_offset {
             let offset = unsafe { field_ptr.cast::<u8>().offset_from(base_ptr.cast()) as usize };
 
             #[allow(clippy::forget_non_drop, clippy::forget_copy)]
-            core::mem::forget(uninit);
+            ::core::mem::forget(uninit);
 
             $crate::MaybeUninhabited::Inhabited(offset)
         } else {
@@ -771,7 +771,7 @@ pub macro struct_variant_field_offset {
             let offset = unsafe { field_ptr.cast::<u8>().offset_from(base_ptr.cast()) as usize };
 
             #[allow(clippy::forget_non_drop, clippy::forget_copy)]
-            core::mem::forget(uninit);
+            ::core::mem::forget(uninit);
 
             $crate::MaybeUninhabited::Inhabited(offset)
         } else {

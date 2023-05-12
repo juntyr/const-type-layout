@@ -36,6 +36,14 @@ struct Foo3 {
 #[derive(TypeLayout)]
 struct Foo4<T>(T);
 
+#[derive(TypeLayout)]
+struct Foo5<A, B> {
+    a: (),
+    b: (i32,),
+    c: (Foo1, Foo2),
+    d: (Foo3, Foo4<A>, Foo4<B>),
+}
+
 #[repr(C)]
 #[derive(TypeLayout)]
 union Bar {
@@ -157,6 +165,8 @@ fn main() {
     println!("{:#?}", Foo2::TYPE_GRAPH);
     println!("{:#?}", Foo3::TYPE_GRAPH);
     println!("{:#?}", Foo4::<u8>::TYPE_GRAPH);
+    println!("{:#?}", Foo5::<u8, i8>::TYPE_GRAPH);
+    println!("{:#?}", Foo5::<!, char>::TYPE_GRAPH);
 
     println!("{:#?}", Bar::TYPE_GRAPH);
     println!("{:#?}", SingleUnion::TYPE_GRAPH);
