@@ -3,6 +3,7 @@ mod cell;
 mod cmp;
 mod convert;
 mod ffi;
+mod r#fn;
 mod marker;
 mod mem;
 mod num;

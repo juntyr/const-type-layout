@@ -164,6 +164,7 @@
 #![feature(const_maybe_uninit_uninit_array)]
 #![feature(maybe_uninit_array_assume_init)]
 #![feature(const_maybe_uninit_array_assume_init)]
+#![feature(c_variadic)]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 #![cfg_attr(
@@ -241,14 +242,6 @@ pub enum Asyncness {
 pub enum Safety {
     Safe,
     Unsafe,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Serialize))]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub enum Origin<'a> {
-    Internal,
-    External { abi: &'a str },
 }
 
 /// # Safety
@@ -386,13 +379,13 @@ pub enum TypeStructure<
         constness: Constness,
         asyncness: Asyncness,
         safety: Safety,
-        origin: Origin<'a>,
+        abi: &'a str,
         parameters: P,
         r#return: &'a str,
     },
     FunctionPointer {
         safety: Safety,
-        origin: Origin<'a>,
+        abi: &'a str,
         parameters: P,
         r#return: &'a str,
     },

@@ -1,7 +1,7 @@
 use core::ops::Deref;
 
 use crate::{
-    Asyncness, Constness, Discriminant, Field, MaybeUninhabited, Mutability, Origin, Safety,
+    Asyncness, Constness, Discriminant, Field, MaybeUninhabited, Mutability, Safety,
     TypeLayoutGraph, TypeLayoutInfo, TypeStructure, Variant,
 };
 
@@ -153,30 +153,6 @@ pub const fn serialise_safety(bytes: &mut [u8], from: usize, value: Safety) -> u
 
 pub const fn serialised_safety_len(from: usize, _value: Safety) -> usize {
     from + 1
-}
-
-pub const fn serialise_origin(bytes: &mut [u8], from: usize, value: Origin) -> usize {
-    assert!(
-        serialised_origin_len(from, value) <= bytes.len(),
-        "bytes is not large enough to contain the serialised Origin."
-    );
-
-    bytes[from] = match value {
-        Origin::Internal => b'i',
-        Origin::External { .. } => b'e',
-    };
-
-    match value {
-        Origin::Internal => from + 1,
-        Origin::External { abi } => serialise_str(bytes, from + 1, abi),
-    }
-}
-
-pub const fn serialised_origin_len(from: usize, value: Origin) -> usize {
-    match value {
-        Origin::Internal => from + 1,
-        Origin::External { abi } => serialised_str_len(from + 1, abi),
-    }
 }
 
 pub const fn serialise_maybe_uninhabited(
@@ -438,7 +414,7 @@ pub const fn serialise_type_structure<
             constness,
             asyncness,
             safety,
-            origin,
+            abi,
             parameters,
             r#return,
         } => {
@@ -446,19 +422,19 @@ pub const fn serialise_type_structure<
             let from = serialise_constness(bytes, from, *constness);
             let from = serialise_asyncness(bytes, from, *asyncness);
             let from = serialise_safety(bytes, from, *safety);
-            let from = serialise_origin(bytes, from, *origin);
+            let from = serialise_str(bytes, from, abi);
             let from = serialise_parameters(bytes, from, parameters);
             serialise_str(bytes, from, r#return)
         },
         TypeStructure::FunctionPointer {
             safety,
-            origin,
+            abi,
             parameters,
             r#return,
         } => {
             let from = serialise_byte(bytes, from, b'f');
             let from = serialise_safety(bytes, from, *safety);
-            let from = serialise_origin(bytes, from, *origin);
+            let from = serialise_str(bytes, from, abi);
             let from = serialise_parameters(bytes, from, parameters);
             serialise_str(bytes, from, r#return)
         },
@@ -510,7 +486,7 @@ pub const fn serialised_type_structure_len<
             constness,
             asyncness,
             safety,
-            origin,
+            abi,
             parameters,
             r#return,
         } => {
@@ -518,19 +494,19 @@ pub const fn serialised_type_structure_len<
             let from = serialised_constness_len(from, *constness);
             let from = serialised_asyncness_len(from, *asyncness);
             let from = serialised_safety_len(from, *safety);
-            let from = serialised_origin_len(from, *origin);
+            let from = serialised_str_len(from, abi);
             let from = serialised_parameters_len(from, parameters);
             serialised_str_len(from, r#return)
         },
         TypeStructure::FunctionPointer {
             safety,
-            origin,
+            abi,
             parameters,
             r#return,
         } => {
             let from = serialised_byte_len(from, b'f');
             let from = serialised_safety_len(from, *safety);
-            let from = serialised_origin_len(from, *origin);
+            let from = serialised_str_len(from, abi);
             let from = serialised_parameters_len(from, parameters);
             serialised_str_len(from, r#return)
         },

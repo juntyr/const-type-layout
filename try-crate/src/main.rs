@@ -167,6 +167,15 @@ fn main() {
     println!("{:#?}", Foo4::<u8>::TYPE_GRAPH);
     println!("{:#?}", Foo5::<u8, i8>::TYPE_GRAPH);
     println!("{:#?}", Foo5::<!, char>::TYPE_GRAPH);
+    println!("{:#?}", Foo5::<fn(), unsafe fn(i32) -> bool>::TYPE_GRAPH);
+    println!(
+        "{:#?}",
+        Foo5::<extern "C" fn(), unsafe extern "C" fn(i32) -> bool>::TYPE_GRAPH
+    );
+    println!(
+        "{:#?}",
+        Foo4::<unsafe extern "C" fn(i32, !, ...)>::TYPE_GRAPH
+    );
 
     println!("{:#?}", Bar::TYPE_GRAPH);
     println!("{:#?}", SingleUnion::TYPE_GRAPH);
