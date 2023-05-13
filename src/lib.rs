@@ -219,6 +219,38 @@ pub enum Mutability {
     Mutable,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize))]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
+pub enum Constness {
+    NonConst,
+    Const,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize))]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
+pub enum Asyncness {
+    Sync,
+    Async,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize))]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
+pub enum Safety {
+    Safe,
+    Unsafe,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", derive(::serde::Serialize))]
+#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
+pub enum Origin<'a> {
+    Internal,
+    External { abi: &'a str },
+}
+
 /// # Safety
 ///
 /// It is only safe to implement this trait if it accurately describes the
@@ -309,11 +341,12 @@ pub struct TypeLayoutInfo<
     'a,
     F: Deref<Target = [Field<'a>]> = &'a [Field<'a>],
     V: Deref<Target = [Variant<'a, F>]> = &'a [Variant<'a, F>],
+    P: Deref<Target = [&'a str]> = &'a [&'a str],
 > {
     pub name: &'a str,
     pub size: usize,
     pub alignment: usize,
-    pub structure: TypeStructure<'a, F, V>,
+    pub structure: TypeStructure<'a, F, V, P>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -322,6 +355,7 @@ pub enum TypeStructure<
     'a,
     F: Deref<Target = [Field<'a>]> = &'a [Field<'a>],
     V: Deref<Target = [Variant<'a, F>]> = &'a [Variant<'a, F>],
+    P: Deref<Target = [&'a str]> = &'a [&'a str],
 > {
     Struct {
         repr: &'a str,
@@ -347,6 +381,20 @@ pub enum TypeStructure<
     Pointer {
         inner: &'a str,
         mutability: Mutability,
+    },
+    FunctionItem {
+        constness: Constness,
+        asyncness: Asyncness,
+        safety: Safety,
+        origin: Origin<'a>,
+        parameters: P,
+        r#return: &'a str,
+    },
+    FunctionPointer {
+        safety: Safety,
+        origin: Origin<'a>,
+        parameters: P,
+        r#return: &'a str,
     },
 }
 
