@@ -121,24 +121,8 @@
 <a href="#121" id="121">121</a>
 <a href="#122" id="122">122</a>
 <a href="#123" id="123">123</a>
-<a href="#124" id="124">124</a>
-<a href="#125" id="125">125</a>
-<a href="#126" id="126">126</a>
-<a href="#127" id="127">127</a>
-<a href="#128" id="128">128</a>
-<a href="#129" id="129">129</a>
-<a href="#130" id="130">130</a>
-<a href="#131" id="131">131</a>
-<a href="#132" id="132">132</a>
-<a href="#133" id="133">133</a>
-<a href="#134" id="134">134</a>
-<a href="#135" id="135">135</a>
-<a href="#136" id="136">136</a>
-<a href="#137" id="137">137</a>
-<a href="#138" id="138">138</a>
-<a href="#139" id="139">139</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
-    MaybeUninhabited, Safety, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+    MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
 };
 
 <span class="macro">macro_rules! </span>impl_fn_pointer_type_layout {
@@ -146,32 +130,23 @@
         <span class="macro">impl_fn_pointer_type_layout!</span>{
             <span class="kw">impl extern </span><span class="macro-nonterminal">$abi </span><span class="kw">fn</span>($(<span class="macro-nonterminal">$T</span>),<span class="kw-2">*</span>) -&gt; <span class="macro-nonterminal">$R</span>,
             <span class="kw">extern </span><span class="macro-nonterminal">$abi </span><span class="kw">fn</span>($(<span class="macro-nonterminal">$T</span>),<span class="kw-2">*</span>) -&gt; <span class="macro-nonterminal">$R</span>,
-            <span class="kw">extern </span><span class="macro-nonterminal">$abi </span><span class="kw">fn </span>demo&lt;<span class="macro-nonterminal">$R</span>, $(<span class="macro-nonterminal">$T</span>),<span class="kw-2">*</span>&gt;($(<span class="kw">_</span>: <span class="macro-nonterminal">$T</span>),<span class="kw-2">*</span>) -&gt; <span class="macro-nonterminal">$R </span>{ <span class="kw">loop </span>{} },
-            Safety::Safe
+            <span class="kw">extern </span><span class="macro-nonterminal">$abi </span><span class="kw">fn </span>demo&lt;<span class="macro-nonterminal">$R</span>, $(<span class="macro-nonterminal">$T</span>),<span class="kw-2">*</span>&gt;($(<span class="kw">_</span>: <span class="macro-nonterminal">$T</span>),<span class="kw-2">*</span>) -&gt; <span class="macro-nonterminal">$R </span>{ <span class="kw">loop </span>{} }
         }
     };
     (<span class="kw">impl unsafe extern </span><span class="macro-nonterminal">$abi</span>:literal <span class="kw">fn</span>($(<span class="macro-nonterminal">$T</span>:ident),<span class="kw-2">*</span>) -&gt; <span class="macro-nonterminal">$R</span>:ident) =&gt; {
         <span class="macro">impl_fn_pointer_type_layout!</span>{
             <span class="kw">impl extern </span><span class="macro-nonterminal">$abi </span><span class="kw">fn</span>($(<span class="macro-nonterminal">$T</span>),<span class="kw-2">*</span>) -&gt; <span class="macro-nonterminal">$R</span>,
             <span class="kw">unsafe extern </span><span class="macro-nonterminal">$abi </span><span class="kw">fn</span>($(<span class="macro-nonterminal">$T</span>),<span class="kw-2">*</span>) -&gt; <span class="macro-nonterminal">$R</span>,
-            <span class="kw">unsafe extern </span><span class="macro-nonterminal">$abi </span><span class="kw">fn </span>demo&lt;<span class="macro-nonterminal">$R</span>, $(<span class="macro-nonterminal">$T</span>),<span class="kw-2">*</span>&gt;($(<span class="kw">_</span>: <span class="macro-nonterminal">$T</span>),<span class="kw-2">*</span>) -&gt; <span class="macro-nonterminal">$R </span>{ <span class="kw">loop </span>{} },
-            Safety::Unsafe
+            <span class="kw">unsafe extern </span><span class="macro-nonterminal">$abi </span><span class="kw">fn </span>demo&lt;<span class="macro-nonterminal">$R</span>, $(<span class="macro-nonterminal">$T</span>),<span class="kw-2">*</span>&gt;($(<span class="kw">_</span>: <span class="macro-nonterminal">$T</span>),<span class="kw-2">*</span>) -&gt; <span class="macro-nonterminal">$R </span>{ <span class="kw">loop </span>{} }
         }
     };
-    (<span class="kw">impl extern </span><span class="macro-nonterminal">$abi</span>:literal <span class="kw">fn</span>($(<span class="macro-nonterminal">$T</span>:ident),<span class="kw-2">*</span>) -&gt; <span class="macro-nonterminal">$R</span>:ident, <span class="macro-nonterminal">$ty</span>:ty, <span class="macro-nonterminal">$demo</span>:item, <span class="macro-nonterminal">$safety</span>:expr) =&gt; {
+    (<span class="kw">impl extern </span><span class="macro-nonterminal">$abi</span>:literal <span class="kw">fn</span>($(<span class="macro-nonterminal">$T</span>:ident),<span class="kw-2">*</span>) -&gt; <span class="macro-nonterminal">$R</span>:ident, <span class="macro-nonterminal">$ty</span>:ty, <span class="macro-nonterminal">$demo</span>:item) =&gt; {
         <span class="kw">unsafe impl</span>&lt;<span class="macro-nonterminal">$R</span>: ~<span class="kw">const </span>TypeLayout, $(<span class="macro-nonterminal">$T</span>: ~<span class="kw">const </span>TypeLayout),<span class="kw-2">*</span>&gt; <span class="kw">const </span>TypeLayout <span class="kw">for </span><span class="macro-nonterminal">$ty </span>{
             <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt; = TypeLayoutInfo {
                 name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
                 size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
                 alignment: ::core::mem::align_of::&lt;<span class="self">Self</span>&gt;(),
-                structure: TypeStructure::FunctionPointer {
-                    safety: <span class="macro-nonterminal">$safety</span>,
-                    abi: <span class="macro-nonterminal">$abi</span>,
-                    parameters: <span class="kw-2">&amp;</span>[$(
-                        ::core::any::type_name::&lt;<span class="macro-nonterminal">$T</span>&gt;()
-                    ),<span class="kw-2">*</span>],
-                    r#return: ::core::any::type_name::&lt;<span class="macro-nonterminal">$R</span>&gt;(),
-                },
+                structure: TypeStructure::Primitive,
             };
 
             <span class="kw">unsafe fn </span>uninit() -&gt; MaybeUninhabited&lt;core::mem::MaybeUninit&lt;<span class="self">Self</span>&gt;&gt; {
@@ -224,14 +199,7 @@
                 name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
                 size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
                 alignment: ::core::mem::align_of::&lt;<span class="self">Self</span>&gt;(),
-                structure: TypeStructure::FunctionPointer {
-                    safety: Safety::Unsafe,
-                    abi: <span class="macro-nonterminal">$abi</span>,
-                    parameters: <span class="kw-2">&amp;</span>[$(
-                        ::core::any::type_name::&lt;<span class="macro-nonterminal">$T</span>&gt;()
-                    ),<span class="kw-2">*</span>, <span class="string">&quot;...&quot;</span>],
-                    r#return: ::core::any::type_name::&lt;<span class="macro-nonterminal">$R</span>&gt;(),
-                },
+                structure: TypeStructure::Primitive,
             };
 
             <span class="kw">unsafe fn </span>uninit() -&gt; MaybeUninhabited&lt;core::mem::MaybeUninit&lt;<span class="self">Self</span>&gt;&gt; {

@@ -74,6 +74,7 @@
 <a href="#74" id="74">74</a>
 <a href="#75" id="75">75</a>
 <a href="#76" id="76">76</a>
+<a href="#77" id="77">77</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
     Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
 };
@@ -85,7 +86,8 @@
                 name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
                 size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
                 alignment: ::core::mem::align_of::&lt;<span class="self">Self</span>&gt;(),
-                structure: TypeStructure::Struct {
+                <span class="comment">// Even though tuples are primitives, their field layout is non-trivial
+                </span>structure: TypeStructure::Struct {
                     repr: <span class="string">&quot;&quot;</span>,
                     fields: <span class="kw-2">&amp;</span>[$(Field {
                         name: <span class="macro">stringify!</span>(<span class="macro-nonterminal">$a</span>),

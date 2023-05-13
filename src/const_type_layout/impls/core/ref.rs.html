@@ -52,14 +52,8 @@
 <a href="#52" id="52">52</a>
 <a href="#53" id="53">53</a>
 <a href="#54" id="54">54</a>
-<a href="#55" id="55">55</a>
-<a href="#56" id="56">56</a>
-<a href="#57" id="57">57</a>
-<a href="#58" id="58">58</a>
-<a href="#59" id="59">59</a>
-<a href="#60" id="60">60</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
-    impls::leak_uninit_ptr, MaybeUninhabited, Mutability, TypeGraph, TypeLayout, TypeLayoutGraph,
+    impls::leak_uninit_ptr, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph,
     TypeLayoutInfo, TypeStructure,
 };
 
@@ -68,10 +62,7 @@
         name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
         size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
         alignment: ::core::mem::align_of::&lt;<span class="self">Self</span>&gt;(),
-        structure: TypeStructure::Reference {
-            inner: ::core::any::type_name::&lt;T&gt;(),
-            mutability: Mutability::Immutable,
-        },
+        structure: TypeStructure::Primitive,
     };
 
     <span class="kw">unsafe fn </span>uninit() -&gt; MaybeUninhabited&lt;core::mem::MaybeUninit&lt;<span class="self">Self</span>&gt;&gt; {
@@ -96,10 +87,7 @@
         name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
         size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
         alignment: ::core::mem::align_of::&lt;<span class="self">Self</span>&gt;(),
-        structure: TypeStructure::Reference {
-            inner: ::core::any::type_name::&lt;T&gt;(),
-            mutability: Mutability::Mutable,
-        },
+        structure: TypeStructure::Primitive,
     };
 
     <span class="kw">unsafe fn </span>uninit() -&gt; MaybeUninhabited&lt;core::mem::MaybeUninit&lt;<span class="self">Self</span>&gt;&gt; {
