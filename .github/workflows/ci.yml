@@ -32,7 +32,7 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           profile: minimal
-          override: true
+          # override: true
 
       - name: Install power tools
         uses: taiki-e/install-action@cargo-hack
@@ -59,7 +59,7 @@ jobs:
         with:
           toolchain: ${{ matrix.rust }}
           profile: minimal
-          override: true
+          # override: true
 
       - name: Install power tools
         uses: taiki-e/install-action@cargo-hack
@@ -83,7 +83,7 @@ jobs:
           toolchain: nightly
           profile: minimal
           components: rustfmt
-          override: true
+          # override: true
 
       - name: Check the code formatting
         run: cargo fmt --all -- --check
@@ -106,7 +106,7 @@ jobs:
           toolchain: ${{ matrix.rust }}
           profile: minimal
           components: clippy
-          override: true
+          # override: true
 
       - name: Install power tools
         uses: taiki-e/install-action@cargo-hack
@@ -135,7 +135,7 @@ jobs:
           toolchain: ${{ matrix.rust }}
           profile: minimal
           components: miri, rust-src
-          override: true
+          # override: true
 
       - name: Install power tools
         uses: taiki-e/install-action@cargo-hack

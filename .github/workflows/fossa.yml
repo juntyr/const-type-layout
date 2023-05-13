@@ -22,7 +22,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
-          override: true
+          # override: true
 
       - name: Generate the Cargo.lock file
         run: cargo update
