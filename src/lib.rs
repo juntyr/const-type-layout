@@ -154,7 +154,6 @@
 #![feature(allow_internal_unstable)]
 #![feature(decl_macro)]
 #![feature(allocator_api)]
-#![feature(const_box)]
 #![feature(const_pin)]
 #![feature(const_ptr_write)]
 #![feature(inline_const)]
@@ -210,14 +209,6 @@ impl<T> MaybeUninhabited<T> {
             Self::Uninhabited => MaybeUninhabited::Uninhabited,
         }
     }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = "serde", derive(::serde::Serialize))]
-#[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
-pub enum Mutability {
-    Immutable,
-    Mutable,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -350,6 +341,7 @@ pub enum TypeStructure<
     V: Deref<Target = [Variant<'a, F>]> = &'a [Variant<'a, F>],
     P: Deref<Target = [&'a str]> = &'a [&'a str],
 > {
+    Primitive,
     Struct {
         repr: &'a str,
         fields: F,
@@ -362,28 +354,9 @@ pub enum TypeStructure<
         repr: &'a str,
         variants: V,
     },
-    Primitive,
-    Array {
-        item: &'a str,
-        len: usize,
-    },
-    Reference {
-        inner: &'a str,
-        mutability: Mutability,
-    },
-    Pointer {
-        inner: &'a str,
-        mutability: Mutability,
-    },
-    FunctionItem {
+    Function {
         constness: Constness,
         asyncness: Asyncness,
-        safety: Safety,
-        abi: &'a str,
-        parameters: P,
-        r#return: &'a str,
-    },
-    FunctionPointer {
         safety: Safety,
         abi: &'a str,
         parameters: P,

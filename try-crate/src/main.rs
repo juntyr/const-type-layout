@@ -104,6 +104,12 @@ enum NoUnit<T> {
     B(T),
 }
 
+#[derive(TypeLayout)]
+struct Box<T> {
+    pointer: std::ptr::NonNull<T>,
+    marker: std::marker::PhantomData<T>,
+}
+
 #[repr(u8, C)]
 #[derive(TypeLayout)]
 enum List<T> {
@@ -193,7 +199,6 @@ fn main() {
     println!("{:#?}", <[u32; 3]>::TYPE_GRAPH);
     println!("{:#?}", <std::mem::MaybeUninit<Box<i8>>>::TYPE_GRAPH);
     println!("{:#?}", <Box<u8>>::TYPE_GRAPH);
-    println!("{:#?}", <Box<[u8]>>::TYPE_GRAPH);
     println!("{:#?}", <Box<&'static u8>>::TYPE_GRAPH);
 
     println!("{:#?}", <std::marker::PhantomData<bool>>::TYPE_GRAPH);

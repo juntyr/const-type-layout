@@ -1,6 +1,5 @@
 use crate::{MaybeUninhabited, TypeLayout};
 
-mod alloc;
 mod core;
 
 #[doc(hidden)]

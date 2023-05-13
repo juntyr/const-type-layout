@@ -1,8 +1,8 @@
 use core::ops::Deref;
 
 use crate::{
-    Asyncness, Constness, Discriminant, Field, MaybeUninhabited, Mutability, Safety,
-    TypeLayoutGraph, TypeLayoutInfo, TypeStructure, Variant,
+    Asyncness, Constness, Discriminant, Field, MaybeUninhabited, Safety, TypeLayoutGraph,
+    TypeLayoutInfo, TypeStructure, Variant,
 };
 
 pub const fn serialise_str(bytes: &mut [u8], from: usize, value: &str) -> usize {
@@ -80,24 +80,6 @@ pub const fn serialise_byte(bytes: &mut [u8], from: usize, value: u8) -> usize {
 }
 
 pub const fn serialised_byte_len(from: usize, _value: u8) -> usize {
-    from + 1
-}
-
-pub const fn serialise_mutability(bytes: &mut [u8], from: usize, value: Mutability) -> usize {
-    assert!(
-        from < bytes.len(),
-        "bytes is not large enough to contain the serialised Mutability."
-    );
-
-    bytes[from] = match value {
-        Mutability::Immutable => b'i',
-        Mutability::Mutable => b'm',
-    };
-
-    from + 1
-}
-
-pub const fn serialised_mutability_len(from: usize, _value: Mutability) -> usize {
     from + 1
 }
 
@@ -379,6 +361,7 @@ pub const fn serialise_type_structure<
     value: &TypeStructure<'a, F, V, P>,
 ) -> usize {
     match value {
+        TypeStructure::Primitive => serialise_byte(bytes, from, b'p'),
         TypeStructure::Struct { repr, fields } => {
             let from = serialise_byte(bytes, from, b's');
             let from = serialise_str(bytes, from, repr);
@@ -394,23 +377,7 @@ pub const fn serialise_type_structure<
             let from = serialise_str(bytes, from, repr);
             serialise_variants(bytes, from, variants)
         },
-        TypeStructure::Primitive => serialise_byte(bytes, from, b'v'),
-        TypeStructure::Array { item, len } => {
-            let from = serialise_byte(bytes, from, b'a');
-            let from = serialise_str(bytes, from, item);
-            serialise_usize(bytes, from, *len)
-        },
-        TypeStructure::Reference { inner, mutability } => {
-            let from = serialise_byte(bytes, from, b'r');
-            let from = serialise_str(bytes, from, inner);
-            serialise_mutability(bytes, from, *mutability)
-        },
-        TypeStructure::Pointer { inner, mutability } => {
-            let from = serialise_byte(bytes, from, b'p');
-            let from = serialise_str(bytes, from, inner);
-            serialise_mutability(bytes, from, *mutability)
-        },
-        TypeStructure::FunctionItem {
+        TypeStructure::Function {
             constness,
             asyncness,
             safety,
@@ -418,21 +385,9 @@ pub const fn serialise_type_structure<
             parameters,
             r#return,
         } => {
-            let from = serialise_byte(bytes, from, b'i');
+            let from = serialise_byte(bytes, from, b'f');
             let from = serialise_constness(bytes, from, *constness);
             let from = serialise_asyncness(bytes, from, *asyncness);
-            let from = serialise_safety(bytes, from, *safety);
-            let from = serialise_str(bytes, from, abi);
-            let from = serialise_parameters(bytes, from, parameters);
-            serialise_str(bytes, from, r#return)
-        },
-        TypeStructure::FunctionPointer {
-            safety,
-            abi,
-            parameters,
-            r#return,
-        } => {
-            let from = serialise_byte(bytes, from, b'f');
             let from = serialise_safety(bytes, from, *safety);
             let from = serialise_str(bytes, from, abi);
             let from = serialise_parameters(bytes, from, parameters);
@@ -451,6 +406,7 @@ pub const fn serialised_type_structure_len<
     value: &TypeStructure<'a, F, V, P>,
 ) -> usize {
     match value {
+        TypeStructure::Primitive => serialised_byte_len(from, b'p'),
         TypeStructure::Struct { repr, fields } => {
             let from = serialised_byte_len(from, b's');
             let from = serialised_str_len(from, repr);
@@ -466,23 +422,7 @@ pub const fn serialised_type_structure_len<
             let from = serialised_str_len(from, repr);
             serialised_variants_len(from, variants)
         },
-        TypeStructure::Primitive => serialised_byte_len(from, b'v'),
-        TypeStructure::Array { item, len } => {
-            let from = serialised_byte_len(from, b'a');
-            let from = serialised_str_len(from, item);
-            serialised_usize_len(from, *len)
-        },
-        TypeStructure::Reference { inner, mutability } => {
-            let from = serialised_byte_len(from, b'r');
-            let from = serialised_str_len(from, inner);
-            serialised_mutability_len(from, *mutability)
-        },
-        TypeStructure::Pointer { inner, mutability } => {
-            let from = serialised_byte_len(from, b'p');
-            let from = serialised_str_len(from, inner);
-            serialised_mutability_len(from, *mutability)
-        },
-        TypeStructure::FunctionItem {
+        TypeStructure::Function {
             constness,
             asyncness,
             safety,
@@ -490,21 +430,9 @@ pub const fn serialised_type_structure_len<
             parameters,
             r#return,
         } => {
-            let from = serialised_byte_len(from, b'i');
+            let from = serialised_byte_len(from, b'f');
             let from = serialised_constness_len(from, *constness);
             let from = serialised_asyncness_len(from, *asyncness);
-            let from = serialised_safety_len(from, *safety);
-            let from = serialised_str_len(from, abi);
-            let from = serialised_parameters_len(from, parameters);
-            serialised_str_len(from, r#return)
-        },
-        TypeStructure::FunctionPointer {
-            safety,
-            abi,
-            parameters,
-            r#return,
-        } => {
-            let from = serialised_byte_len(from, b'f');
             let from = serialised_safety_len(from, *safety);
             let from = serialised_str_len(from, abi);
             let from = serialised_parameters_len(from, parameters);

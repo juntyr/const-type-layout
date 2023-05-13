@@ -1,5 +1,5 @@
 use crate::{
-    MaybeUninhabited, Safety, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+    MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
 };
 
 macro_rules! impl_fn_pointer_type_layout {
@@ -7,32 +7,23 @@ macro_rules! impl_fn_pointer_type_layout {
         impl_fn_pointer_type_layout!{
             impl extern $abi fn($($T),*) -> $R,
             extern $abi fn($($T),*) -> $R,
-            extern $abi fn demo<$R, $($T),*>($(_: $T),*) -> $R { loop {} },
-            Safety::Safe
+            extern $abi fn demo<$R, $($T),*>($(_: $T),*) -> $R { loop {} }
         }
     };
     (impl unsafe extern $abi:literal fn($($T:ident),*) -> $R:ident) => {
         impl_fn_pointer_type_layout!{
             impl extern $abi fn($($T),*) -> $R,
             unsafe extern $abi fn($($T),*) -> $R,
-            unsafe extern $abi fn demo<$R, $($T),*>($(_: $T),*) -> $R { loop {} },
-            Safety::Unsafe
+            unsafe extern $abi fn demo<$R, $($T),*>($(_: $T),*) -> $R { loop {} }
         }
     };
-    (impl extern $abi:literal fn($($T:ident),*) -> $R:ident, $ty:ty, $demo:item, $safety:expr) => {
+    (impl extern $abi:literal fn($($T:ident),*) -> $R:ident, $ty:ty, $demo:item) => {
         unsafe impl<$R: ~const TypeLayout, $($T: ~const TypeLayout),*> const TypeLayout for $ty {
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
-                structure: TypeStructure::FunctionPointer {
-                    safety: $safety,
-                    abi: $abi,
-                    parameters: &[$(
-                        ::core::any::type_name::<$T>()
-                    ),*],
-                    r#return: ::core::any::type_name::<$R>(),
-                },
+                structure: TypeStructure::Primitive,
             };
 
             unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
@@ -85,14 +76,7 @@ macro_rules! impl_variadic_extern_fn_pointer_type_layout {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
-                structure: TypeStructure::FunctionPointer {
-                    safety: Safety::Unsafe,
-                    abi: $abi,
-                    parameters: &[$(
-                        ::core::any::type_name::<$T>()
-                    ),*, "..."],
-                    r#return: ::core::any::type_name::<$R>(),
-                },
+                structure: TypeStructure::Primitive,
             };
 
             unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {

@@ -9,6 +9,7 @@ macro_rules! impl_tuple_type_layout {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
+                // Even though tuples are primitives, their field layout is non-trivial
                 structure: TypeStructure::Struct {
                     repr: "",
                     fields: &[$(Field {

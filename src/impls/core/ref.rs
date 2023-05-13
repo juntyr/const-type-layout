@@ -1,5 +1,5 @@
 use crate::{
-    impls::leak_uninit_ptr, MaybeUninhabited, Mutability, TypeGraph, TypeLayout, TypeLayoutGraph,
+    impls::leak_uninit_ptr, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph,
     TypeLayoutInfo, TypeStructure,
 };
 
@@ -8,10 +8,7 @@ unsafe impl<'a, T: ~const TypeLayout + 'a> const TypeLayout for &'a T {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
-        structure: TypeStructure::Reference {
-            inner: ::core::any::type_name::<T>(),
-            mutability: Mutability::Immutable,
-        },
+        structure: TypeStructure::Primitive,
     };
 
     unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
@@ -36,10 +33,7 @@ unsafe impl<'a, T: ~const TypeLayout + 'a> const TypeLayout for &'a mut T {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
-        structure: TypeStructure::Reference {
-            inner: ::core::any::type_name::<T>(),
-            mutability: Mutability::Mutable,
-        },
+        structure: TypeStructure::Primitive,
     };
 
     unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
