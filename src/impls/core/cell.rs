@@ -1,4 +1,5 @@
 use crate::{
+    typeset::{tset, ComputeSet, ComputeTypeSet, Set},
     Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
 };
 
@@ -35,6 +36,10 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for core::cell::UnsafeCell<T> {
     }
 }
 
+unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::cell::UnsafeCell<T> {
+    type Output<R: ComputeSet> = Set<Self, tset!([T] => R)>;
+}
+
 unsafe impl<T: ~const TypeLayout> const TypeLayout for core::cell::Cell<T> {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -66,4 +71,8 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for core::cell::Cell<T> {
             <core::cell::UnsafeCell<T> as TypeGraph>::populate_graph(graph);
         }
     }
+}
+
+unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::cell::Cell<T> {
+    type Output<R: ComputeSet> = Set<Self, tset!([core::cell::UnsafeCell<T>] => R)>;
 }

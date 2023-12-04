@@ -1,4 +1,5 @@
 use crate::{
+    typeset::{ComputeSet, ComputeTypeSet, Set},
     MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
 };
 
@@ -21,6 +22,10 @@ macro_rules! impl_primitive_type_layout {
             fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
                 graph.insert(&Self::TYPE_LAYOUT);
             }
+        }
+
+        unsafe impl ComputeTypeSet for $ty {
+            type Output<T: ComputeSet> = Set<Self, T>;
         }
     };
     ($($ty:ty => $val:expr),*) => {
@@ -52,4 +57,8 @@ unsafe impl const TypeGraph for ! {
     fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
         graph.insert(&Self::TYPE_LAYOUT);
     }
+}
+
+unsafe impl ComputeTypeSet for ! {
+    type Output<T: ComputeSet> = Set<Self, T>;
 }

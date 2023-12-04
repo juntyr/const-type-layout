@@ -1,4 +1,5 @@
 use crate::{
+    typeset::{tset, ComputeSet, ComputeTypeSet, Set},
     MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
 };
 
@@ -41,4 +42,8 @@ unsafe impl<T: ~const TypeGraph, const N: usize> const TypeGraph for [T; N] {
             <T as TypeGraph>::populate_graph(graph);
         }
     }
+}
+
+unsafe impl<T: ComputeTypeSet, const N: usize> ComputeTypeSet for [T; N] {
+    type Output<R: ComputeSet> = Set<Self, tset!([T] => R)>;
 }

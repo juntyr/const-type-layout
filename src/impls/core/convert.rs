@@ -1,4 +1,5 @@
 use crate::{
+    typeset::{ComputeSet, ComputeTypeSet, Set},
     MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
 };
 
@@ -22,4 +23,8 @@ unsafe impl const TypeGraph for core::convert::Infallible {
     fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
         graph.insert(&Self::TYPE_LAYOUT);
     }
+}
+
+unsafe impl ComputeTypeSet for core::convert::Infallible {
+    type Output<T: ComputeSet> = Set<Self, T>;
 }

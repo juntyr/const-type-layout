@@ -1,4 +1,5 @@
 use crate::{
+    typeset::{tset, ComputeSet, ComputeTypeSet, Set},
     Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
 };
 
@@ -54,6 +55,10 @@ macro_rules! impl_tuple_type_layout {
                     $(<$T as TypeGraph>::populate_graph(graph);)*
                 }
             }
+        }
+
+        unsafe impl<$($T: ComputeTypeSet),*> ComputeTypeSet for ($($T,)*) {
+            type Output<T: ComputeSet> = Set<Self, tset!([$($T),*] => T)>;
         }
     };
     ($(($($a:tt => $T:ident),+)),*) => {

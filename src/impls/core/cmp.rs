@@ -1,4 +1,5 @@
 use crate::{
+    typeset::{tset, ComputeSet, ComputeTypeSet, Set},
     Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
 };
 
@@ -33,4 +34,8 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for core::cmp::Reverse<T> {
             <T as TypeGraph>::populate_graph(graph);
         }
     }
+}
+
+unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::cmp::Reverse<T> {
+    type Output<R: ComputeSet> = Set<Self, tset!([T] => R)>;
 }

@@ -166,6 +166,7 @@
 #![feature(c_variadic)]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
+#![feature(specialization)]
 #![cfg_attr(
     all(doc, not(docsrs)),
     doc(html_root_url = "https://juntyr.github.io/const-type-layout")
@@ -186,6 +187,7 @@ pub mod impls;
 mod ser;
 #[cfg(feature = "serde")]
 mod serde;
+pub mod typeset;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize))]
