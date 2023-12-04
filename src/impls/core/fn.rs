@@ -1,4 +1,5 @@
 use crate::{
+    typeset::{tset, ComputeSet, ComputeTypeSet, Set},
     MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
 };
 
@@ -41,6 +42,10 @@ macro_rules! impl_fn_pointer_type_layout {
                     $(<$T as TypeGraph>::populate_graph(graph);)*
                 }
             }
+        }
+
+        unsafe impl<$R: ComputeTypeSet, $($T: ComputeTypeSet),*> ComputeTypeSet for $ty {
+            type Output<Z: ComputeSet> = Set<Self, tset!([$R $(, $T)*] => Z)>;
         }
     };
     ($(fn($($T:ident),*) -> $R:ident),*) => {
@@ -98,6 +103,12 @@ macro_rules! impl_variadic_extern_fn_pointer_type_layout {
                     $(<$T as TypeGraph>::populate_graph(graph);)*
                 }
             }
+        }
+
+        unsafe impl<$R: ComputeTypeSet, $($T: ComputeTypeSet),*> ComputeTypeSet
+            for unsafe extern $abi fn($($T),*, ...) -> $R
+        {
+            type Output<Z: ComputeSet> = Set<Self, tset!([$R $(, $T)*] => Z)>;
         }
     };
     ($(unsafe extern "C" fn($($T:ident),+, ...) -> $R:ident),*) => {

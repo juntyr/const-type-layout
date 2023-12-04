@@ -1,4 +1,5 @@
 use crate::{
+    typeset::{tset, ComputeSet, ComputeTypeSet, Set},
     Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
     Variant,
 };
@@ -69,4 +70,8 @@ where
             <E as TypeGraph>::populate_graph(graph);
         }
     }
+}
+
+unsafe impl<T: ComputeTypeSet, E: ComputeTypeSet> ComputeTypeSet for core::result::Result<T, E> {
+    type Output<R: ComputeSet> = Set<Self, tset!([T, E] => R)>;
 }

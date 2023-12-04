@@ -1,4 +1,5 @@
 use crate::{
+    typeset::{tset, ComputeSet, ComputeTypeSet, Set},
     Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
 };
 
@@ -34,6 +35,10 @@ macro_rules! impl_nonzero_type_layout {
                     <$ty as TypeGraph>::populate_graph(graph);
                 }
             }
+        }
+
+        unsafe impl ComputeTypeSet for core::num::$nz {
+            type Output<T: ComputeSet> = Set<Self, tset!([$ty] => T)>;
         }
     };
     ($($nz:ident => $ty:ty),*) => {
@@ -79,4 +84,8 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for core::num::Wrapping<T> {
             <T as TypeGraph>::populate_graph(graph);
         }
     }
+}
+
+unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::num::Wrapping<T> {
+    type Output<R: ComputeSet> = Set<Self, tset!([T] => R)>;
 }

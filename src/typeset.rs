@@ -54,6 +54,7 @@ pub unsafe trait ComputeTypeSet {
 }
 
 pub macro tset {
+    ([] => $T:ty) => { $T },
     ([$H:ty] => $T:ty) => {
         <$H as ComputeTypeSet>::Output::<$T>
     },

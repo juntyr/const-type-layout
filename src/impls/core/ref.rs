@@ -1,6 +1,7 @@
 use crate::{
-    impls::leak_uninit_ptr, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph,
-    TypeLayoutInfo, TypeStructure,
+    impls::leak_uninit_ptr,
+    typeset::{tset, ComputeSet, ComputeTypeSet, Set},
+    MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
 };
 
 unsafe impl<'a, T: ~const TypeLayout + 'a> const TypeLayout for &'a T {
@@ -28,6 +29,10 @@ unsafe impl<'a, T: ~const TypeGraph + 'a> const TypeGraph for &'a T {
     }
 }
 
+unsafe impl<'a, T: ComputeTypeSet + 'a> ComputeTypeSet for &'a T {
+    type Output<R: ComputeSet> = Set<Self, tset!([T] => R)>;
+}
+
 unsafe impl<'a, T: ~const TypeLayout + 'a> const TypeLayout for &'a mut T {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -51,4 +56,8 @@ unsafe impl<'a, T: ~const TypeGraph + 'a> const TypeGraph for &'a mut T {
             <T as TypeGraph>::populate_graph(graph);
         }
     }
+}
+
+unsafe impl<'a, T: ComputeTypeSet + 'a> ComputeTypeSet for &'a mut T {
+    type Output<R: ComputeSet> = Set<Self, tset!([T] => R)>;
 }
