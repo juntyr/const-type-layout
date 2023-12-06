@@ -58,7 +58,7 @@ macro_rules! impl_tuple_type_layout {
         }
 
         unsafe impl<$($T: ComputeTypeSet),*> ComputeTypeSet for ($($T,)*) {
-            type Output<T: ComputeSet> = Set<Self, tset!([$($T),*] => T)>;
+            type Output<T: ComputeSet> = Set<Self, tset![$($T),*, .. @ T]>;
         }
     };
     ($(($($a:tt => $T:ident),+)),*) => {

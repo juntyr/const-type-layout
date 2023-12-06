@@ -54,5 +54,5 @@ where
 }
 
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::option::Option<T> {
-    type Output<R: ComputeSet> = Set<Self, tset!([T] => R)>;
+    type Output<R: ComputeSet> = Set<Self, tset![T, .. @ R]>;
 }

@@ -100,9 +100,9 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
             #ty_name #type_set_ty_generics #type_set_where_clause
         {
             type Output<__TypeSetRest: #crate_path::typeset::ComputeSet> =
-                #crate_path::typeset::Set<Self, #crate_path::typeset::tset!([
-                    #(#inner_types),*
-                ] => __TypeSetRest)>;
+                #crate_path::typeset::Set<Self, #crate_path::typeset::tset![
+                    #(#inner_types,)* .. @ __TypeSetRest
+                ]>;
         }
     }
     .into()

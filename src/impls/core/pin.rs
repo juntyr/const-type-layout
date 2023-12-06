@@ -37,5 +37,5 @@ unsafe impl<T: ~const TypeGraph + core::ops::Deref> const TypeGraph for core::pi
 }
 
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::pin::Pin<T> {
-    type Output<R: ComputeSet> = Set<Self, tset!([T] => R)>;
+    type Output<R: ComputeSet> = Set<Self, tset![T, .. @ R]>;
 }

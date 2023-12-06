@@ -37,5 +37,5 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for core::cmp::Reverse<T> {
 }
 
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::cmp::Reverse<T> {
-    type Output<R: ComputeSet> = Set<Self, tset!([T] => R)>;
+    type Output<R: ComputeSet> = Set<Self, tset![T, .. @ R]>;
 }

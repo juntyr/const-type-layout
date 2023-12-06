@@ -73,5 +73,5 @@ where
 }
 
 unsafe impl<T: ComputeTypeSet, E: ComputeTypeSet> ComputeTypeSet for core::result::Result<T, E> {
-    type Output<R: ComputeSet> = Set<Self, tset!([T, E] => R)>;
+    type Output<R: ComputeSet> = Set<Self, tset![E, .. @ R]>;
 }

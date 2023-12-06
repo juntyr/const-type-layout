@@ -38,7 +38,7 @@ macro_rules! impl_nonzero_type_layout {
         }
 
         unsafe impl ComputeTypeSet for core::num::$nz {
-            type Output<T: ComputeSet> = Set<Self, tset!([$ty] => T)>;
+            type Output<T: ComputeSet> = Set<Self, tset![$ty, .. @ T]>;
         }
     };
     ($($nz:ident => $ty:ty),*) => {
@@ -87,5 +87,5 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for core::num::Wrapping<T> {
 }
 
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::num::Wrapping<T> {
-    type Output<R: ComputeSet> = Set<Self, tset!([T] => R)>;
+    type Output<R: ComputeSet> = Set<Self, tset![T, .. @ R]>;
 }

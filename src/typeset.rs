@@ -1,5 +1,7 @@
 #[doc(hidden)]
 pub trait ComputeSet: sealed::ComputeSet {
+    const LEN: usize;
+
     type Output<H>: ComputeSet;
 }
 
@@ -20,10 +22,14 @@ pub struct Cons<H, T> {
 
 impl ComputeSet for Empty {
     type Output<H> = Cons<H, Empty>;
+
+    const LEN: usize = 0;
 }
 
 impl<H2, T: ComputeSet> ComputeSet for Cons<H2, T> {
     type Output<H1> = <Cons<H2, T> as ComputeCons<H1>>::Output;
+
+    const LEN: usize = T::LEN + 1;
 }
 
 #[doc(hidden)]
@@ -54,13 +60,16 @@ pub unsafe trait ComputeTypeSet {
 }
 
 pub macro tset {
-    ([] => $T:ty) => { $T },
-    ([$H:ty] => $T:ty) => {
-        <$H as ComputeTypeSet>::Output::<$T>
-    },
-    ([$H:ty, $($R:ty),*] => $T:ty) => {
+    () => { Empty },
+    (.. @ $T:tt) => { $T },
+    ($H:ty, $($R:ty,)*) => {
         <$H as ComputeTypeSet>::Output::<
-            tset!([$($R),*] => $T)
+            tset![$($R,)*]
+        >
+    },
+    ($H:ty, $($R:ty,)* .. @ $T:ty ) => {
+        <$H as ComputeTypeSet>::Output::<
+            tset![$($R,)* .. @ $T]
         >
     },
 }

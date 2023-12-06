@@ -42,7 +42,7 @@ macro_rules! impl_atomic_int_layout {
 
         #[cfg(target_has_atomic_load_store = $cfg)]
         unsafe impl ComputeTypeSet for core::sync::atomic::$at {
-            type Output<T: ComputeSet> = Set<Self, tset!([core::cell::UnsafeCell<$ty>] => T)>;
+            type Output<T: ComputeSet> = Set<Self, tset![core::cell::UnsafeCell<$ty>, .. @ T]>;
         }
     };
     ($($at:ident ( $align:literal : $cfg:literal ) => $ty:ty => $val:literal),*) => {
@@ -100,7 +100,7 @@ macro_rules! impl_atomic_int_ptr_sized_layout {
         #[cfg(target_has_atomic_load_store = "ptr")]
         #[cfg(target_pointer_width = $cfg)]
         unsafe impl ComputeTypeSet for core::sync::atomic::$at {
-            type Output<T: ComputeSet> = Set<Self, tset!([core::cell::UnsafeCell<$ty>] => T)>;
+            type Output<T: ComputeSet> = Set<Self, tset![core::cell::UnsafeCell<$ty>, .. @ T]>;
         }
     };
     ($($at:ident ( $align:literal : $cfg:literal ) => $ty:ty => $val:literal),*) => {
@@ -156,7 +156,7 @@ macro_rules! impl_atomic_ptr_layout {
         #[cfg(target_has_atomic_load_store = "ptr")]
         #[cfg(target_pointer_width = $cfg)]
         unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::sync::atomic::AtomicPtr<T> {
-            type Output<R: ComputeSet> = Set<Self, tset!([core::cell::UnsafeCell<T>] => R)>;
+            type Output<R: ComputeSet> = Set<Self, tset![core::cell::UnsafeCell<T>, .. @ R]>;
         }
     };
     ($(( $align:literal : $cfg:literal )),*) => {

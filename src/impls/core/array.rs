@@ -45,5 +45,5 @@ unsafe impl<T: ~const TypeGraph, const N: usize> const TypeGraph for [T; N] {
 }
 
 unsafe impl<T: ComputeTypeSet, const N: usize> ComputeTypeSet for [T; N] {
-    type Output<R: ComputeSet> = Set<Self, tset!([T] => R)>;
+    type Output<R: ComputeSet> = Set<Self, tset![T, .. @ R]>;
 }

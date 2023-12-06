@@ -37,7 +37,7 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for core::cell::UnsafeCell<T> {
 }
 
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::cell::UnsafeCell<T> {
-    type Output<R: ComputeSet> = Set<Self, tset!([T] => R)>;
+    type Output<R: ComputeSet> = Set<Self, tset![T, .. @ R]>;
 }
 
 unsafe impl<T: ~const TypeLayout> const TypeLayout for core::cell::Cell<T> {
@@ -74,5 +74,5 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for core::cell::Cell<T> {
 }
 
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::cell::Cell<T> {
-    type Output<R: ComputeSet> = Set<Self, tset!([core::cell::UnsafeCell<T>] => R)>;
+    type Output<R: ComputeSet> = Set<Self, tset![core::cell::UnsafeCell<T>, .. @ R]>;
 }
