@@ -1,6 +1,6 @@
 use crate::{
     typeset::{tset, ComputeTypeSet, ExpandTypeSet, Set},
-    Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
 macro_rules! impl_tuple_type_layout {
@@ -46,14 +46,6 @@ macro_rules! impl_tuple_type_layout {
                 MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(
                     ($($T.assume_init(),)*)
                 ))
-            }
-        }
-
-        unsafe impl<$($T: ~const TypeGraph),*> const TypeGraph for ($($T,)*) {
-            fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-                if graph.insert(&Self::TYPE_LAYOUT) {
-                    $(<$T as TypeGraph>::populate_graph(graph);)*
-                }
             }
         }
 

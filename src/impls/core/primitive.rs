@@ -1,6 +1,6 @@
 use crate::{
     typeset::{ComputeTypeSet, ExpandTypeSet, Set},
-    MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+    MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
 macro_rules! impl_primitive_type_layout {
@@ -15,12 +15,6 @@ macro_rules! impl_primitive_type_layout {
 
             unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
                 MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new($val))
-            }
-        }
-
-        unsafe impl const TypeGraph for $ty {
-            fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-                graph.insert(&Self::TYPE_LAYOUT);
             }
         }
 
@@ -50,12 +44,6 @@ unsafe impl const TypeLayout for ! {
 
     unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
         MaybeUninhabited::Uninhabited
-    }
-}
-
-unsafe impl const TypeGraph for ! {
-    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-        graph.insert(&Self::TYPE_LAYOUT);
     }
 }
 

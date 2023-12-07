@@ -1,6 +1,6 @@
 use crate::{
     typeset::{tset, ComputeTypeSet, ExpandTypeSet, Set},
-    Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
 unsafe impl<T: ~const TypeLayout + core::ops::Deref> const TypeLayout for core::pin::Pin<T> {
@@ -28,14 +28,6 @@ unsafe impl<T: ~const TypeLayout + core::ops::Deref> const TypeLayout for core::
     }
 }
 
-unsafe impl<T: ~const TypeGraph + core::ops::Deref> const TypeGraph for core::pin::Pin<T> {
-    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-        if graph.insert(&Self::TYPE_LAYOUT) {
-            <T as TypeGraph>::populate_graph(graph);
-        }
-    }
-}
-
-unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::pin::Pin<T> {
+unsafe impl<T: ComputeTypeSet + core::ops::Deref> ComputeTypeSet for core::pin::Pin<T> {
     type Output<R: ExpandTypeSet> = Set<Self, tset![T, .. @ R]>;
 }

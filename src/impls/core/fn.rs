@@ -1,6 +1,6 @@
 use crate::{
     typeset::{tset, ComputeTypeSet, ExpandTypeSet, Set},
-    MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+    MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
 macro_rules! impl_fn_pointer_type_layout {
@@ -32,15 +32,6 @@ macro_rules! impl_fn_pointer_type_layout {
                 $demo
 
                 MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(demo))
-            }
-        }
-
-        unsafe impl<$R: ~const TypeGraph, $($T: ~const TypeGraph),*> const TypeGraph for $ty {
-            fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-                if graph.insert(&Self::TYPE_LAYOUT) {
-                    <$R as TypeGraph>::populate_graph(graph);
-                    $(<$T as TypeGraph>::populate_graph(graph);)*
-                }
             }
         }
 
@@ -91,17 +82,6 @@ macro_rules! impl_variadic_extern_fn_pointer_type_layout {
                 ) -> $R { loop {} }
 
                 MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(demo))
-            }
-        }
-
-        unsafe impl<$R: ~const TypeGraph, $($T: ~const TypeGraph),*> const TypeGraph
-            for unsafe extern $abi fn($($T),*, ...) -> $R
-        {
-            fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-                if graph.insert(&Self::TYPE_LAYOUT) {
-                    <$R as TypeGraph>::populate_graph(graph);
-                    $(<$T as TypeGraph>::populate_graph(graph);)*
-                }
             }
         }
 

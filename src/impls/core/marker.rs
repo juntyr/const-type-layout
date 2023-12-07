@@ -1,6 +1,6 @@
 use crate::{
     typeset::{ComputeTypeSet, ExpandTypeSet, Set},
-    MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+    MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
 unsafe impl<T> const TypeLayout for core::marker::PhantomData<T> {
@@ -16,12 +16,6 @@ unsafe impl<T> const TypeLayout for core::marker::PhantomData<T> {
 
     unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
         MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(core::marker::PhantomData::<T>))
-    }
-}
-
-unsafe impl<T> const TypeGraph for core::marker::PhantomData<T> {
-    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-        graph.insert(&Self::TYPE_LAYOUT);
     }
 }
 
@@ -42,12 +36,6 @@ unsafe impl const TypeLayout for core::marker::PhantomPinned {
 
     unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
         MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(core::marker::PhantomPinned))
-    }
-}
-
-unsafe impl const TypeGraph for core::marker::PhantomPinned {
-    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-        graph.insert(&Self::TYPE_LAYOUT);
     }
 }
 

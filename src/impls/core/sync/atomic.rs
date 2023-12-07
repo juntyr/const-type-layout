@@ -1,7 +1,7 @@
 use crate::{
     impls::leak_uninit_ptr,
     typeset::{tset, ComputeTypeSet, ExpandTypeSet, Set},
-    Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
 macro_rules! impl_atomic_int_layout {
@@ -28,15 +28,6 @@ macro_rules! impl_atomic_int_layout {
                 MaybeUninhabited::Inhabited(
                     core::mem::MaybeUninit::new(Self::new($val))
                 )
-            }
-        }
-
-        #[cfg(target_has_atomic_load_store = $cfg)]
-        unsafe impl const TypeGraph for core::sync::atomic::$at {
-            fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-                if graph.insert(&Self::TYPE_LAYOUT) {
-                    <core::cell::UnsafeCell<$ty> as TypeGraph>::populate_graph(graph);
-                }
             }
         }
 
@@ -89,16 +80,6 @@ macro_rules! impl_atomic_int_ptr_sized_layout {
 
         #[cfg(target_has_atomic_load_store = "ptr")]
         #[cfg(target_pointer_width = $cfg)]
-        unsafe impl const TypeGraph for core::sync::atomic::$at {
-            fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-                if graph.insert(&Self::TYPE_LAYOUT) {
-                    <core::cell::UnsafeCell<$ty> as TypeGraph>::populate_graph(graph);
-                }
-            }
-        }
-
-        #[cfg(target_has_atomic_load_store = "ptr")]
-        #[cfg(target_pointer_width = $cfg)]
         unsafe impl ComputeTypeSet for core::sync::atomic::$at {
             type Output<T: ExpandTypeSet> = Set<Self, tset![core::cell::UnsafeCell<$ty>, .. @ T]>;
         }
@@ -140,16 +121,6 @@ macro_rules! impl_atomic_ptr_layout {
                 MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(
                     Self::new(leak_uninit_ptr())
                 ))
-            }
-        }
-
-        #[cfg(target_has_atomic_load_store = "ptr")]
-        #[cfg(target_pointer_width = $cfg)]
-        unsafe impl<T: ~const TypeGraph> const TypeGraph for core::sync::atomic::AtomicPtr<T> {
-            fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-                if graph.insert(&Self::TYPE_LAYOUT) {
-                    <core::cell::UnsafeCell<*mut T> as TypeGraph>::populate_graph(graph);
-                }
             }
         }
 

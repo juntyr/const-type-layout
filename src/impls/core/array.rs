@@ -1,6 +1,6 @@
 use crate::{
     typeset::{tset, ComputeTypeSet, ExpandTypeSet, Set},
-    MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+    MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
 unsafe impl<T: ~const TypeLayout, const N: usize> const TypeLayout for [T; N] {
@@ -33,14 +33,6 @@ unsafe impl<T: ~const TypeLayout, const N: usize> const TypeLayout for [T; N] {
         MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(
             core::mem::MaybeUninit::array_assume_init(uninit_array),
         ))
-    }
-}
-
-unsafe impl<T: ~const TypeGraph, const N: usize> const TypeGraph for [T; N] {
-    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-        if graph.insert(&Self::TYPE_LAYOUT) {
-            <T as TypeGraph>::populate_graph(graph);
-        }
     }
 }
 

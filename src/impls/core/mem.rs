@@ -1,6 +1,6 @@
 use crate::{
     typeset::{tset, ComputeTypeSet, ExpandTypeSet, Set},
-    Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
 unsafe impl<T: ~const TypeLayout> const TypeLayout for core::mem::ManuallyDrop<T> {
@@ -24,14 +24,6 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::mem::ManuallyDrop<T
             MaybeUninhabited::Inhabited(uninit) => MaybeUninhabited::Inhabited(
                 core::mem::MaybeUninit::new(Self::new(uninit.assume_init())),
             ),
-        }
-    }
-}
-
-unsafe impl<T: ~const TypeGraph> const TypeGraph for core::mem::ManuallyDrop<T> {
-    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-        if graph.insert(&Self::TYPE_LAYOUT) {
-            <T as TypeGraph>::populate_graph(graph);
         }
     }
 }
@@ -64,15 +56,6 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::mem::MaybeUninit<T>
 
     unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
         MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(core::mem::MaybeUninit::uninit()))
-    }
-}
-
-unsafe impl<T: ~const TypeGraph> const TypeGraph for core::mem::MaybeUninit<T> {
-    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-        if graph.insert(&Self::TYPE_LAYOUT) {
-            <() as TypeGraph>::populate_graph(graph);
-            <core::mem::ManuallyDrop<T> as TypeGraph>::populate_graph(graph);
-        }
     }
 }
 

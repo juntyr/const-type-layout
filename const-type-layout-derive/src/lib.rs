@@ -48,7 +48,6 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
 
     let Generics {
         type_layout_input_generics,
-        type_graph_input_generics,
         type_set_input_generics,
     } = generate_generics(
         &crate_path,
@@ -61,8 +60,6 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     );
     let (type_layout_impl_generics, type_layout_ty_generics, type_layout_where_clause) =
         type_layout_input_generics.split_for_impl();
-    let (type_graph_impl_generics, type_graph_ty_generics, type_graph_where_clause) =
-        type_graph_input_generics.split_for_impl();
     let (type_set_impl_generics, type_set_ty_generics, type_set_where_clause) =
         type_set_input_generics.split_for_impl();
 
@@ -83,16 +80,6 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
                 ::core::mem::MaybeUninit<Self>
             > {
                 #uninit
-            }
-        }
-
-        unsafe impl #type_graph_impl_generics const #crate_path::TypeGraph for
-            #ty_name #type_graph_ty_generics #type_graph_where_clause
-        {
-            fn populate_graph(graph: &mut #crate_path::TypeLayoutGraph<'static>) {
-                if graph.insert(&<Self as #crate_path::TypeLayout>::TYPE_LAYOUT) {
-                    #(<#inner_types as #crate_path::TypeGraph>::populate_graph(graph);)*
-                }
             }
         }
 
@@ -395,7 +382,6 @@ fn extract_inner_types(data: &syn::Data) -> Vec<&syn::Type> {
 
 struct Generics {
     type_layout_input_generics: syn::Generics,
-    type_graph_input_generics: syn::Generics,
     type_set_input_generics: syn::Generics,
 }
 
@@ -409,18 +395,10 @@ fn generate_generics(
     type_params: &[&syn::Ident],
 ) -> Generics {
     let mut type_layout_input_generics = generics.clone();
-    let mut type_graph_input_generics = generics.clone();
     let mut type_set_input_generics = generics.clone();
 
     if is_enum {
         type_layout_input_generics
-            .make_where_clause()
-            .predicates
-            .push(syn::parse_quote! {
-                [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()]:
-            });
-
-        type_graph_input_generics
             .make_where_clause()
             .predicates
             .push(syn::parse_quote! {
@@ -443,20 +421,6 @@ fn generate_generics(
                 #ty: ~const #crate_path::TypeLayout
             });
 
-        type_graph_input_generics
-            .make_where_clause()
-            .predicates
-            .push(syn::parse_quote! {
-                #ty: ~const #crate_path::TypeLayout
-            });
-
-        type_graph_input_generics
-            .make_where_clause()
-            .predicates
-            .push(syn::parse_quote! {
-                #ty: ~const #crate_path::TypeGraph
-            });
-
         type_set_input_generics
             .make_where_clause()
             .predicates
@@ -471,11 +435,6 @@ fn generate_generics(
             .predicates
             .push(bound.clone());
 
-        type_graph_input_generics
-            .make_where_clause()
-            .predicates
-            .push(bound.clone());
-
         type_set_input_generics
             .make_where_clause()
             .predicates
@@ -484,7 +443,6 @@ fn generate_generics(
 
     Generics {
         type_layout_input_generics,
-        type_graph_input_generics,
         type_set_input_generics,
     }
 }

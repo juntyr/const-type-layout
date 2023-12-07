@@ -185,8 +185,6 @@ pub use const_type_layout_derive::TypeLayout;
 #[doc(hidden)]
 pub mod impls;
 mod ser;
-#[cfg(feature = "serde")]
-mod serde;
 pub mod typeset;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -242,7 +240,7 @@ pub enum Safety {
 /// It is only safe to implement this trait if it accurately describes the
 ///  type's layout. Use `#[derive(TypeLayout)]` instead.
 #[const_trait]
-pub unsafe trait TypeLayout: Sized + typeset::ComputeTypeSet {
+pub unsafe trait TypeLayout: Sized {
     const TYPE_LAYOUT: TypeLayoutInfo<'static>;
 
     #[must_use]
@@ -258,28 +256,13 @@ pub unsafe trait TypeLayout: Sized + typeset::ComputeTypeSet {
     unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>>;
 }
 
-/// # Safety
-///
-/// It is only safe to implement this trait if it accurately populates the
-///  type's layout graph. Use `#[derive(TypeLayout)]` instead.
 #[const_trait]
-pub unsafe trait TypeGraph: ~const TypeLayout {
-    fn populate_graph(graph: &mut TypeLayoutGraph<'static>);
-}
-
-#[const_trait]
-pub trait TypeGraphLayout: ~const TypeLayout + ~const TypeGraph {
+pub trait TypeGraphLayout: ~const TypeLayout {
     const TYPE_GRAPH: TypeLayoutGraph<'static>;
 }
 
-impl<T: ~const TypeLayout + ~const TypeGraph> const TypeGraphLayout for T {
-    const TYPE_GRAPH: TypeLayoutGraph<'static> = {
-        let mut graph = TypeLayoutGraph::new::<T>();
-
-        <T as TypeGraph>::populate_graph(&mut graph);
-
-        graph
-    };
+impl<T: ~const TypeLayout + typeset::ComputeTypeSet> const TypeGraphLayout for T {
+    const TYPE_GRAPH: TypeLayoutGraph<'static> = TypeLayoutGraph::new::<T>();
 }
 
 #[must_use]
@@ -301,24 +284,25 @@ pub const fn serialise_type_graph<T: ~const TypeGraphLayout>(
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 #[cfg_attr(
     feature = "serde",
-    serde(bound(
-        serialize = "F: ::serde::Serialize, V: ::serde::Serialize, I: ::serde::Serialize"
-    ))
+    serde(bound(serialize = "F: ::serde::Serialize, V: ::serde::Serialize, P: \
+                             ::serde::Serialize, I: ::serde::Serialize, G: ::serde::Serialize"))
 )]
 #[cfg_attr(
     feature = "serde",
     serde(bound(deserialize = "'a: 'de, F: ::serde::Deserialize<'a>, V: \
-                               ::serde::Deserialize<'a>, I: ::serde::Deserialize<'a>"))
+                               ::serde::Deserialize<'a>, P: ::serde::Deserialize<'a>, I: \
+                               ::serde::Deserialize<'a>, G: ::serde::Deserialize<'a>"))
 )]
 pub struct TypeLayoutGraph<
     'a,
     F: Deref<Target = [Field<'a>]> = &'a [Field<'a>],
     V: Deref<Target = [Variant<'a, F>]> = &'a [Variant<'a, F>],
-    I: Deref<Target = TypeLayoutInfo<'a, F, V>> = &'a TypeLayoutInfo<'a, F, V>,
+    P: Deref<Target = [&'a str]> = &'a [&'a str],
+    I: Deref<Target = TypeLayoutInfo<'a, F, V, P>> = &'a TypeLayoutInfo<'a, F, V, P>,
+    G: Deref<Target = [I]> = &'a [I],
 > {
     ty: &'a str,
-    #[cfg_attr(feature = "serde", serde(with = "serde"))]
-    tys: [Option<I>; TypeLayoutGraph::CAPACITY],
+    tys: G,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -390,57 +374,12 @@ pub struct Field<'a> {
 }
 
 impl<'a> TypeLayoutGraph<'a> {
-    const CAPACITY: usize = 1024;
-
     #[must_use]
-    #[doc(hidden)]
-    pub const fn new<T: ~const TypeLayout>() -> Self {
+    pub const fn new<T: ~const TypeLayout + typeset::ComputeTypeSet>() -> Self {
         Self {
             ty: <T as TypeLayout>::TYPE_LAYOUT.name,
-            tys: [None; Self::CAPACITY],
+            tys: &[],
         }
-    }
-
-    #[doc(hidden)]
-    pub const fn insert(&mut self, ty: &'a TypeLayoutInfo<'a>) -> bool {
-        let ty_name_bytes = ty.name.as_bytes();
-
-        let mut i = 0;
-
-        while i < self.tys.len() {
-            // The first free slot can be used to insert the ty
-            let Some(cached_ty) = self.tys[i] else {
-                self.tys[i] = Some(ty);
-
-                return true;
-            };
-
-            let cached_ty_name_bytes = cached_ty.name.as_bytes();
-
-            // The type names can only be equal if they are the same length
-            if ty_name_bytes.len() == cached_ty_name_bytes.len() {
-                let mut j = 0;
-
-                while j < ty_name_bytes.len() {
-                    // Break early, i.e. j < ty_name_bytes.len(),
-                    //  if the type names do NOT match
-                    if ty_name_bytes[j] != cached_ty_name_bytes[j] {
-                        break;
-                    }
-
-                    j += 1;
-                }
-
-                // j == ty_name_bytes.len() IFF the type names match
-                if j >= ty_name_bytes.len() {
-                    return false;
-                }
-            }
-
-            i += 1;
-        }
-
-        panic!("TypeLayoutGraph is not large enough for this complex type.")
     }
 }
 
@@ -448,15 +387,19 @@ impl<
         'a,
         F: Deref<Target = [Field<'a>]>,
         V: Deref<Target = [Variant<'a, F>]>,
-        I: Deref<Target = TypeLayoutInfo<'a, F, V>>,
-    > TypeLayoutGraph<'a, F, V, I>
+        P: Deref<Target = [&'a str]>,
+        I: Deref<Target = TypeLayoutInfo<'a, F, V, P>>,
+        G: Deref<Target = [I]>,
+    > TypeLayoutGraph<'a, F, V, P, I, G>
 {
     #[must_use]
     pub const fn serialised_len(&self) -> usize
     where
         F: ~const Deref<Target = [Field<'a>]>,
         V: ~const Deref<Target = [Variant<'a, F>]>,
-        I: ~const Deref<Target = TypeLayoutInfo<'a, F, V>>,
+        P: ~const Deref<Target = [&'a str]>,
+        I: ~const Deref<Target = TypeLayoutInfo<'a, F, V, P>>,
+        G: ~const Deref<Target = [I]>,
     {
         let len = ser::serialised_type_layout_graph_len(0, self);
 
@@ -475,7 +418,9 @@ impl<
     where
         F: ~const Deref<Target = [Field<'a>]>,
         V: ~const Deref<Target = [Variant<'a, F>]>,
-        I: ~const Deref<Target = TypeLayoutInfo<'a, F, V>>,
+        P: ~const Deref<Target = [&'a str]>,
+        I: ~const Deref<Target = TypeLayoutInfo<'a, F, V, P>>,
+        G: ~const Deref<Target = [I]>,
     {
         let from = ser::serialise_usize(bytes, 0, self.serialised_len());
 
@@ -487,24 +432,13 @@ impl<
         'a,
         F: Deref<Target = [Field<'a>]> + fmt::Debug,
         V: Deref<Target = [Variant<'a, F>]> + fmt::Debug,
-        I: Deref<Target = TypeLayoutInfo<'a, F, V>> + fmt::Debug,
-    > fmt::Debug for TypeLayoutGraph<'a, F, V, I>
+        P: Deref<Target = [&'a str]> + fmt::Debug,
+        I: Deref<Target = TypeLayoutInfo<'a, F, V, P>> + fmt::Debug,
+        G: Deref<Target = [I]> + fmt::Debug,
+    > fmt::Debug for TypeLayoutGraph<'a, F, V, P, I, G>
 {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "TypeLayoutGraph<{}>(", self.ty)?;
-
-        let mut debug = fmt.debug_list();
-
-        for ty in &self.tys {
-            match ty {
-                Some(ty) => debug.entry(&ty),
-                None => break,
-            };
-        }
-
-        debug.finish()?;
-
-        write!(fmt, ")")
+        fmt.write_fmt(format_args!("TypeLayoutGraph<{}>({:?})", self.ty, self.tys))
     }
 }
 

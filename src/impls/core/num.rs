@@ -1,6 +1,6 @@
 use crate::{
     typeset::{tset, ComputeTypeSet, ExpandTypeSet, Set},
-    Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
 macro_rules! impl_nonzero_type_layout {
@@ -26,14 +26,6 @@ macro_rules! impl_nonzero_type_layout {
                 MaybeUninhabited::Inhabited(
                     core::mem::MaybeUninit::new(Self::new(1).unwrap())
                 )
-            }
-        }
-
-        unsafe impl const TypeGraph for core::num::$nz {
-            fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-                if graph.insert(&Self::TYPE_LAYOUT) {
-                    <$ty as TypeGraph>::populate_graph(graph);
-                }
             }
         }
 
@@ -74,14 +66,6 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::num::Wrapping<T> {
             MaybeUninhabited::Inhabited(uninit) => {
                 MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(Self(uninit.assume_init())))
             },
-        }
-    }
-}
-
-unsafe impl<T: ~const TypeGraph> const TypeGraph for core::num::Wrapping<T> {
-    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-        if graph.insert(&Self::TYPE_LAYOUT) {
-            <T as TypeGraph>::populate_graph(graph);
         }
     }
 }

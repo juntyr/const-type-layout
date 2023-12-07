@@ -1,6 +1,6 @@
 use crate::{
     typeset::{tset, ComputeTypeSet, ExpandTypeSet, Set},
-    Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
 unsafe impl<T: ~const TypeLayout> const TypeLayout for *const T {
@@ -15,14 +15,6 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for *const T {
         MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(
             core::ptr::NonNull::dangling().as_ptr(),
         ))
-    }
-}
-
-unsafe impl<T: ~const TypeGraph> const TypeGraph for *const T {
-    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-        if graph.insert(&Self::TYPE_LAYOUT) {
-            <T as TypeGraph>::populate_graph(graph);
-        }
     }
 }
 
@@ -42,14 +34,6 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for *mut T {
         MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(
             core::ptr::NonNull::dangling().as_ptr(),
         ))
-    }
-}
-
-unsafe impl<T: ~const TypeGraph> const TypeGraph for *mut T {
-    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-        if graph.insert(&Self::TYPE_LAYOUT) {
-            <T as TypeGraph>::populate_graph(graph);
-        }
     }
 }
 
@@ -74,14 +58,6 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::ptr::NonNull<T> {
 
     unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
         MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(core::ptr::NonNull::dangling()))
-    }
-}
-
-unsafe impl<T: ~const TypeGraph> const TypeGraph for core::ptr::NonNull<T> {
-    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-        if graph.insert(&Self::TYPE_LAYOUT) {
-            <*const T as TypeGraph>::populate_graph(graph);
-        }
     }
 }
 

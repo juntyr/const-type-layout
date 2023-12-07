@@ -1,7 +1,6 @@
 use crate::{
     typeset::{tset, ComputeTypeSet, ExpandTypeSet, Set},
-    Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
-    Variant,
+    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure, Variant,
 };
 
 unsafe impl<T: ~const TypeLayout, E: ~const TypeLayout> const TypeLayout
@@ -59,19 +58,9 @@ where
     }
 }
 
-unsafe impl<T: ~const TypeGraph + ~const TypeLayout, E: ~const TypeGraph + ~const TypeLayout> const
-    TypeGraph for core::result::Result<T, E>
+unsafe impl<T: ComputeTypeSet, E: ComputeTypeSet> ComputeTypeSet for core::result::Result<T, E>
 where
     [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
 {
-    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-        if graph.insert(&Self::TYPE_LAYOUT) {
-            <T as TypeGraph>::populate_graph(graph);
-            <E as TypeGraph>::populate_graph(graph);
-        }
-    }
-}
-
-unsafe impl<T: ComputeTypeSet, E: ComputeTypeSet> ComputeTypeSet for core::result::Result<T, E> {
     type Output<R: ExpandTypeSet> = Set<Self, tset![E, .. @ R]>;
 }

@@ -1,6 +1,6 @@
 use crate::{
     typeset::{ComputeTypeSet, ExpandTypeSet, Set},
-    MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+    MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
 unsafe impl const TypeLayout for core::ffi::c_void {
@@ -16,12 +16,6 @@ unsafe impl const TypeLayout for core::ffi::c_void {
 
     unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
         MaybeUninhabited::Uninhabited
-    }
-}
-
-unsafe impl const TypeGraph for core::ffi::c_void {
-    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-        graph.insert(&Self::TYPE_LAYOUT);
     }
 }
 

@@ -5,10 +5,6 @@ pub trait ComputeSet: sealed::ComputeSet {
     type Output<H: ComputeTypeSet>: ExpandTypeSet;
 }
 
-pub trait ComputeSetLen<const LEN: usize> {}
-
-impl<T: ComputeSet> ComputeSetLen<{ T::LEN }> for T {}
-
 mod sealed {
     pub trait ComputeSet {}
 
