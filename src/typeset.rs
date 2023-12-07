@@ -1,8 +1,13 @@
+use core::marker::Destruct;
+
 #[doc(hidden)]
 pub trait ComputeSet: sealed::ComputeSet {
     const LEN: usize;
 
     type Output<H: ComputeTypeSet>: ExpandTypeSet;
+
+    type TyHList: 'static + Copy + ~const Destruct;
+    const TYS: &'static Self::TyHList;
 }
 
 mod sealed {
@@ -12,24 +17,34 @@ mod sealed {
     impl<H2: super::ComputeTypeSet, T: ComputeSet> ComputeSet for super::Cons<H2, T> {}
 }
 
-#[allow(clippy::empty_enum)]
-pub enum Empty {}
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct Empty;
 
+#[repr(C)]
+#[derive(Copy, Clone)]
 pub struct Cons<H, T> {
-    _head: H,
-    _tail: T,
+    head: H,
+    tail: T,
 }
 
 impl ComputeSet for Empty {
     type Output<H: ComputeTypeSet> = Cons<H, Empty>;
+    type TyHList = Empty;
 
     const LEN: usize = 0;
+    const TYS: &'static Self::TyHList = &Empty;
 }
 
 impl<H2: ComputeTypeSet, T: ExpandTypeSet> ComputeSet for Cons<H2, T> {
     type Output<H1: ComputeTypeSet> = <Cons<H2, T> as ComputeCons<H1>>::Output;
+    type TyHList = Cons<&'static crate::TypeLayoutInfo<'static>, T::TyHList>;
 
     const LEN: usize = T::LEN + 1;
+    const TYS: &'static Self::TyHList = &Cons {
+        head: &H2::TYPE_LAYOUT,
+        tail: *T::TYS,
+    };
 }
 
 #[doc(hidden)]
@@ -55,7 +70,7 @@ pub type Set<H, T> = <T as ComputeSet>::Output<H>;
 ///
 /// It is only safe to implement this trait if it accurately includes
 /// all type components that are referenced by this type's layout.
-pub unsafe trait ComputeTypeSet {
+pub unsafe trait ComputeTypeSet: crate::TypeLayout {
     type Output<T: ExpandTypeSet>: ExpandTypeSet;
 }
 

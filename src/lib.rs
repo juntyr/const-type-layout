@@ -164,6 +164,7 @@
 #![feature(maybe_uninit_array_assume_init)]
 #![feature(const_maybe_uninit_array_assume_init)]
 #![feature(c_variadic)]
+#![feature(ptr_from_ref)]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 #![feature(specialization)]
@@ -256,23 +257,21 @@ pub unsafe trait TypeLayout: Sized {
     unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>>;
 }
 
-#[const_trait]
 pub trait TypeGraphLayout: ~const TypeLayout {
     const TYPE_GRAPH: TypeLayoutGraph<'static>;
 }
 
-impl<T: ~const TypeLayout + typeset::ComputeTypeSet> const TypeGraphLayout for T {
+impl<T: ~const TypeLayout + typeset::ComputeTypeSet> TypeGraphLayout for T {
     const TYPE_GRAPH: TypeLayoutGraph<'static> = TypeLayoutGraph::new::<T>();
 }
 
 #[must_use]
-pub const fn serialised_type_graph_len<T: ~const TypeGraphLayout>() -> usize {
+pub const fn serialised_type_graph_len<T: TypeGraphLayout>() -> usize {
     T::TYPE_GRAPH.serialised_len()
 }
 
 #[must_use]
-pub const fn serialise_type_graph<T: ~const TypeGraphLayout>(
-) -> [u8; serialised_type_graph_len::<T>()] {
+pub const fn serialise_type_graph<T: TypeGraphLayout>() -> [u8; serialised_type_graph_len::<T>()] {
     let mut bytes = [0_u8; serialised_type_graph_len::<T>()];
 
     T::TYPE_GRAPH.serialise(&mut bytes);
@@ -281,6 +280,7 @@ pub const fn serialise_type_graph<T: ~const TypeGraphLayout>(
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = "serde", allow(clippy::unsafe_derive_deserialize))]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 #[cfg_attr(
     feature = "serde",
@@ -305,7 +305,7 @@ pub struct TypeLayoutGraph<
     tys: G,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub struct TypeLayoutInfo<
     'a,
@@ -319,7 +319,7 @@ pub struct TypeLayoutInfo<
     pub structure: TypeStructure<'a, F, V, P>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub enum TypeStructure<
     'a,
@@ -350,7 +350,7 @@ pub enum TypeStructure<
     },
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub struct Variant<'a, F: Deref<Target = [Field<'a>]> = &'a [Field<'a>]> {
     pub name: &'a str,
@@ -358,14 +358,14 @@ pub struct Variant<'a, F: Deref<Target = [Field<'a>]> = &'a [Field<'a>]> {
     pub fields: F,
 }
 
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 #[repr(transparent)]
 pub struct Discriminant<'a> {
     pub big_endian_bytes: &'a [u8],
 }
 
-#[derive(Clone, Debug, Hash)]
+#[derive(Clone, Copy, Debug, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub struct Field<'a> {
     pub name: &'a str,
@@ -373,12 +373,17 @@ pub struct Field<'a> {
     pub ty: &'a str,
 }
 
-impl<'a> TypeLayoutGraph<'a> {
+impl TypeLayoutGraph<'static> {
     #[must_use]
     pub const fn new<T: ~const TypeLayout + typeset::ComputeTypeSet>() -> Self {
         Self {
             ty: <T as TypeLayout>::TYPE_LAYOUT.name,
-            tys: &[],
+            tys: unsafe {
+                core::slice::from_raw_parts(
+                    core::ptr::from_ref(<typeset::TypeSet<T> as typeset::ComputeSet>::TYS).cast(),
+                    <typeset::TypeSet<T> as typeset::ComputeSet>::LEN,
+                )
+            },
         }
     }
 }
