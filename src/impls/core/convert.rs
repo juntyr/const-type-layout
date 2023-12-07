@@ -1,5 +1,5 @@
 use crate::{
-    typeset::{ComputeSet, ComputeTypeSet, Set},
+    typeset::{ComputeTypeSet, ExpandTypeSet, Set},
     MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
 };
 
@@ -26,5 +26,5 @@ unsafe impl const TypeGraph for core::convert::Infallible {
 }
 
 unsafe impl ComputeTypeSet for core::convert::Infallible {
-    type Output<T: ComputeSet> = Set<Self, T>;
+    type Output<T: ExpandTypeSet> = Set<Self, T>;
 }

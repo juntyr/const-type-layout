@@ -57,20 +57,17 @@ union SingleUnion {
     a: u8,
 }
 
-// FIXME: self-recursive types
-// typeset includes itself unconditionally, has no specialised base case
+#[derive(TypeLayout)]
+#[layout(ground = "b")]
+union RecursiveRef<'a> {
+    a: &'a RecursiveRef<'a>,
+    b: (),
+}
 
-// #[derive(TypeLayout)]
-// #[layout(ground = "b")]
-// union RecursiveRef<'a> {
-//     a: &'a RecursiveRef<'a>,
-//     b: (),
-// }
-
-// #[derive(TypeLayout)]
-// union RecursivePtr {
-//     a: *const RecursivePtr,
-// }
+#[derive(TypeLayout)]
+union RecursivePtr {
+    a: *const RecursivePtr,
+}
 
 #[allow(clippy::empty_enum)]
 #[derive(TypeLayout)]
@@ -113,24 +110,24 @@ struct Box<T> {
     marker: std::marker::PhantomData<T>,
 }
 
-// #[repr(u8, C)]
-// #[derive(TypeLayout)]
-// enum List<T> {
-//     Cons { item: T, next: Box<List<T>> },
-//     Tail,
-// }
+#[repr(u8, C)]
+#[derive(TypeLayout)]
+enum List<T> {
+    Cons { item: T, next: Box<List<T>> },
+    Tail,
+}
 
-// #[derive(TypeLayout)]
-// #[layout(ground = "Leaf")]
-// enum Tree<T> {
-//     Node {
-//         left: Box<Tree<T>>,
-//         right: Box<Tree<T>>,
-//     },
-//     Leaf {
-//         item: T,
-//     },
-// }
+#[derive(TypeLayout)]
+#[layout(ground = "Leaf")]
+enum Tree<T> {
+    Node {
+        left: Box<Tree<T>>,
+        right: Box<Tree<T>>,
+    },
+    Leaf {
+        item: T,
+    },
+}
 
 #[repr(transparent)]
 #[derive(TypeLayout)]
@@ -170,6 +167,18 @@ where
     T: std::fmt::Debug + ~const TypeGraphLayout;
 
 fn main() {
+    println!("{}", std::any::type_name::<ctl::typeset::TypeSet::<Foo1>>());
+    println!("{}", std::any::type_name::<ctl::typeset::TypeSet::<Foo2>>());
+    println!("{}", std::any::type_name::<ctl::typeset::TypeSet::<Foo3>>());
+    println!(
+        "{}",
+        std::any::type_name::<ctl::typeset::TypeSet::<List<u8>>>()
+    );
+    println!(
+        "{}",
+        std::any::type_name::<ctl::typeset::TypeSet::<Tree<Foo1>>>()
+    );
+
     println!("{:#?}", Foo1::TYPE_GRAPH);
     println!("{:#?}", Foo2::TYPE_GRAPH);
     println!("{:#?}", Foo3::TYPE_GRAPH);
@@ -188,8 +197,8 @@ fn main() {
 
     println!("{:#?}", Bar::TYPE_GRAPH);
     println!("{:#?}", SingleUnion::TYPE_GRAPH);
-    // println!("{:#?}", RecursiveRef::<'static>::TYPE_GRAPH);
-    // println!("{:#?}", RecursivePtr::TYPE_GRAPH);
+    println!("{:#?}", RecursiveRef::<'static>::TYPE_GRAPH);
+    println!("{:#?}", RecursivePtr::TYPE_GRAPH);
 
     println!("{:#?}", Never::TYPE_GRAPH);
     println!("{:#?}", Single::TYPE_GRAPH);
@@ -237,27 +246,26 @@ fn main() {
 
     non_static_ref(&0);
 
-    // println!("{:#?}", <List<u8>>::TYPE_GRAPH);
-    // println!("{:#?}", <Tree<u8>>::TYPE_GRAPH);
+    println!("{:#?}", <List<u8>>::TYPE_GRAPH);
+    println!("{:#?}", <Tree<u8>>::TYPE_GRAPH);
 
-    // let mut ascii_escaped_layout = String::new();
-    // for b in SERIALISED_LIST_U8_LAYOUT {
-    //     let part: Vec<u8> = std::ascii::escape_default(b).collect();
-    //     ascii_escaped_layout.push_str(std::str::from_utf8(&part).unwrap());
-    // }
-    // println!("{ascii_escaped_layout}");
+    let mut ascii_escaped_layout = String::new();
+    for b in SERIALISED_LIST_U8_LAYOUT {
+        let part: Vec<u8> = std::ascii::escape_default(b).collect();
+        ascii_escaped_layout.push_str(std::str::from_utf8(&part).unwrap());
+    }
+    println!("{ascii_escaped_layout}");
 
-    // let ron_layout = ron::to_string(&<List<u8>>::TYPE_GRAPH).unwrap();
-    // println!("{ron_layout}");
+    let ron_layout = ron::to_string(&<List<u8>>::TYPE_GRAPH).unwrap();
+    println!("{ron_layout}");
 }
 
 fn non_static_ref<'a>(_val: &'a u128) {
     println!("{:#?}", <Referencing<&'a u8>>::TYPE_GRAPH);
 }
 
-// const SERIALISED_LIST_U8_LAYOUT: [u8;
-// const_type_layout::serialised_type_graph_len::<List<u8>>()] =
-//     const_type_layout::serialise_type_graph::<List<u8>>();
+const SERIALISED_LIST_U8_LAYOUT: [u8; const_type_layout::serialised_type_graph_len::<List<u8>>()] =
+    const_type_layout::serialise_type_graph::<List<u8>>();
 
 #[derive(
     Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,

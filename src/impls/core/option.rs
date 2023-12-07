@@ -1,5 +1,5 @@
 use crate::{
-    typeset::{tset, ComputeSet, ComputeTypeSet, Set},
+    typeset::{tset, ComputeTypeSet, ExpandTypeSet, Set},
     Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
     Variant,
 };
@@ -54,5 +54,5 @@ where
 }
 
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::option::Option<T> {
-    type Output<R: ComputeSet> = Set<Self, tset![T, .. @ R]>;
+    type Output<R: ExpandTypeSet> = Set<Self, tset![T, .. @ R]>;
 }

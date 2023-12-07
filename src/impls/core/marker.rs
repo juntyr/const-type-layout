@@ -1,5 +1,5 @@
 use crate::{
-    typeset::{ComputeSet, ComputeTypeSet, Set},
+    typeset::{ComputeTypeSet, ExpandTypeSet, Set},
     MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
 };
 
@@ -26,7 +26,7 @@ unsafe impl<T> const TypeGraph for core::marker::PhantomData<T> {
 }
 
 unsafe impl<T> ComputeTypeSet for core::marker::PhantomData<T> {
-    type Output<R: ComputeSet> = Set<Self, R>;
+    type Output<R: ExpandTypeSet> = Set<Self, R>;
 }
 
 unsafe impl const TypeLayout for core::marker::PhantomPinned {
@@ -52,5 +52,5 @@ unsafe impl const TypeGraph for core::marker::PhantomPinned {
 }
 
 unsafe impl ComputeTypeSet for core::marker::PhantomPinned {
-    type Output<T: ComputeSet> = Set<Self, T>;
+    type Output<T: ExpandTypeSet> = Set<Self, T>;
 }

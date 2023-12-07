@@ -1,5 +1,5 @@
 use crate::{
-    typeset::{ComputeSet, ComputeTypeSet, Set},
+    typeset::{ComputeTypeSet, ExpandTypeSet, Set},
     MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
 };
 
@@ -25,7 +25,7 @@ macro_rules! impl_primitive_type_layout {
         }
 
         unsafe impl ComputeTypeSet for $ty {
-            type Output<T: ComputeSet> = Set<Self, T>;
+            type Output<T: ExpandTypeSet> = Set<Self, T>;
         }
     };
     ($($ty:ty => $val:expr),*) => {
@@ -60,5 +60,5 @@ unsafe impl const TypeGraph for ! {
 }
 
 unsafe impl ComputeTypeSet for ! {
-    type Output<T: ComputeSet> = Set<Self, T>;
+    type Output<T: ExpandTypeSet> = Set<Self, T>;
 }

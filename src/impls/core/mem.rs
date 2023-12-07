@@ -1,5 +1,5 @@
 use crate::{
-    typeset::{tset, ComputeSet, ComputeTypeSet, Set},
+    typeset::{tset, ComputeTypeSet, ExpandTypeSet, Set},
     Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
 };
 
@@ -37,7 +37,7 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for core::mem::ManuallyDrop<T> 
 }
 
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::mem::ManuallyDrop<T> {
-    type Output<R: ComputeSet> = Set<Self, tset![T, .. @ R]>;
+    type Output<R: ExpandTypeSet> = Set<Self, tset![T, .. @ R]>;
 }
 
 unsafe impl<T: ~const TypeLayout> const TypeLayout for core::mem::MaybeUninit<T> {
@@ -77,5 +77,5 @@ unsafe impl<T: ~const TypeGraph> const TypeGraph for core::mem::MaybeUninit<T> {
 }
 
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::mem::MaybeUninit<T> {
-    type Output<R: ComputeSet> = Set<Self, tset![(), core::mem::ManuallyDrop<T>, .. @ R]>;
+    type Output<R: ExpandTypeSet> = Set<Self, tset![(), core::mem::ManuallyDrop<T>, .. @ R]>;
 }

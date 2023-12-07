@@ -1,5 +1,5 @@
 use crate::{
-    typeset::{tset, ComputeSet, ComputeTypeSet, Set},
+    typeset::{tset, ComputeTypeSet, ExpandTypeSet, Set},
     Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
 };
 
@@ -58,7 +58,7 @@ macro_rules! impl_tuple_type_layout {
         }
 
         unsafe impl<$($T: ComputeTypeSet),*> ComputeTypeSet for ($($T,)*) {
-            type Output<T: ComputeSet> = Set<Self, tset![$($T),*, .. @ T]>;
+            type Output<T: ExpandTypeSet> = Set<Self, tset![$($T),*, .. @ T]>;
         }
     };
     ($(($($a:tt => $T:ident),+)),*) => {
