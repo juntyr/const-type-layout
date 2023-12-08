@@ -234,6 +234,8 @@ fn main() {
 
     println!("{:#?}", <*const u8>::TYPE_GRAPH);
     println!("{:#?}", <*mut u8>::TYPE_GRAPH);
+    println!("{:#?}", <core::ptr::NonNull<u8>>::TYPE_GRAPH);
+    println!("{:#?}", <core::sync::atomic::AtomicPtr<u8>>::TYPE_GRAPH);
     println!("{:#?}", <&u8>::TYPE_GRAPH);
     println!("{:#?}", <&mut u8>::TYPE_GRAPH);
 
@@ -264,7 +266,8 @@ fn non_static_ref<'a>(_val: &'a u128) {
     println!("{:#?}", <Referencing<&'a u8>>::TYPE_GRAPH);
 }
 
-// const SERIALISED_LIST_U8_LAYOUT: [u8; const_type_layout::serialised_type_graph_len::<List<u8>>()] =
+// const SERIALISED_LIST_U8_LAYOUT: [u8;
+// const_type_layout::serialised_type_graph_len::<List<u8>>()] =
 //     const_type_layout::serialise_type_graph::<List<u8>>();
 
 #[derive(

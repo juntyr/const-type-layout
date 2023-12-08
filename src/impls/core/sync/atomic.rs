@@ -1,5 +1,4 @@
 use crate::{
-    impls::leak_uninit_ptr,
     typeset::{tset, ComputeTypeSet, ExpandTypeSet, Set},
     Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
 };
@@ -119,7 +118,7 @@ macro_rules! impl_atomic_ptr_layout {
 
             unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
                 MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(
-                    Self::new(leak_uninit_ptr())
+                    Self::new(core::ptr::NonNull::dangling().as_ptr())
                 ))
             }
         }

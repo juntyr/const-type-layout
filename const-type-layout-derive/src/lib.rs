@@ -14,10 +14,6 @@ use proc_macro2::Literal;
 use quote::{quote, quote_spanned};
 use syn::{parse_macro_input, spanned::Spanned};
 
-// TODO:
-// - wait for `const_heap` feature to be implemented for a workaround the graph
-//   size limitation: https://github.com/rust-lang/rust/issues/79597
-
 #[proc_macro_error]
 #[proc_macro_derive(TypeLayout, attributes(layout))]
 pub fn derive_type_layout(input: TokenStream) -> TokenStream {

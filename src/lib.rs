@@ -257,7 +257,8 @@ pub unsafe trait TypeLayout: Sized {
     unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>>;
 }
 
-pub trait TypeGraphLayout: ~const TypeLayout {
+#[const_trait]
+pub trait TypeGraphLayout: ~const TypeLayout + typeset::ComputeTypeSet {
     const TYPE_GRAPH: TypeLayoutGraph<'static>;
 }
 
