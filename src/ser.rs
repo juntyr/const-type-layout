@@ -1,8 +1,8 @@
 use core::ops::Deref;
 
 use crate::{
-    Asyncness, Constness, Discriminant, Field, MaybeUninhabited, Safety, TypeLayoutGraph,
-    TypeLayoutInfo, TypeStructure, Variant,
+    Asyncness, Constness, Discriminant, Field, MaybeUninhabited, Safety, TypeLayout,
+    TypeLayoutGraph, TypeLayoutInfo, TypeStructure, Variant,
 };
 
 pub const fn serialise_str(bytes: &mut [u8], from: usize, value: &str) -> usize {
@@ -159,9 +159,7 @@ pub const fn serialised_maybe_uninhabited_len(from: usize, _value: MaybeUninhabi
     from + 1
 }
 
-pub const fn serialise_discriminant(bytes: &mut [u8], from: usize, value: &Discriminant) -> usize {
-    let value_bytes = value.big_endian_bytes;
-
+const fn serialise_discriminant_bytes(bytes: &mut [u8], from: usize, value_bytes: &[u8]) -> usize {
     let mut leading_zeroes = 0;
 
     while leading_zeroes < value_bytes.len() {
@@ -190,9 +188,43 @@ pub const fn serialise_discriminant(bytes: &mut [u8], from: usize, value: &Discr
     from + i - leading_zeroes
 }
 
-pub const fn serialised_discriminant_len(from: usize, value: &Discriminant) -> usize {
-    let value_bytes = value.big_endian_bytes;
+pub const fn serialise_discriminant(bytes: &mut [u8], from: usize, value: &Discriminant) -> usize {
+    let from = match value {
+        Discriminant::I8(_) => serialise_str(bytes, from, <i8 as TypeLayout>::TYPE_LAYOUT.name),
+        Discriminant::I16(_) => serialise_str(bytes, from, <i16 as TypeLayout>::TYPE_LAYOUT.name),
+        Discriminant::I32(_) => serialise_str(bytes, from, <i32 as TypeLayout>::TYPE_LAYOUT.name),
+        Discriminant::I64(_) => serialise_str(bytes, from, <i64 as TypeLayout>::TYPE_LAYOUT.name),
+        Discriminant::I128(_) => serialise_str(bytes, from, <i128 as TypeLayout>::TYPE_LAYOUT.name),
+        Discriminant::Isize(_) => {
+            serialise_str(bytes, from, <isize as TypeLayout>::TYPE_LAYOUT.name)
+        },
+        Discriminant::U8(_) => serialise_str(bytes, from, <u8 as TypeLayout>::TYPE_LAYOUT.name),
+        Discriminant::U16(_) => serialise_str(bytes, from, <u16 as TypeLayout>::TYPE_LAYOUT.name),
+        Discriminant::U32(_) => serialise_str(bytes, from, <u32 as TypeLayout>::TYPE_LAYOUT.name),
+        Discriminant::U64(_) => serialise_str(bytes, from, <u64 as TypeLayout>::TYPE_LAYOUT.name),
+        Discriminant::U128(_) => serialise_str(bytes, from, <u128 as TypeLayout>::TYPE_LAYOUT.name),
+        Discriminant::Usize(_) => {
+            serialise_str(bytes, from, <usize as TypeLayout>::TYPE_LAYOUT.name)
+        },
+    };
 
+    match value {
+        Discriminant::I8(v) => serialise_discriminant_bytes(bytes, from, &v.to_be_bytes()),
+        Discriminant::I16(v) => serialise_discriminant_bytes(bytes, from, &v.to_be_bytes()),
+        Discriminant::I32(v) => serialise_discriminant_bytes(bytes, from, &v.to_be_bytes()),
+        Discriminant::I64(v) => serialise_discriminant_bytes(bytes, from, &v.to_be_bytes()),
+        Discriminant::I128(v) => serialise_discriminant_bytes(bytes, from, &v.to_be_bytes()),
+        Discriminant::Isize(v) => serialise_discriminant_bytes(bytes, from, &v.to_be_bytes()),
+        Discriminant::U8(v) => serialise_discriminant_bytes(bytes, from, &v.to_be_bytes()),
+        Discriminant::U16(v) => serialise_discriminant_bytes(bytes, from, &v.to_be_bytes()),
+        Discriminant::U32(v) => serialise_discriminant_bytes(bytes, from, &v.to_be_bytes()),
+        Discriminant::U64(v) => serialise_discriminant_bytes(bytes, from, &v.to_be_bytes()),
+        Discriminant::U128(v) => serialise_discriminant_bytes(bytes, from, &v.to_be_bytes()),
+        Discriminant::Usize(v) => serialise_discriminant_bytes(bytes, from, &v.to_be_bytes()),
+    }
+}
+
+const fn serialised_discriminant_bytes_len(from: usize, value_bytes: &[u8]) -> usize {
     let mut leading_zeroes = 0;
 
     while leading_zeroes < value_bytes.len() {
@@ -206,6 +238,38 @@ pub const fn serialised_discriminant_len(from: usize, value: &Discriminant) -> u
     let from = serialised_usize_len(from, value_bytes.len() - leading_zeroes);
 
     from + value_bytes.len() - leading_zeroes
+}
+
+pub const fn serialised_discriminant_len(from: usize, value: &Discriminant) -> usize {
+    let from = match value {
+        Discriminant::I8(_) => serialised_str_len(from, <i8 as TypeLayout>::TYPE_LAYOUT.name),
+        Discriminant::I16(_) => serialised_str_len(from, <i16 as TypeLayout>::TYPE_LAYOUT.name),
+        Discriminant::I32(_) => serialised_str_len(from, <i32 as TypeLayout>::TYPE_LAYOUT.name),
+        Discriminant::I64(_) => serialised_str_len(from, <i64 as TypeLayout>::TYPE_LAYOUT.name),
+        Discriminant::I128(_) => serialised_str_len(from, <i128 as TypeLayout>::TYPE_LAYOUT.name),
+        Discriminant::Isize(_) => serialised_str_len(from, <isize as TypeLayout>::TYPE_LAYOUT.name),
+        Discriminant::U8(_) => serialised_str_len(from, <u8 as TypeLayout>::TYPE_LAYOUT.name),
+        Discriminant::U16(_) => serialised_str_len(from, <u16 as TypeLayout>::TYPE_LAYOUT.name),
+        Discriminant::U32(_) => serialised_str_len(from, <u32 as TypeLayout>::TYPE_LAYOUT.name),
+        Discriminant::U64(_) => serialised_str_len(from, <u64 as TypeLayout>::TYPE_LAYOUT.name),
+        Discriminant::U128(_) => serialised_str_len(from, <u128 as TypeLayout>::TYPE_LAYOUT.name),
+        Discriminant::Usize(_) => serialised_str_len(from, <usize as TypeLayout>::TYPE_LAYOUT.name),
+    };
+
+    match value {
+        Discriminant::I8(v) => serialised_discriminant_bytes_len(from, &v.to_be_bytes()),
+        Discriminant::I16(v) => serialised_discriminant_bytes_len(from, &v.to_be_bytes()),
+        Discriminant::I32(v) => serialised_discriminant_bytes_len(from, &v.to_be_bytes()),
+        Discriminant::I64(v) => serialised_discriminant_bytes_len(from, &v.to_be_bytes()),
+        Discriminant::I128(v) => serialised_discriminant_bytes_len(from, &v.to_be_bytes()),
+        Discriminant::Isize(v) => serialised_discriminant_bytes_len(from, &v.to_be_bytes()),
+        Discriminant::U8(v) => serialised_discriminant_bytes_len(from, &v.to_be_bytes()),
+        Discriminant::U16(v) => serialised_discriminant_bytes_len(from, &v.to_be_bytes()),
+        Discriminant::U32(v) => serialised_discriminant_bytes_len(from, &v.to_be_bytes()),
+        Discriminant::U64(v) => serialised_discriminant_bytes_len(from, &v.to_be_bytes()),
+        Discriminant::U128(v) => serialised_discriminant_bytes_len(from, &v.to_be_bytes()),
+        Discriminant::Usize(v) => serialised_discriminant_bytes_len(from, &v.to_be_bytes()),
+    }
 }
 
 pub const fn serialise_field(bytes: &mut [u8], from: usize, value: &Field) -> usize {

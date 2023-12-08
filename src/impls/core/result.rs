@@ -5,8 +5,6 @@ use crate::{
 
 unsafe impl<T: ~const TypeLayout, E: ~const TypeLayout> const TypeLayout
     for core::result::Result<T, E>
-where
-    [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
 {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -58,9 +56,11 @@ where
     }
 }
 
-unsafe impl<T: ComputeTypeSet, E: ComputeTypeSet> ComputeTypeSet for core::result::Result<T, E>
-where
-    [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
-{
-    type Output<R: ExpandTypeSet> = Set<Self, tset![E, .. @ R]>;
+unsafe impl<T: ComputeTypeSet, E: ComputeTypeSet> ComputeTypeSet for core::result::Result<T, E> {
+    type Output<R: ExpandTypeSet> = Set<
+        Self,
+        tset![
+            T, E, <Self as crate::ExtractDiscriminant>::Ty, .. @ R
+        ],
+    >;
 }

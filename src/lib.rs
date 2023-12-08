@@ -165,6 +165,7 @@
 #![feature(const_maybe_uninit_array_assume_init)]
 #![feature(c_variadic)]
 #![feature(ptr_from_ref)]
+#![feature(discriminant_kind)]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 #![feature(specialization)]
@@ -355,15 +356,77 @@ pub enum TypeStructure<
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 pub struct Variant<'a, F: Deref<Target = [Field<'a>]> = &'a [Field<'a>]> {
     pub name: &'a str,
-    pub discriminant: MaybeUninhabited<Discriminant<'a>>,
+    pub discriminant: MaybeUninhabited<Discriminant>,
     pub fields: F,
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
-#[repr(transparent)]
-pub struct Discriminant<'a> {
-    pub big_endian_bytes: &'a [u8],
+pub enum Discriminant {
+    I8(i8),
+    I16(i16),
+    I32(i32),
+    I64(i64),
+    I128(i128),
+    Isize(isize),
+    U8(u8),
+    U16(u16),
+    U32(u32),
+    U64(u64),
+    U128(u128),
+    Usize(usize),
+}
+
+#[const_trait]
+pub trait ExtractDiscriminant {
+    type Ty: typeset::ComputeTypeSet;
+
+    fn discriminant(&self) -> Discriminant;
+}
+
+impl<T> const ExtractDiscriminant for T {
+    type Ty =
+        <T as ExtractDiscriminantSpec<<T as core::marker::DiscriminantKind>::Discriminant>>::Ty;
+
+    fn discriminant(&self) -> Discriminant {
+        <T as ExtractDiscriminantSpec<<T as core::marker::DiscriminantKind>::Discriminant>>::discriminant(self)
+    }
+}
+
+#[doc(hidden)]
+#[const_trait]
+pub trait ExtractDiscriminantSpec<T> {
+    type Ty: typeset::ComputeTypeSet;
+
+    fn discriminant(&self) -> Discriminant;
+}
+
+impl<T> const ExtractDiscriminantSpec<<T as core::marker::DiscriminantKind>::Discriminant> for T {
+    default type Ty = !;
+
+    default fn discriminant(&self) -> Discriminant {
+        panic!("bug: unknown discriminant kind")
+    }
+}
+
+macro_rules! impl_extract_discriminant {
+    ($variant:ident($ty:ty)) => {
+        impl<T: core::marker::DiscriminantKind<Discriminant = $ty>> const ExtractDiscriminantSpec<$ty> for T {
+            type Ty = $ty;
+
+            fn discriminant(&self) -> Discriminant {
+                Discriminant::$variant(core::intrinsics::discriminant_value(self))
+            }
+        }
+    };
+    ($($variant:ident($ty:ty)),*) => {
+        $(impl_extract_discriminant! { $variant($ty) })*
+    };
+}
+
+impl_extract_discriminant! {
+    I8(i8), I16(i16), I32(i32), I64(i64), I128(i128), Isize(isize),
+    U8(u8), U16(u16), U32(u32), U64(u64), U128(u128), Usize(usize)
 }
 
 #[derive(Clone, Copy, Debug, Hash)]
@@ -468,28 +531,6 @@ impl<'a, F: Deref<Target = [Field<'a>]> + PartialOrd> PartialOrd for Variant<'a,
     }
 }
 
-impl<'a> fmt::Debug for Discriminant<'a> {
-    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
-        write!(fmt, "0x")?;
-
-        let mut is_zero = true;
-
-        for byte in self.big_endian_bytes.iter().copied() {
-            if byte != 0_u8 {
-                is_zero = false;
-
-                write!(fmt, "{byte:x}")?;
-            }
-        }
-
-        if is_zero {
-            write!(fmt, "0")?;
-        }
-
-        Ok(())
-    }
-}
-
 impl<'a> PartialEq for Field<'a> {
     fn eq(&self, other: &Self) -> bool {
         self.name == other.name && self.offset == other.offset && core::ptr::eq(self.ty, other.ty)
@@ -541,38 +582,16 @@ pub macro struct_field_offset($ty_name:ident => $ty:ty => (*$base:ident).$field:
 #[doc(hidden)]
 #[allow_internal_unstable(const_discriminant)]
 pub macro struct_variant_discriminant {
-    ($ty_name:ident => $ty:ty => $variant_name:ident) => {
-        $crate::MaybeUninhabited::Inhabited {
-            0: $crate::Discriminant {
-                big_endian_bytes: &{
-                    let uninit: $ty = $ty_name::$variant_name;
+    ($ty_name:ident => $ty:ty => $variant_name:ident) => {{
+        let uninit: $ty = $ty_name::$variant_name;
 
-                    let system_endian_bytes: [u8; ::core::mem::size_of::<::core::mem::Discriminant<$ty>>()] = unsafe {
-                        ::core::mem::transmute(::core::mem::discriminant(&uninit))
-                    };
+        let discriminant = <$ty as $crate::ExtractDiscriminant>::discriminant(&uninit);
 
-                    #[allow(clippy::forget_non_drop, clippy::forget_copy)]
-                    ::core::mem::forget(uninit);
+        #[allow(clippy::forget_non_drop, clippy::forget_copy)]
+        ::core::mem::forget(uninit);
 
-                    let mut big_endian_bytes = [0_u8; ::core::mem::size_of::<::core::mem::Discriminant<$ty>>()];
-
-                    let mut i = 0;
-
-                    while i < system_endian_bytes.len() {
-                        big_endian_bytes[i] = system_endian_bytes[if cfg!(target_endian = "big") {
-                            i
-                        } else {
-                            system_endian_bytes.len() - i - 1
-                        }];
-
-                        i += 1;
-                    }
-
-                    big_endian_bytes
-                },
-            },
-        }
-    },
+        $crate::MaybeUninhabited::Inhabited(discriminant)
+    }},
     ($ty_name:ident => $ty:ty => $variant_name:ident($($field_name:ident: $field_ty:ty),* $(,)?)) => {{
         #[allow(unused_parens)]
         if let (
@@ -580,42 +599,16 @@ pub macro struct_variant_discriminant {
         ) = (
             $(unsafe { <$field_ty as $crate::TypeLayout>::uninit() }),*
         ) {
-            $crate::MaybeUninhabited::Inhabited {
-                0: $crate::Discriminant {
-                    big_endian_bytes: {
-                        let uninit: $ty = $ty_name::$variant_name(
-                            $(unsafe { $field_name.assume_init() }),*
-                        );
+            let uninit: $ty = $ty_name::$variant_name(
+                $(unsafe { $field_name.assume_init() }),*
+            );
 
-                        let system_endian_bytes: [u8; ::core::mem::size_of::<::core::mem::Discriminant<$ty>>()] = unsafe {
-                            ::core::mem::transmute(::core::mem::discriminant(&uninit))
-                        };
+            let discriminant = <$ty as $crate::ExtractDiscriminant>::discriminant(&uninit);
 
-                        #[allow(clippy::forget_non_drop, clippy::forget_copy)]
-                        ::core::mem::forget(uninit);
+            #[allow(clippy::forget_non_drop, clippy::forget_copy)]
+            ::core::mem::forget(uninit);
 
-                        let big_endian_bytes = unsafe {
-                            &mut *$crate::impls::leak_uninit_ptr::<
-                                [u8; ::core::mem::size_of::<::core::mem::Discriminant<$ty>>()]
-                            >()
-                        };
-
-                        let mut i = 0;
-
-                        while i < system_endian_bytes.len() {
-                            (*big_endian_bytes)[i] = system_endian_bytes[if cfg!(target_endian = "big") {
-                                i
-                            } else {
-                                system_endian_bytes.len() - i - 1
-                            }];
-
-                            i += 1;
-                        }
-
-                        big_endian_bytes
-                    }
-                },
-            }
+            $crate::MaybeUninhabited::Inhabited(discriminant)
         } else {
             $crate::MaybeUninhabited::Uninhabited
         }
@@ -627,42 +620,16 @@ pub macro struct_variant_discriminant {
         ) = (
             $(unsafe { <$field_ty as $crate::TypeLayout>::uninit() }),*
         ) {
-            $crate::MaybeUninhabited::Inhabited {
-                0: $crate::Discriminant {
-                    big_endian_bytes: {
-                        let uninit: $ty = $ty_name::$variant_name {
-                            $($field_name: unsafe { $field_name.assume_init() }),*
-                        };
+            let uninit: $ty = $ty_name::$variant_name {
+                $($field_name: unsafe { $field_name.assume_init() }),*
+            };
 
-                        let system_endian_bytes: [u8; ::core::mem::size_of::<::core::mem::Discriminant<$ty>>()] = unsafe {
-                            ::core::mem::transmute(::core::mem::discriminant(&uninit))
-                        };
+            let discriminant = <$ty as $crate::ExtractDiscriminant>::discriminant(&uninit);
 
-                        #[allow(clippy::forget_non_drop, clippy::forget_copy)]
-                        ::core::mem::forget(uninit);
+            #[allow(clippy::forget_non_drop, clippy::forget_copy)]
+            ::core::mem::forget(uninit);
 
-                        let big_endian_bytes = unsafe {
-                            &mut *$crate::impls::leak_uninit_ptr::<
-                                [u8; ::core::mem::size_of::<::core::mem::Discriminant<$ty>>()]
-                            >()
-                        };
-
-                        let mut i = 0;
-
-                        while i < system_endian_bytes.len() {
-                            (*big_endian_bytes)[i] = system_endian_bytes[if cfg!(target_endian = "big") {
-                                i
-                            } else {
-                                system_endian_bytes.len() - i - 1
-                            }];
-
-                            i += 1;
-                        }
-
-                        big_endian_bytes
-                    }
-                },
-            }
+            $crate::MaybeUninhabited::Inhabited(discriminant)
         } else {
             $crate::MaybeUninhabited::Uninhabited
         }

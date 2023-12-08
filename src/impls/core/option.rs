@@ -3,10 +3,7 @@ use crate::{
     Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure, Variant,
 };
 
-unsafe impl<T: ~const TypeLayout> const TypeLayout for core::option::Option<T>
-where
-    [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
-{
+unsafe impl<T: ~const TypeLayout> const TypeLayout for core::option::Option<T> {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -41,9 +38,11 @@ where
     }
 }
 
-unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::option::Option<T>
-where
-    [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
-{
-    type Output<R: ExpandTypeSet> = Set<Self, tset![T, .. @ R]>;
+unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::option::Option<T> {
+    type Output<R: ExpandTypeSet> = Set<
+        Self,
+        tset![
+            T, <Self as crate::ExtractDiscriminant>::Ty, .. @ R
+        ],
+    >;
 }
