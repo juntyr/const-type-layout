@@ -10,7 +10,7 @@ repository = "https://github.com/juntyr/const-type-layout"
 readme = "README.md"
 keywords = ["layout", "type", "const"]
 license = "MIT OR Apache-2.0"
-rust-version = "1.60" # nightly
+rust-version = "1.70" # nightly
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

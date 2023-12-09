@@ -6,7 +6,7 @@
 //! [CI Status]: https://img.shields.io/github/actions/workflow/status/juntyr/const-type-layout/ci.yml?branch=main
 //! [workflow]: https://github.com/juntyr/const-type-layout/actions/workflows/ci.yml?query=branch%3Amain
 //!
-//! [MSRV]: https://img.shields.io/badge/MSRV-1.60.0-orange
+//! [MSRV]: https://img.shields.io/badge/MSRV-1.70.0-orange
 //! [repo]: https://github.com/juntyr/const-type-layout
 //!
 //! [Latest Version]: https://img.shields.io/crates/v/const-type-layout
