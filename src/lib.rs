@@ -263,7 +263,7 @@ pub trait TypeGraphLayout: ~const TypeLayout + typeset::ComputeTypeSet {
     const TYPE_GRAPH: TypeLayoutGraph<'static>;
 }
 
-impl<T: ~const TypeLayout + typeset::ComputeTypeSet> TypeGraphLayout for T {
+impl<T: ~const TypeLayout + typeset::ComputeTypeSet> const TypeGraphLayout for T {
     const TYPE_GRAPH: TypeLayoutGraph<'static> = TypeLayoutGraph::new::<T>();
 }
 
