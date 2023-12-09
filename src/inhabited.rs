@@ -1,8 +1,43 @@
-#[allow(clippy::empty_enum)]
-pub enum Inhabited {}
+pub struct Inhabited;
+
+unsafe impl crate::TypeLayout for Inhabited {
+    type Inhabited = Inhabited;
+
+    const TYPE_LAYOUT: crate::TypeLayoutInfo<'static> = crate::TypeLayoutInfo {
+        name: ::core::any::type_name::<Self>(),
+        size: ::core::mem::size_of::<Self>(),
+        alignment: ::core::mem::align_of::<Self>(),
+        structure: crate::TypeStructure::Struct {
+            repr: "",
+            fields: &[],
+        },
+    };
+}
+
+unsafe impl crate::typeset::ComputeTypeSet for Inhabited {
+    type Output<T: crate::typeset::ExpandTypeSet> = crate::typeset::Set<Self, T>;
+}
 
 #[allow(clippy::empty_enum)]
 pub enum Uninhabited {}
+
+unsafe impl crate::TypeLayout for Uninhabited {
+    type Inhabited = Uninhabited;
+
+    const TYPE_LAYOUT: crate::TypeLayoutInfo<'static> = crate::TypeLayoutInfo {
+        name: ::core::any::type_name::<Self>(),
+        size: ::core::mem::size_of::<Self>(),
+        alignment: ::core::mem::align_of::<Self>(),
+        structure: crate::TypeStructure::Enum {
+            repr: "",
+            variants: &[],
+        },
+    };
+}
+
+unsafe impl crate::typeset::ComputeTypeSet for Uninhabited {
+    type Output<T: crate::typeset::ExpandTypeSet> = crate::typeset::Set<Self, T>;
+}
 
 #[allow(clippy::module_name_repetitions)]
 pub trait ComputeInhabited: sealed::ComputeInhabited {
@@ -10,7 +45,10 @@ pub trait ComputeInhabited: sealed::ComputeInhabited {
 }
 
 #[allow(clippy::module_name_repetitions)]
-pub trait OutputMaybeInhabited: ComputeInhabited + sealed::OutputMaybeInhabited {}
+pub trait OutputMaybeInhabited:
+    ComputeInhabited + crate::TypeGraphLayout + sealed::OutputMaybeInhabited
+{
+}
 
 mod sealed {
     pub trait ComputeInhabited {}
@@ -31,48 +69,52 @@ impl ComputeInhabited for Uninhabited {
 impl sealed::OutputMaybeInhabited for Uninhabited {}
 impl OutputMaybeInhabited for Uninhabited {}
 
-pub struct And<L: ComputeInhabited, R: ComputeInhabited> {
-    _left: L,
-    _right: R,
-}
+mod logical {
+    use super::{sealed, ComputeInhabited, Inhabited, Uninhabited};
 
-impl<L: ComputeInhabited, R: ComputeInhabited> sealed::ComputeInhabited for And<L, R> {}
-impl<L: ComputeInhabited, R: ComputeInhabited> ComputeInhabited for And<L, R> {
-    default type Output = Uninhabited;
-}
+    pub struct And<L: ComputeInhabited, R: ComputeInhabited> {
+        _left: L,
+        _right: R,
+    }
 
-impl<L: ComputeInhabited<Output = Inhabited>, R: ComputeInhabited<Output = Inhabited>>
-    ComputeInhabited for And<L, R>
-{
-    type Output = Inhabited;
-}
+    impl<L: ComputeInhabited, R: ComputeInhabited> sealed::ComputeInhabited for And<L, R> {}
+    impl<L: ComputeInhabited, R: ComputeInhabited> ComputeInhabited for And<L, R> {
+        default type Output = Uninhabited;
+    }
 
-pub struct Or<L: ComputeInhabited, R: ComputeInhabited> {
-    _left: L,
-    _right: R,
-}
+    impl<L: ComputeInhabited<Output = Inhabited>, R: ComputeInhabited<Output = Inhabited>>
+        ComputeInhabited for And<L, R>
+    {
+        type Output = Inhabited;
+    }
 
-impl<L: ComputeInhabited, R: ComputeInhabited> sealed::ComputeInhabited for Or<L, R> {}
-impl<L: ComputeInhabited, R: ComputeInhabited> ComputeInhabited for Or<L, R> {
-    default type Output = Inhabited;
-}
+    pub struct Or<L: ComputeInhabited, R: ComputeInhabited> {
+        _left: L,
+        _right: R,
+    }
 
-impl<L: ComputeInhabited<Output = Uninhabited>, R: ComputeInhabited<Output = Uninhabited>>
-    ComputeInhabited for Or<L, R>
-{
-    type Output = Uninhabited;
+    impl<L: ComputeInhabited, R: ComputeInhabited> sealed::ComputeInhabited for Or<L, R> {}
+    impl<L: ComputeInhabited, R: ComputeInhabited> ComputeInhabited for Or<L, R> {
+        default type Output = Inhabited;
+    }
+
+    impl<L: ComputeInhabited<Output = Uninhabited>, R: ComputeInhabited<Output = Uninhabited>>
+        ComputeInhabited for Or<L, R>
+    {
+        type Output = Uninhabited;
+    }
 }
 
 pub macro all {
     () => { Inhabited },
     ($L:ty $(, $R:ty)*) => {
-        <And<<$L as $crate::TypeLayout>::Inhabited, all![$($R),*]> as ComputeInhabited>::Output
+        <logical::And<<$L as $crate::TypeLayout>::Inhabited, all![$($R),*]> as ComputeInhabited>::Output
     },
 }
 
 pub macro any {
     () => { Uninhabited },
     ($L:ty $(, $R:ty)*) => {
-        <Or<<$L as $crate::TypeLayout>::Inhabited, any![$($R),*]> as ComputeInhabited>::Output
+        <logical::Or<<$L as $crate::TypeLayout>::Inhabited, any![$($R),*]> as ComputeInhabited>::Output
     },
 }

@@ -34,6 +34,7 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
         crate_path,
     } = parse_attributes(&input.attrs, &mut type_params);
 
+    let inhabited = inhabited_for_type(&crate_path, &input.data);
     let layout = layout_of_type(&crate_path, &ty_name, &ty_generics, &input.data, &reprs);
 
     let inner_types = extract_inner_types(&input.data);
@@ -57,8 +58,7 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
         unsafe impl #type_layout_impl_generics #crate_path::TypeLayout for
             #ty_name #type_layout_ty_generics #type_layout_where_clause
         {
-            // TODO: compute correctly
-            type Inhabited = #crate_path::inhabited::Inhabited;
+            type Inhabited = #inhabited;
 
             const TYPE_LAYOUT: #crate_path::TypeLayoutInfo<'static> = {
                 #crate_path::TypeLayoutInfo {
@@ -377,8 +377,13 @@ fn quote_structlike_fields(
                 let field_name = field.ident.as_ref().unwrap();
                 let field_name_str = Literal::string(&field_name.to_string());
                 let field_ty = &field.ty;
-                let field_offset =
-                    quote_structlike_field_offset(crate_path, ty_name, ty_generics, &field_name);
+                let field_offset = quote_structlike_field_offset(
+                    crate_path,
+                    ty_name,
+                    ty_generics,
+                    &field_name,
+                    field_ty,
+                );
 
                 quote_spanned! { field.span() =>
                     #crate_path::Field {
@@ -397,8 +402,13 @@ fn quote_structlike_fields(
                 let field_name = syn::Index::from(field_index);
                 let field_name_str = Literal::string(&field_index.to_string());
                 let field_ty = &field.ty;
-                let field_offset =
-                    quote_structlike_field_offset(crate_path, ty_name, ty_generics, &field_name);
+                let field_offset = quote_structlike_field_offset(
+                    crate_path,
+                    ty_name,
+                    ty_generics,
+                    &field_name,
+                    field_ty,
+                );
 
                 quote_spanned! { field.span() =>
                     #crate_path::Field {
@@ -418,9 +428,10 @@ fn quote_structlike_field_offset(
     ty_name: &syn::Ident,
     ty_generics: &syn::TypeGenerics,
     field_name: &impl quote::ToTokens,
+    field_ty: &syn::Type,
 ) -> proc_macro2::TokenStream {
     quote! {
-        #crate_path::MaybeUninhabited::new::<#ty_name #ty_generics>(
+        #crate_path::MaybeUninhabited::new::<#field_ty>(
             ::core::mem::offset_of!(#ty_name #ty_generics, #field_name)
         )
     }
@@ -476,8 +487,21 @@ fn quote_enum_variants(
                 },
             };
 
+            // Variants are inhabited if all of their fields in inhabited
+            let variant_inhabited = match &variant.fields {
+                syn::Fields::Named(syn::FieldsNamed { named: fields, .. })
+                | syn::Fields::Unnamed(syn::FieldsUnnamed {
+                    unnamed: fields, ..
+                }) => {
+                    let field_tys = fields.iter().map(|syn::Field { ty, .. }| ty);
+
+                    quote! { #crate_path::inhabited::all![#(#field_tys),*] }
+                },
+                syn::Fields::Unit => quote! { #crate_path::inhabited::Inhabited },
+            };
+
             let discriminant = quote! {
-                #crate_path::MaybeUninhabited::Inhabited(
+                #crate_path::MaybeUninhabited::new::<#variant_inhabited>(
                     #crate_path::Discriminant::new::<Self>(#discriminant)
                 )
             };
@@ -514,6 +538,7 @@ fn quote_variant_fields(
                     ty_generics,
                     variant_name,
                     field_name,
+                    field_ty,
                 );
 
                 quote_spanned! { field.span() =>
@@ -541,6 +566,7 @@ fn quote_variant_fields(
                     ty_generics,
                     variant_name,
                     &field_index,
+                    field_ty,
                 );
 
                 quote_spanned! { field.span() =>
@@ -562,10 +588,60 @@ fn quote_structlike_variant_field_offset(
     ty_generics: &syn::TypeGenerics,
     variant_name: &syn::Ident,
     field_name: &impl quote::ToTokens,
+    field_ty: &syn::Type,
 ) -> proc_macro2::TokenStream {
     quote! {
-        #crate_path::MaybeUninhabited::new::<#ty_name #ty_generics>(
+        #crate_path::MaybeUninhabited::new::<#field_ty>(
             ::core::mem::offset_of!(#ty_name #ty_generics, #variant_name.#field_name)
         )
+    }
+}
+
+fn inhabited_for_type(crate_path: &syn::Path, data: &syn::Data) -> proc_macro2::TokenStream {
+    match data {
+        syn::Data::Struct(data) => {
+            // Structs are inhabited if all of their fields in inhabited
+            let fields = match &data.fields {
+                syn::Fields::Named(syn::FieldsNamed { named: fields, .. })
+                | syn::Fields::Unnamed(syn::FieldsUnnamed {
+                    unnamed: fields, ..
+                }) => fields,
+                syn::Fields::Unit => return quote! { #crate_path::inhabited::Inhabited },
+            };
+
+            let field_tys = fields.iter().map(|syn::Field { ty, .. }| ty);
+
+            quote! { #crate_path::inhabited::all![#(#field_tys),*] }
+        },
+        syn::Data::Enum(syn::DataEnum { variants, .. }) => {
+            let variants_inhabited = variants.iter().map(|syn::Variant { fields, .. }| {
+                // Variants are inhabited if all of their fields in inhabited
+                let fields = match fields {
+                    syn::Fields::Named(syn::FieldsNamed { named: fields, .. })
+                    | syn::Fields::Unnamed(syn::FieldsUnnamed {
+                        unnamed: fields, ..
+                    }) => fields,
+                    syn::Fields::Unit => return quote! { #crate_path::inhabited::Inhabited },
+                };
+
+                let field_tys = fields.iter().map(|syn::Field { ty, .. }| ty);
+
+                quote! { #crate_path::inhabited::all![#(#field_tys),*] }
+            });
+
+            // Enums are inhabited if they have at least one inhabited variant
+            quote! {
+                #crate_path::inhabited::any![#(#variants_inhabited),*]
+            }
+        },
+        syn::Data::Union(syn::DataUnion {
+            fields: syn::FieldsNamed { named: fields, .. },
+            ..
+        }) => {
+            // Unions are inhabited if they have at least one inhabited field
+            let field_tys = fields.iter().map(|syn::Field { ty, .. }| ty);
+
+            quote! { #crate_path::inhabited::any![#(#field_tys),*] }
+        },
     }
 }
