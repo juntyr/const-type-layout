@@ -261,8 +261,8 @@ pub struct TypeLayoutGraph<
     I: Deref<Target = TypeLayoutInfo<'a, F, V, P>> = &'a TypeLayoutInfo<'a, F, V, P>,
     G: Deref<Target = [I]> = &'a [I],
 > {
-    ty: &'a str,
-    tys: G,
+    pub ty: &'a str,
+    pub tys: G,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]

@@ -40,11 +40,13 @@ unsafe impl crate::typeset::ComputeTypeSet for Uninhabited {
 }
 
 #[allow(clippy::module_name_repetitions)]
+#[doc(hidden)]
 pub trait ComputeInhabited: sealed::ComputeInhabited {
     type Output: OutputMaybeInhabited;
 }
 
 #[allow(clippy::module_name_repetitions)]
+#[doc(hidden)]
 pub trait OutputMaybeInhabited:
     ComputeInhabited + crate::TypeGraphLayout + sealed::OutputMaybeInhabited
 {
