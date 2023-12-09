@@ -6,6 +6,8 @@ use crate::{
 macro_rules! impl_primitive_type_layout {
     (impl $ty:ty => $val:expr) => {
         unsafe impl TypeLayout for $ty {
+            type Inhabited = crate::inhabited::Inhabited;
+
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
@@ -31,6 +33,8 @@ impl_primitive_type_layout! {
 }
 
 unsafe impl TypeLayout for ! {
+    type Inhabited = crate::inhabited::Uninhabited;
+
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),

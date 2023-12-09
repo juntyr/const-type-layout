@@ -57,6 +57,9 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
         unsafe impl #type_layout_impl_generics #crate_path::TypeLayout for
             #ty_name #type_layout_ty_generics #type_layout_where_clause
         {
+            // TODO: compute correctly
+            type Inhabited = #crate_path::inhabited::Inhabited;
+
             const TYPE_LAYOUT: #crate_path::TypeLayoutInfo<'static> = {
                 #crate_path::TypeLayoutInfo {
                     name: ::core::any::type_name::<Self>(),
@@ -417,8 +420,9 @@ fn quote_structlike_field_offset(
     field_name: &impl quote::ToTokens,
 ) -> proc_macro2::TokenStream {
     quote! {
-        // TODO: check for uninhabited
-        #crate_path::MaybeUninhabited::Inhabited(::core::mem::offset_of!(#ty_name #ty_generics, #field_name))
+        #crate_path::MaybeUninhabited::new::<#ty_name #ty_generics>(
+            ::core::mem::offset_of!(#ty_name #ty_generics, #field_name)
+        )
     }
 }
 
@@ -560,7 +564,8 @@ fn quote_structlike_variant_field_offset(
     field_name: &impl quote::ToTokens,
 ) -> proc_macro2::TokenStream {
     quote! {
-        // TODO: check for uninhabited
-        #crate_path::MaybeUninhabited::Inhabited(::core::mem::offset_of!(#ty_name #ty_generics, #variant_name.#field_name))
+        #crate_path::MaybeUninhabited::new::<#ty_name #ty_generics>(
+            ::core::mem::offset_of!(#ty_name #ty_generics, #variant_name.#field_name)
+        )
     }
 }

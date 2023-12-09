@@ -153,8 +153,8 @@ use alloc::fmt;
 
 pub use const_type_layout_derive::TypeLayout;
 
-#[doc(hidden)]
-pub mod impls;
+mod impls;
+pub mod inhabited;
 mod ser;
 pub mod typeset;
 
@@ -164,6 +164,17 @@ pub mod typeset;
 pub enum MaybeUninhabited<T> {
     Uninhabited,
     Inhabited(T),
+}
+
+impl<T: Copy> MaybeUninhabited<T> {
+    #[must_use]
+    pub const fn new<U: TypeLayout>(v: T) -> Self {
+        if <U::Inhabited as Same<inhabited::Inhabited>>::EQ {
+            Self::Inhabited(v)
+        } else {
+            Self::Uninhabited
+        }
+    }
 }
 
 impl<T: Default> Default for MaybeUninhabited<T> {
@@ -201,6 +212,8 @@ pub enum Safety {
 /// It is only safe to implement this trait if it accurately describes the
 ///  type's layout. Use `#[derive(TypeLayout)]` instead.
 pub unsafe trait TypeLayout: Sized {
+    type Inhabited: inhabited::OutputMaybeInhabited;
+
     const TYPE_LAYOUT: TypeLayoutInfo<'static>;
 }
 
@@ -327,18 +340,6 @@ impl Discriminant {
     #[allow(clippy::missing_panics_doc)]
     #[must_use]
     pub const fn new<T: ExtractDiscriminant>(v: T::Ty) -> Self {
-        trait Same<T> {
-            const EQ: bool;
-        }
-
-        impl<T, U> Same<U> for T {
-            default const EQ: bool = false;
-        }
-
-        impl<T> Same<T> for T {
-            const EQ: bool = true;
-        }
-
         union Transmute<T: Copy> {
             v: T,
             i8: i8,
@@ -383,6 +384,18 @@ impl Discriminant {
 
         panic!("bug: unknown discriminant kind")
     }
+}
+
+trait Same<T> {
+    const EQ: bool;
+}
+
+impl<T, U> Same<U> for T {
+    default const EQ: bool = false;
+}
+
+impl<T> Same<T> for T {
+    const EQ: bool = true;
 }
 
 pub trait ExtractDiscriminant {

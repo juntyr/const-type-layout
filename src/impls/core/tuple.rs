@@ -6,6 +6,8 @@ use crate::{
 macro_rules! impl_tuple_type_layout {
     (impl ($($a:tt => $T:ident),+)) => {
         unsafe impl<$($T: TypeLayout),*> TypeLayout for ($($T,)*) {
+            type Inhabited = crate::inhabited::all![$($T),*];
+
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
@@ -15,8 +17,7 @@ macro_rules! impl_tuple_type_layout {
                     repr: "",
                     fields: &[$(Field {
                         name: stringify!($a),
-                        // TODO: check for uninhabited
-                        offset: MaybeUninhabited::Inhabited(core::mem::offset_of!(Self, $a)),
+                        offset: MaybeUninhabited::new::<$T>(core::mem::offset_of!(Self, $a)),
                         ty: ::core::any::type_name::<$T>(),
                     }),*],
                 },

@@ -4,6 +4,8 @@ use crate::{
 };
 
 unsafe impl<T: TypeLayout> TypeLayout for core::cmp::Reverse<T> {
+    type Inhabited = T::Inhabited;
+
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -12,8 +14,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::cmp::Reverse<T> {
             repr: "transparent",
             fields: &[Field {
                 name: "0",
-                // TODO: check for uninhabited
-                offset: MaybeUninhabited::Inhabited(0),
+                offset: MaybeUninhabited::new::<T>(0),
                 ty: ::core::any::type_name::<T>(),
             }],
         },

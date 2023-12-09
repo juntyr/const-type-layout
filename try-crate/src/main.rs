@@ -199,6 +199,9 @@ fn main() {
     println!("{:#?}", NoUnit::<u32>::TYPE_GRAPH);
 
     println!("{:#?}", <()>::TYPE_GRAPH);
+    println!("{:#?}", <(u8,)>::TYPE_GRAPH);
+    println!("{:#?}", <(u8, bool)>::TYPE_GRAPH);
+    println!("{:#?}", <(u8, bool, !)>::TYPE_GRAPH);
     println!("{:#?}", <[u32; 3]>::TYPE_GRAPH);
     println!("{:#?}", <std::mem::MaybeUninit<Box<i8>>>::TYPE_GRAPH);
     println!("{:#?}", <Box<u8>>::TYPE_GRAPH);

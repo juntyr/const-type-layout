@@ -4,6 +4,8 @@ use crate::{
 };
 
 unsafe impl<'a, T: TypeLayout + 'a> TypeLayout for &'a T {
+    type Inhabited = crate::inhabited::Inhabited;
+
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -17,6 +19,8 @@ unsafe impl<'a, T: ComputeTypeSet + 'a> ComputeTypeSet for &'a T {
 }
 
 unsafe impl<'a, T: TypeLayout + 'a> TypeLayout for &'a mut T {
+    type Inhabited = crate::inhabited::Inhabited;
+
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
