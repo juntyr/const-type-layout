@@ -1,7 +1,7 @@
 [package]
 name = "const-type-layout"
 description = "Derivable const trait to view and compare the layout of a struct, union, or enum."
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["Juniper Tyree <juniper.tyree@helsinki.fi>", "Lucien Greathouse <me@lpghatguy.com>"]
 documentation = "https://docs.rs/const-type-layout/"
@@ -10,7 +10,7 @@ repository = "https://github.com/juntyr/const-type-layout"
 readme = "README.md"
 keywords = ["layout", "type", "const"]
 license = "MIT OR Apache-2.0"
-rust-version = "1.70" # nightly
+rust-version = "1.75" # nightly
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

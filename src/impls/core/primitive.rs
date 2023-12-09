@@ -1,21 +1,17 @@
 use crate::{
     typeset::{ComputeTypeSet, ExpandTypeSet, Set},
-    MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
+    TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
 macro_rules! impl_primitive_type_layout {
     (impl $ty:ty => $val:expr) => {
-        unsafe impl const TypeLayout for $ty {
+        unsafe impl TypeLayout for $ty {
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
                 structure: TypeStructure::Primitive,
             };
-
-            unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-                MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new($val))
-            }
         }
 
         unsafe impl ComputeTypeSet for $ty {
@@ -34,17 +30,13 @@ impl_primitive_type_layout! {
     char => '\0', bool => false, () => ()
 }
 
-unsafe impl const TypeLayout for ! {
+unsafe impl TypeLayout for ! {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Primitive,
     };
-
-    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-        MaybeUninhabited::Uninhabited
-    }
 }
 
 unsafe impl ComputeTypeSet for ! {

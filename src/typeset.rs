@@ -1,12 +1,10 @@
-use core::marker::Destruct;
-
 #[doc(hidden)]
 pub trait ComputeSet: sealed::ComputeSet {
     const LEN: usize;
 
     type Output<H: ComputeTypeSet>: ExpandTypeSet;
 
-    type TyHList: 'static + Copy + ~const Destruct;
+    type TyHList: 'static + Copy;
     const TYS: &'static Self::TyHList;
 }
 

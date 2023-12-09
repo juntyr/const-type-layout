@@ -5,7 +5,7 @@ use crate::{
 
 macro_rules! impl_tuple_type_layout {
     (impl ($($a:tt => $T:ident),+)) => {
-        unsafe impl<$($T: ~const TypeLayout),*> const TypeLayout for ($($T,)*) {
+        unsafe impl<$($T: TypeLayout),*> TypeLayout for ($($T,)*) {
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
@@ -15,38 +15,12 @@ macro_rules! impl_tuple_type_layout {
                     repr: "",
                     fields: &[$(Field {
                         name: stringify!($a),
-                        offset: match unsafe { <Self as crate::TypeLayout>::uninit() } {
-                            MaybeUninhabited::Uninhabited => MaybeUninhabited::Uninhabited,
-                            MaybeUninhabited::Inhabited(uninit) => {
-                                let base: *const Self = core::ptr::addr_of!(uninit).cast();
-                                let field_ptr = unsafe { core::ptr::addr_of!((*base).$a) };
-
-                                #[allow(clippy::cast_sign_loss)]
-                                let offset = unsafe { field_ptr.cast::<u8>().offset_from(base.cast()) as usize };
-
-                                #[allow(clippy::forget_non_drop, clippy::forget_copy)]
-                                core::mem::forget(uninit);
-
-                                MaybeUninhabited::Inhabited(offset)
-                            },
-                        },
+                        // TODO: check for uninhabited
+                        offset: MaybeUninhabited::Inhabited(core::mem::offset_of!(Self, $a)),
                         ty: ::core::any::type_name::<$T>(),
                     }),*],
                 },
             };
-
-            unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-                $(
-                    #[allow(non_snake_case)]
-                    let MaybeUninhabited::Inhabited($T) = <$T as crate::TypeLayout>::uninit() else {
-                        return MaybeUninhabited::Uninhabited;
-                    };
-                )*
-
-                MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(
-                    ($($T.assume_init(),)*)
-                ))
-            }
         }
 
         unsafe impl<$($T: ComputeTypeSet),*> ComputeTypeSet for ($($T,)*) {

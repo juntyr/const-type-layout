@@ -1,9 +1,9 @@
 use crate::{
     typeset::{ComputeTypeSet, ExpandTypeSet, Set},
-    MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
+    TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
-unsafe impl const TypeLayout for core::convert::Infallible {
+unsafe impl TypeLayout for core::convert::Infallible {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -13,10 +13,6 @@ unsafe impl const TypeLayout for core::convert::Infallible {
             variants: &[],
         },
     };
-
-    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-        MaybeUninhabited::Uninhabited
-    }
 }
 
 unsafe impl ComputeTypeSet for core::convert::Infallible {

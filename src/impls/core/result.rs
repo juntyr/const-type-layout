@@ -3,9 +3,7 @@ use crate::{
     Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure, Variant,
 };
 
-unsafe impl<T: ~const TypeLayout, E: ~const TypeLayout> const TypeLayout
-    for core::result::Result<T, E>
-{
+unsafe impl<T: TypeLayout, E: TypeLayout> TypeLayout for core::result::Result<T, E> {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -15,45 +13,29 @@ unsafe impl<T: ~const TypeLayout, E: ~const TypeLayout> const TypeLayout
             variants: &[
                 Variant {
                     name: "Ok",
-                    discriminant: crate::struct_variant_discriminant!(
-                        Result => Result<T, E> => Ok(f_0: T)
-                    ),
+                    // TODO: check for uninhabited
+                    discriminant: MaybeUninhabited::Inhabited(crate::Discriminant::new::<Self>(0)),
                     fields: &[Field {
                         name: "0",
-                        offset: crate::struct_variant_field_offset!(Result => Result<T, E> => Ok(f_0: T) => 0),
+                        // TODO: check for uninhabited
+                        offset: MaybeUninhabited::Inhabited(::core::mem::offset_of!(Self, Ok.0)),
                         ty: ::core::any::type_name::<T>(),
                     }],
                 },
                 Variant {
                     name: "Err",
-                    discriminant: crate::struct_variant_discriminant!(
-                        Result => Result<T, E> => Err(f_0: E)
-                    ),
+                    // TODO: check for uninhabited
+                    discriminant: MaybeUninhabited::Inhabited(crate::Discriminant::new::<Self>(1)),
                     fields: &[Field {
                         name: "0",
-                        offset: crate::struct_variant_field_offset!(Result => Result<T, E> => Err(f_0: E) => 0),
+                        // TODO: check for uninhabited
+                        offset: MaybeUninhabited::Inhabited(::core::mem::offset_of!(Self, Err.0)),
                         ty: ::core::any::type_name::<E>(),
                     }],
                 },
             ],
         },
     };
-
-    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-        if let MaybeUninhabited::Inhabited(uninit) = <T as TypeLayout>::uninit() {
-            return MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(Ok(
-                uninit.assume_init()
-            )));
-        }
-
-        if let MaybeUninhabited::Inhabited(uninit) = <E as TypeLayout>::uninit() {
-            return MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(Err(
-                uninit.assume_init()
-            )));
-        }
-
-        MaybeUninhabited::Uninhabited
-    }
 }
 
 unsafe impl<T: ComputeTypeSet, E: ComputeTypeSet> ComputeTypeSet for core::result::Result<T, E> {

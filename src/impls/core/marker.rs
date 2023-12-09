@@ -1,9 +1,9 @@
 use crate::{
     typeset::{ComputeTypeSet, ExpandTypeSet, Set},
-    MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
+    TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
-unsafe impl<T> const TypeLayout for core::marker::PhantomData<T> {
+unsafe impl<T> TypeLayout for core::marker::PhantomData<T> {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -13,17 +13,13 @@ unsafe impl<T> const TypeLayout for core::marker::PhantomData<T> {
             fields: &[],
         },
     };
-
-    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(core::marker::PhantomData::<T>))
-    }
 }
 
 unsafe impl<T> ComputeTypeSet for core::marker::PhantomData<T> {
     type Output<R: ExpandTypeSet> = Set<Self, R>;
 }
 
-unsafe impl const TypeLayout for core::marker::PhantomPinned {
+unsafe impl TypeLayout for core::marker::PhantomPinned {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -33,10 +29,6 @@ unsafe impl const TypeLayout for core::marker::PhantomPinned {
             fields: &[],
         },
     };
-
-    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(core::marker::PhantomPinned))
-    }
 }
 
 unsafe impl ComputeTypeSet for core::marker::PhantomPinned {

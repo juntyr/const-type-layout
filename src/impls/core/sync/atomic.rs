@@ -6,7 +6,7 @@ use crate::{
 macro_rules! impl_atomic_int_layout {
     (impl $at:ident ( $align:literal : $cfg:literal ) => $ty:ty => $val:literal) => {
         #[cfg(target_has_atomic_load_store = $cfg)]
-        unsafe impl const TypeLayout for core::sync::atomic::$at {
+        unsafe impl TypeLayout for core::sync::atomic::$at {
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
@@ -22,12 +22,6 @@ macro_rules! impl_atomic_int_layout {
                     ],
                 },
             };
-
-            unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-                MaybeUninhabited::Inhabited(
-                    core::mem::MaybeUninit::new(Self::new($val))
-                )
-            }
         }
 
         #[cfg(target_has_atomic_load_store = $cfg)]
@@ -53,7 +47,7 @@ macro_rules! impl_atomic_int_ptr_sized_layout {
     (impl $at:ident ( $align:literal : $cfg:literal ) => $ty:ty => $val:literal) => {
         #[cfg(target_has_atomic_load_store = "ptr")]
         #[cfg(target_pointer_width = $cfg)]
-        unsafe impl const TypeLayout for core::sync::atomic::$at {
+        unsafe impl TypeLayout for core::sync::atomic::$at {
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
@@ -69,12 +63,6 @@ macro_rules! impl_atomic_int_ptr_sized_layout {
                     ],
                 },
             };
-
-            unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-                MaybeUninhabited::Inhabited(
-                    core::mem::MaybeUninit::new(Self::new($val))
-                )
-            }
         }
 
         #[cfg(target_has_atomic_load_store = "ptr")]
@@ -99,7 +87,7 @@ macro_rules! impl_atomic_ptr_layout {
     (impl ( $align:literal : $cfg:literal )) => {
         #[cfg(target_has_atomic_load_store = "ptr")]
         #[cfg(target_pointer_width = $cfg)]
-        unsafe impl<T: ~const TypeLayout> const TypeLayout for core::sync::atomic::AtomicPtr<T> {
+        unsafe impl<T: TypeLayout> TypeLayout for core::sync::atomic::AtomicPtr<T> {
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
@@ -115,12 +103,6 @@ macro_rules! impl_atomic_ptr_layout {
                     ],
                 },
             };
-
-            unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-                MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(
-                    Self::new(core::ptr::NonNull::dangling().as_ptr())
-                ))
-            }
         }
 
         #[cfg(target_has_atomic_load_store = "ptr")]

@@ -1,4 +1,5 @@
-use core::ops::Deref;
+// use core::ops::Deref;
+#![allow(clippy::needless_borrow, clippy::borrow_deref_ref)] // FIXME: Deref const trait
 
 use crate::{
     Asyncness, Constness, Discriminant, Field, MaybeUninhabited, Safety, TypeLayout,
@@ -333,11 +334,7 @@ pub const fn serialised_fields_len(from: usize, value: &[Field]) -> usize {
     from
 }
 
-pub const fn serialise_variant<'a, F: ~const Deref<Target = [Field<'a>]>>(
-    bytes: &mut [u8],
-    from: usize,
-    value: &Variant<'a, F>,
-) -> usize {
+pub const fn serialise_variant(bytes: &mut [u8], from: usize, value: &Variant) -> usize {
     let from = serialise_str(bytes, from, value.name);
     let from = serialise_maybe_uninhabited(
         bytes,
@@ -356,10 +353,7 @@ pub const fn serialise_variant<'a, F: ~const Deref<Target = [Field<'a>]>>(
     serialise_fields(bytes, from, &value.fields)
 }
 
-pub const fn serialised_variant_len<'a, F: ~const Deref<Target = [Field<'a>]>>(
-    from: usize,
-    value: &Variant<'a, F>,
-) -> usize {
+pub const fn serialised_variant_len(from: usize, value: &Variant) -> usize {
     let from = serialised_str_len(from, value.name);
     let from = serialised_maybe_uninhabited_len(
         from,
@@ -377,11 +371,7 @@ pub const fn serialised_variant_len<'a, F: ~const Deref<Target = [Field<'a>]>>(
     serialised_fields_len(from, &value.fields)
 }
 
-pub const fn serialise_variants<'a, F: ~const Deref<Target = [Field<'a>]>>(
-    bytes: &mut [u8],
-    from: usize,
-    value: &[Variant<'a, F>],
-) -> usize {
+pub const fn serialise_variants(bytes: &mut [u8], from: usize, value: &[Variant]) -> usize {
     let mut from = serialise_usize(bytes, from, value.len());
 
     let mut i = 0;
@@ -395,10 +385,7 @@ pub const fn serialise_variants<'a, F: ~const Deref<Target = [Field<'a>]>>(
     from
 }
 
-pub const fn serialised_variants_len<'a, F: ~const Deref<Target = [Field<'a>]>>(
-    from: usize,
-    value: &[Variant<'a, F>],
-) -> usize {
+pub const fn serialised_variants_len(from: usize, value: &[Variant]) -> usize {
     let mut from = serialised_usize_len(from, value.len());
 
     let mut i = 0;
@@ -440,15 +427,10 @@ pub const fn serialised_parameters_len(from: usize, value: &[&str]) -> usize {
     from
 }
 
-pub const fn serialise_type_structure<
-    'a,
-    F: ~const Deref<Target = [Field<'a>]>,
-    V: ~const Deref<Target = [Variant<'a, F>]>,
-    P: ~const Deref<Target = [&'a str]>,
->(
+pub const fn serialise_type_structure(
     bytes: &mut [u8],
     from: usize,
-    value: &TypeStructure<'a, F, V, P>,
+    value: &TypeStructure,
 ) -> usize {
     match value {
         TypeStructure::Primitive => serialise_byte(bytes, from, b'p'),
@@ -486,15 +468,7 @@ pub const fn serialise_type_structure<
     }
 }
 
-pub const fn serialised_type_structure_len<
-    'a,
-    F: ~const Deref<Target = [Field<'a>]>,
-    V: ~const Deref<Target = [Variant<'a, F>]>,
-    P: ~const Deref<Target = [&'a str]>,
->(
-    from: usize,
-    value: &TypeStructure<'a, F, V, P>,
-) -> usize {
+pub const fn serialised_type_structure_len(from: usize, value: &TypeStructure) -> usize {
     match value {
         TypeStructure::Primitive => serialised_byte_len(from, b'p'),
         TypeStructure::Struct { repr, fields } => {
@@ -531,15 +505,10 @@ pub const fn serialised_type_structure_len<
     }
 }
 
-pub const fn serialise_type_layout_info<
-    'a,
-    F: ~const Deref<Target = [Field<'a>]>,
-    V: ~const Deref<Target = [Variant<'a, F>]>,
-    P: ~const Deref<Target = [&'a str]>,
->(
+pub const fn serialise_type_layout_info(
     bytes: &mut [u8],
     from: usize,
-    value: &TypeLayoutInfo<'a, F, V, P>,
+    value: &TypeLayoutInfo,
 ) -> usize {
     let from = serialise_str(bytes, from, value.name);
     let from = serialise_usize(bytes, from, value.size);
@@ -547,15 +516,7 @@ pub const fn serialise_type_layout_info<
     serialise_type_structure(bytes, from, &value.structure)
 }
 
-pub const fn serialised_type_layout_info_len<
-    'a,
-    F: ~const Deref<Target = [Field<'a>]>,
-    V: ~const Deref<Target = [Variant<'a, F>]>,
-    P: ~const Deref<Target = [&'a str]>,
->(
-    from: usize,
-    value: &TypeLayoutInfo<'a, F, V, P>,
-) -> usize {
+pub const fn serialised_type_layout_info_len(from: usize, value: &TypeLayoutInfo) -> usize {
     let from = serialised_str_len(from, value.name);
     let from = serialised_usize_len(from, value.size);
     let from = serialised_usize_len(from, value.alignment);
@@ -564,17 +525,10 @@ pub const fn serialised_type_layout_info_len<
 
 const LAYOUT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub const fn serialise_type_layout_graph<
-    'a,
-    F: ~const Deref<Target = [Field<'a>]>,
-    V: ~const Deref<Target = [Variant<'a, F>]>,
-    P: ~const Deref<Target = [&'a str]>,
-    I: ~const Deref<Target = TypeLayoutInfo<'a, F, V, P>>,
-    G: ~const Deref<Target = [I]>,
->(
+pub const fn serialise_type_layout_graph(
     bytes: &mut [u8],
     from: usize,
-    value: &TypeLayoutGraph<'a, F, V, P, I, G>,
+    value: &TypeLayoutGraph,
 ) -> usize {
     // Include the crate version of `type_layout` for cross-version comparison
     let from = serialise_str(bytes, from, LAYOUT_VERSION);
@@ -594,17 +548,7 @@ pub const fn serialise_type_layout_graph<
     from
 }
 
-pub const fn serialised_type_layout_graph_len<
-    'a,
-    F: ~const Deref<Target = [Field<'a>]>,
-    V: ~const Deref<Target = [Variant<'a, F>]>,
-    P: ~const Deref<Target = [&'a str]>,
-    I: ~const Deref<Target = TypeLayoutInfo<'a, F, V, P>>,
-    G: ~const Deref<Target = [I]>,
->(
-    from: usize,
-    value: &TypeLayoutGraph<'a, F, V, P, I, G>,
-) -> usize {
+pub const fn serialised_type_layout_graph_len(from: usize, value: &TypeLayoutGraph) -> usize {
     // Include the crate version of `type_layout` for cross-version comparison
     let from = serialised_str_len(from, LAYOUT_VERSION);
 

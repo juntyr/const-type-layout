@@ -1,6 +1,6 @@
 use crate::{
     typeset::{tset, ComputeTypeSet, ExpandTypeSet, Set},
-    MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
+    TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
 macro_rules! impl_fn_pointer_type_layout {
@@ -19,20 +19,13 @@ macro_rules! impl_fn_pointer_type_layout {
         }
     };
     (impl extern $abi:literal fn($($T:ident),*) -> $R:ident, $ty:ty, $demo:item) => {
-        unsafe impl<$R: ~const TypeLayout, $($T: ~const TypeLayout),*> const TypeLayout for $ty {
+        unsafe impl<$R: TypeLayout, $($T: TypeLayout),*> TypeLayout for $ty {
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
                 structure: TypeStructure::Primitive,
             };
-
-            unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-                #[allow(clippy::too_many_arguments)]
-                $demo
-
-                MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(demo))
-            }
         }
 
         unsafe impl<$R: ComputeTypeSet, $($T: ComputeTypeSet),*> ComputeTypeSet for $ty {
@@ -65,7 +58,7 @@ impl_fn_pointer_type_layout! {
 
 macro_rules! impl_variadic_extern_fn_pointer_type_layout {
     (impl unsafe extern $abi:literal fn($($T:ident),+, ...) -> $R:ident) => {
-        unsafe impl<$R: ~const TypeLayout, $($T: ~const TypeLayout),*> const TypeLayout
+        unsafe impl<$R: TypeLayout, $($T: TypeLayout),*> TypeLayout
             for unsafe extern $abi fn($($T),*, ...) -> $R
         {
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
@@ -74,15 +67,6 @@ macro_rules! impl_variadic_extern_fn_pointer_type_layout {
                 alignment: ::core::mem::align_of::<Self>(),
                 structure: TypeStructure::Primitive,
             };
-
-            unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-                #[allow(clippy::too_many_arguments)]
-                unsafe extern $abi fn demo<$R, $($T),*>(
-                    $(_: $T),*, _: ...
-                ) -> $R { loop {} }
-
-                MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(demo))
-            }
         }
 
         unsafe impl<$R: ComputeTypeSet, $($T: ComputeTypeSet),*> ComputeTypeSet

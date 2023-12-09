@@ -3,7 +3,7 @@ use crate::{
     Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure, Variant,
 };
 
-unsafe impl<T: ~const TypeLayout> const TypeLayout for core::option::Option<T> {
+unsafe impl<T: TypeLayout> TypeLayout for core::option::Option<T> {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -13,29 +13,23 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::option::Option<T> {
             variants: &[
                 Variant {
                     name: "None",
-                    discriminant: crate::struct_variant_discriminant!(
-                        Option => Option<T> => None
-                    ),
+                    discriminant: MaybeUninhabited::Inhabited(crate::Discriminant::new::<Self>(0)),
                     fields: &[],
                 },
                 Variant {
                     name: "Some",
-                    discriminant: crate::struct_variant_discriminant!(
-                        Option => Option<T> => Some(f_0: T)
-                    ),
+                    // TODO: check for uninhabited
+                    discriminant: MaybeUninhabited::Inhabited(crate::Discriminant::new::<Self>(1)),
                     fields: &[Field {
                         name: "0",
-                        offset: crate::struct_variant_field_offset!(Option => Option<T> => Some(f_0: T) => 0),
+                        // TODO: check for uninhabited
+                        offset: MaybeUninhabited::Inhabited(::core::mem::offset_of!(Self, Some.0)),
                         ty: ::core::any::type_name::<T>(),
                     }],
                 },
             ],
         },
     };
-
-    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(None))
-    }
 }
 
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::option::Option<T> {

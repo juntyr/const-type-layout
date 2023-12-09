@@ -5,7 +5,7 @@ use crate::{
 
 macro_rules! impl_nonzero_type_layout {
     (impl $nz:ident => $ty:ty) => {
-        unsafe impl const TypeLayout for core::num::$nz {
+        unsafe impl TypeLayout for core::num::$nz {
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
@@ -21,12 +21,6 @@ macro_rules! impl_nonzero_type_layout {
                     ],
                 },
             };
-
-            unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-                MaybeUninhabited::Inhabited(
-                    core::mem::MaybeUninit::new(Self::MIN)
-                )
-            }
         }
 
         unsafe impl ComputeTypeSet for core::num::$nz {
@@ -45,7 +39,7 @@ impl_nonzero_type_layout! {
     NonZeroU128 => u128, NonZeroUsize => usize
 }
 
-unsafe impl<T: ~const TypeLayout> const TypeLayout for core::num::Wrapping<T> {
+unsafe impl<T: TypeLayout> TypeLayout for core::num::Wrapping<T> {
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -54,23 +48,12 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::num::Wrapping<T> {
             repr: "transparent",
             fields: &[Field {
                 name: "0",
-                offset: match unsafe { <T as TypeLayout>::uninit() } {
-                    MaybeUninhabited::Inhabited(_) => MaybeUninhabited::Inhabited(0),
-                    MaybeUninhabited::Uninhabited => MaybeUninhabited::Uninhabited,
-                },
+                // TODO: check for uninhabited
+                offset: MaybeUninhabited::Inhabited(0),
                 ty: ::core::any::type_name::<T>(),
             }],
         },
     };
-
-    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-        match <T as TypeLayout>::uninit() {
-            MaybeUninhabited::Uninhabited => MaybeUninhabited::Uninhabited,
-            MaybeUninhabited::Inhabited(uninit) => {
-                MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(Self(uninit.assume_init())))
-            },
-        }
-    }
 }
 
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::num::Wrapping<T> {
