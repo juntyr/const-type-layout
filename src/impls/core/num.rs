@@ -24,7 +24,7 @@ macro_rules! impl_nonzero_type_layout {
 
             unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
                 MaybeUninhabited::Inhabited(
-                    core::mem::MaybeUninit::new(Self::new(1).unwrap())
+                    core::mem::MaybeUninit::new(Self::MIN)
                 )
             }
         }
@@ -54,7 +54,10 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::num::Wrapping<T> {
             repr: "transparent",
             fields: &[Field {
                 name: "0",
-                offset: unsafe { <T as TypeLayout>::uninit() }.map(0),
+                offset: match unsafe { <T as TypeLayout>::uninit() } {
+                    MaybeUninhabited::Inhabited(_) => MaybeUninhabited::Inhabited(0),
+                    MaybeUninhabited::Uninhabited => MaybeUninhabited::Uninhabited,
+                },
                 ty: ::core::any::type_name::<T>(),
             }],
         },

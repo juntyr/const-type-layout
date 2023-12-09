@@ -274,7 +274,14 @@ pub const fn serialised_discriminant_len(from: usize, value: &Discriminant) -> u
 
 pub const fn serialise_field(bytes: &mut [u8], from: usize, value: &Field) -> usize {
     let from = serialise_str(bytes, from, value.name);
-    let from = serialise_maybe_uninhabited(bytes, from, value.offset.map(()));
+    let from = serialise_maybe_uninhabited(
+        bytes,
+        from,
+        match value.offset {
+            MaybeUninhabited::Inhabited(_) => MaybeUninhabited::Inhabited(()),
+            MaybeUninhabited::Uninhabited => MaybeUninhabited::Uninhabited,
+        },
+    );
     let from = match value.offset {
         MaybeUninhabited::Inhabited(offset) => serialise_usize(bytes, from, offset),
         MaybeUninhabited::Uninhabited => from,
@@ -284,7 +291,13 @@ pub const fn serialise_field(bytes: &mut [u8], from: usize, value: &Field) -> us
 
 pub const fn serialised_field_len(from: usize, value: &Field) -> usize {
     let from = serialised_str_len(from, value.name);
-    let from = serialised_maybe_uninhabited_len(from, value.offset.map(()));
+    let from = serialised_maybe_uninhabited_len(
+        from,
+        match value.offset {
+            MaybeUninhabited::Inhabited(_) => MaybeUninhabited::Inhabited(()),
+            MaybeUninhabited::Uninhabited => MaybeUninhabited::Uninhabited,
+        },
+    );
     let from = match value.offset {
         MaybeUninhabited::Inhabited(offset) => serialised_usize_len(from, offset),
         MaybeUninhabited::Uninhabited => from,
@@ -326,7 +339,14 @@ pub const fn serialise_variant<'a, F: ~const Deref<Target = [Field<'a>]>>(
     value: &Variant<'a, F>,
 ) -> usize {
     let from = serialise_str(bytes, from, value.name);
-    let from = serialise_maybe_uninhabited(bytes, from, value.discriminant.map(()));
+    let from = serialise_maybe_uninhabited(
+        bytes,
+        from,
+        match value.discriminant {
+            MaybeUninhabited::Inhabited(_) => MaybeUninhabited::Inhabited(()),
+            MaybeUninhabited::Uninhabited => MaybeUninhabited::Uninhabited,
+        },
+    );
     let from = match &value.discriminant {
         MaybeUninhabited::Inhabited(discriminant) => {
             serialise_discriminant(bytes, from, discriminant)
@@ -341,7 +361,13 @@ pub const fn serialised_variant_len<'a, F: ~const Deref<Target = [Field<'a>]>>(
     value: &Variant<'a, F>,
 ) -> usize {
     let from = serialised_str_len(from, value.name);
-    let from = serialised_maybe_uninhabited_len(from, value.discriminant.map(()));
+    let from = serialised_maybe_uninhabited_len(
+        from,
+        match value.discriminant {
+            MaybeUninhabited::Inhabited(_) => MaybeUninhabited::Inhabited(()),
+            MaybeUninhabited::Uninhabited => MaybeUninhabited::Uninhabited,
+        },
+    );
     let from = match &value.discriminant {
         MaybeUninhabited::Inhabited(discriminant) => {
             serialised_discriminant_len(from, discriminant)

@@ -12,7 +12,10 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::cmp::Reverse<T> {
             repr: "transparent",
             fields: &[Field {
                 name: "0",
-                offset: unsafe { <T as TypeLayout>::uninit() }.map(0),
+                offset: match unsafe { <T as TypeLayout>::uninit() } {
+                    MaybeUninhabited::Inhabited(_) => MaybeUninhabited::Inhabited(0),
+                    MaybeUninhabited::Uninhabited => MaybeUninhabited::Uninhabited,
+                },
                 ty: ::core::any::type_name::<T>(),
             }],
         },

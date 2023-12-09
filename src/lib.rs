@@ -45,15 +45,10 @@
 //! works on non-`#[repr(C)]` types, but their layout is unpredictable.
 //!
 //! ```rust
-//! # #![feature(cfg_version)]
 //! # #![feature(const_type_name)]
 //! # #![feature(const_refs_to_cell)]
 //! # #![feature(const_trait_impl)]
 //! # #![feature(const_mut_refs)]
-//! # #![cfg_attr(not(version("1.61.0")), feature(const_fn_trait_bound))]
-//! # #![cfg_attr(not(version("1.61.0")), feature(const_ptr_offset))]
-//! # #![allow(incomplete_features)]
-//! # #![feature(generic_const_exprs)]
 //! use const_type_layout::TypeLayout;
 //!
 //! #[derive(TypeLayout)]
@@ -96,15 +91,10 @@
 //! some FFI scenarios:
 //!
 //! ```rust
-//! # #![feature(cfg_version)]
 //! # #![feature(const_type_name)]
 //! # #![feature(const_refs_to_cell)]
 //! # #![feature(const_trait_impl)]
 //! # #![feature(const_mut_refs)]
-//! # #![cfg_attr(not(version("1.61.0")), feature(const_fn_trait_bound))]
-//! # #![cfg_attr(not(version("1.61.0")), feature(const_ptr_offset))]
-//! # #![allow(incomplete_features)]
-//! # #![feature(generic_const_exprs)]
 //! use const_type_layout::TypeLayout;
 //!
 //! #[derive(TypeLayout)]
@@ -116,7 +106,7 @@
 //! assert_eq!(
 //!     format!("{:#?}", OverAligned::TYPE_LAYOUT),
 //! r#"TypeLayoutInfo {
-//!     name: "rust_out::main::_doctest_main_src_lib_rs_98_0::OverAligned",
+//!     name: "rust_out::main::_doctest_main_src_lib_rs_93_0::OverAligned",
 //!     size: 128,
 //!     alignment: 128,
 //!     structure: Struct {
@@ -137,26 +127,17 @@
 
 #![deny(clippy::pedantic)]
 #![no_std]
-#![feature(cfg_version)]
 #![feature(const_type_name)]
-#![cfg_attr(not(version("1.61.0")), feature(const_ptr_offset))]
 #![feature(const_mut_refs)]
 #![feature(const_trait_impl)]
-#![cfg_attr(not(version("1.61.0")), feature(const_fn_trait_bound))]
 #![feature(cfg_target_has_atomic)]
 #![feature(const_discriminant)]
-#![cfg_attr(not(version("1.65.0")), feature(const_ptr_offset_from))]
 #![feature(const_refs_to_cell)]
-#![feature(const_option)]
-#![cfg_attr(not(version("1.66.0")), feature(let_else))]
 #![feature(core_intrinsics)]
 #![feature(const_heap)]
-#![feature(allow_internal_unstable)]
 #![feature(decl_macro)]
-#![feature(allocator_api)]
 #![feature(const_pin)]
 #![feature(const_ptr_write)]
-#![feature(inline_const)]
 #![feature(const_eval_select)]
 #![feature(never_type)]
 #![feature(maybe_uninit_uninit_array)]
@@ -178,7 +159,7 @@
 #[doc(hidden)]
 pub extern crate alloc;
 
-use core::{marker::Destruct, ops::Deref};
+use core::ops::Deref;
 
 use alloc::fmt;
 
@@ -200,16 +181,6 @@ pub enum MaybeUninhabited<T> {
 impl<T: Default> Default for MaybeUninhabited<T> {
     fn default() -> Self {
         Self::Inhabited(T::default())
-    }
-}
-
-impl<T> MaybeUninhabited<T> {
-    #[must_use]
-    pub const fn map<U: ~const Destruct>(&self, value: U) -> MaybeUninhabited<U> {
-        match self {
-            Self::Inhabited(_) => MaybeUninhabited::Inhabited(value),
-            Self::Uninhabited => MaybeUninhabited::Uninhabited,
-        }
     }
 }
 
@@ -552,7 +523,6 @@ impl<'a> PartialOrd for Field<'a> {
 }
 
 #[doc(hidden)]
-#[allow_internal_unstable(const_ptr_offset_from)]
 pub macro struct_field_offset($ty_name:ident => $ty:ty => (*$base:ident).$field:tt => $($extra_fields:tt)?) {
     {
         #[allow(clippy::unneeded_field_pattern)]
@@ -580,7 +550,6 @@ pub macro struct_field_offset($ty_name:ident => $ty:ty => (*$base:ident).$field:
 }
 
 #[doc(hidden)]
-#[allow_internal_unstable(const_discriminant)]
 pub macro struct_variant_discriminant {
     ($ty_name:ident => $ty:ty => $variant_name:ident) => {{
         let uninit: $ty = $ty_name::$variant_name;
@@ -637,7 +606,6 @@ pub macro struct_variant_discriminant {
 }
 
 #[doc(hidden)]
-#[allow_internal_unstable(const_ptr_offset_from)]
 pub macro struct_variant_field_offset {
     ($ty_name:ident => $ty:ty => $variant_name:ident($($field_name:ident: $field_ty:ty),* $(,)?) => $field_index:tt) => {{
         #[allow(unused_parens)]

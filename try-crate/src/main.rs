@@ -1,14 +1,9 @@
 #![deny(clippy::pedantic)]
-#![feature(cfg_version)]
 #![feature(const_type_name)]
 #![feature(const_refs_to_cell)]
 #![feature(const_trait_impl)]
 #![feature(const_mut_refs)]
-#![cfg_attr(not(version("1.61.0")), feature(const_fn_trait_bound))]
-#![cfg_attr(not(version("1.61.0")), feature(const_ptr_offset))]
 #![feature(never_type)]
-#![allow(incomplete_features)]
-#![feature(generic_const_exprs)]
 
 use std::{borrow::Cow, ops::Deref};
 

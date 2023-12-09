@@ -12,7 +12,10 @@ unsafe impl<T: ~const TypeLayout + core::ops::Deref> const TypeLayout for core::
             repr: "transparent",
             fields: &[Field {
                 name: "pointer",
-                offset: unsafe { <T as TypeLayout>::uninit() }.map(0),
+                offset: match unsafe { <T as TypeLayout>::uninit() } {
+                    MaybeUninhabited::Inhabited(_) => MaybeUninhabited::Inhabited(0),
+                    MaybeUninhabited::Uninhabited => MaybeUninhabited::Uninhabited,
+                },
                 ty: ::core::any::type_name::<T>(),
             }],
         },

@@ -12,7 +12,10 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::cell::UnsafeCell<T>
             repr: "no_nieche,transparent",
             fields: &[Field {
                 name: "value",
-                offset: unsafe { <T as TypeLayout>::uninit() }.map(0),
+                offset: match unsafe { <T as TypeLayout>::uninit() } {
+                    MaybeUninhabited::Inhabited(_) => MaybeUninhabited::Inhabited(0),
+                    MaybeUninhabited::Uninhabited => MaybeUninhabited::Uninhabited,
+                },
                 ty: ::core::any::type_name::<T>(),
             }],
         },
@@ -41,7 +44,10 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::cell::Cell<T> {
             repr: "transparent",
             fields: &[Field {
                 name: "value",
-                offset: unsafe { <T as TypeLayout>::uninit() }.map(0),
+                offset: match unsafe { <T as TypeLayout>::uninit() } {
+                    MaybeUninhabited::Inhabited(_) => MaybeUninhabited::Inhabited(0),
+                    MaybeUninhabited::Uninhabited => MaybeUninhabited::Uninhabited,
+                },
                 ty: ::core::any::type_name::<core::cell::UnsafeCell<T>>(),
             }],
         },
