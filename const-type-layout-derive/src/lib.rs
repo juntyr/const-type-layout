@@ -1,7 +1,46 @@
-#![deny(clippy::pedantic)]
-#![feature(cfg_version)]
+//! [![CI Status]][workflow] [![MSRV]][repo] [![Latest Version]][crates.io]
+//! [![Rust Doc Crate]][docs.rs] [![Rust Doc Main]][docs]
+//! [![License Status]][fossa] [![Code Coverage]][codecov]
+//! [![Gitpod Ready-to-Code]][gitpod]
+//!
+//! [CI Status]: https://img.shields.io/github/actions/workflow/status/juntyr/const-type-layout/ci.yml?branch=main
+//! [workflow]: https://github.com/juntyr/const-type-layout/actions/workflows/ci.yml?query=branch%3Amain
+//!
+//! [MSRV]: https://img.shields.io/badge/MSRV-1.75.0--nightly-orange
+//! [repo]: https://github.com/juntyr/const-type-layout
+//!
+//! [Latest Version]: https://img.shields.io/crates/v/const-type-layout
+//! [crates.io]: https://crates.io/crates/const-type-layout
+//!
+//! [Rust Doc Crate]: https://img.shields.io/docsrs/const-type-layout
+//! [docs.rs]: https://docs.rs/const-type-layout/
+//!
+//! [Rust Doc Main]: https://img.shields.io/badge/docs-main-blue
+//! [docs]: https://juntyr.github.io/const-type-layout/const_type_layout
+//!
+//! [License Status]: https://app.fossa.com/api/projects/custom%2B26490%2Fgithub.com%2Fjuntyr%2Fconst-type-layout.svg?type=shield
+//! [fossa]: https://app.fossa.com/projects/custom%2B26490%2Fgithub.com%2Fjuntyr%2Fconst-type-layout?ref=badge_shield
+//!
+//! [Code Coverage]: https://img.shields.io/codecov/c/github/juntyr/const-type-layout?token=J39WVBIMZX
+//! [codecov]: https://codecov.io/gh/juntyr/const-type-layout
+//!
+//! [Gitpod Ready-to-Code]: https://img.shields.io/badge/Gitpod-ready-blue?logo=gitpod
+//! [gitpod]: https://gitpod.io/#https://github.com/juntyr/const-type-layout
+//!
+//! `const-type-layout-derive` provides the [`#[derive(TypeLayout)`](TypeLayout)
+//! implementation for the
+//! [`const_type_layout::TypeLayout`](https://docs.rs/const-type-layout/0.2.0/const_type_layout/trait.TypeLayout.html)
+//! trait.
+
+#![deny(clippy::complexity)]
+#![deny(clippy::correctness)]
+#![warn(clippy::nursery)]
+#![warn(clippy::pedantic)]
+#![deny(clippy::perf)]
+#![deny(clippy::style)]
+#![deny(clippy::suspicious)]
+#![deny(missing_docs)]
 #![feature(iter_intersperse)]
-#![cfg_attr(not(version("1.66.0")), feature(let_else))]
 
 extern crate proc_macro;
 
@@ -14,12 +53,22 @@ use proc_macro2::Literal;
 use quote::{quote, quote_spanned};
 use syn::{parse_macro_input, spanned::Spanned};
 
-// TODO:
-// - wait for `const_heap` feature to be implemented for a workaround the graph
-//   size limitation: https://github.com/rust-lang/rust/issues/79597
-
 #[proc_macro_error]
 #[proc_macro_derive(TypeLayout, attributes(layout))]
+/// Provides the `#[derive(TypeLayout)]` implementation for the
+/// [`const_type_layout::TypeLayout`](https://docs.rs/const-type-layout/0.2.0/const_type_layout/trait.TypeLayout.html)
+/// trait.
+///
+/// The derive also accepts a `#[layout(...)]` attribute to configure the
+/// implementation as follows:
+/// - `#[layout(crate = "<crate-path>")]` changes the path to the [`const-type-layout`](https://docs.rs/const-type-layout/0.2.0/const_type_layout)
+///   crate that the derive uses, which by default is `const_type_layout`.
+/// - `#[layout(bound = "<where-predicate>")]` adds the provided predicate to
+///   the where clause of the trait implementation.
+/// - `#[layout(free = "<type>")]` removes the the auto-added trait bounds for
+///   the type parameter `<type>` from the trait implementation, e.g. when
+///   implementing a wrapper around [`PhantomData<T>`](std::marker::PhantomData)
+///   which should implement the trait for any `T`.
 pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     // Parse the input tokens into a syntax tree
     let input = parse_macro_input!(input as syn::DeriveInput);
@@ -37,36 +86,35 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     let Attributes {
         reprs,
         extra_bounds,
-        ground,
         crate_path,
-    } = parse_attributes(&input.attrs, &mut type_params, &input.data);
+    } = parse_attributes(&input.attrs, &mut type_params);
 
+    let inhabited = inhabited_for_type(&crate_path, &input.data);
     let layout = layout_of_type(&crate_path, &ty_name, &ty_generics, &input.data, &reprs);
-    let uninit = uninit_for_type(&crate_path, &ty_name, &input.data, &ground);
 
     let inner_types = extract_inner_types(&input.data);
 
+    let discriminant_ty = if let syn::Data::Enum(_) = input.data {
+        Some(quote! { <Self as #crate_path::ExtractDiscriminant>::Discriminant, })
+    } else {
+        None
+    };
+
     let Generics {
         type_layout_input_generics,
-        type_graph_input_generics,
-    } = generate_generics(
-        &crate_path,
-        &ty_name,
-        &ty_generics,
-        &input.generics,
-        matches!(input.data, syn::Data::Enum(_)),
-        &extra_bounds,
-        &type_params,
-    );
+        type_set_input_generics,
+    } = generate_generics(&crate_path, &input.generics, &extra_bounds, &type_params);
     let (type_layout_impl_generics, type_layout_ty_generics, type_layout_where_clause) =
         type_layout_input_generics.split_for_impl();
-    let (type_graph_impl_generics, type_graph_ty_generics, type_graph_where_clause) =
-        type_graph_input_generics.split_for_impl();
+    let (type_set_impl_generics, type_set_ty_generics, type_set_where_clause) =
+        type_set_input_generics.split_for_impl();
 
     quote! {
-        unsafe impl #type_layout_impl_generics const #crate_path::TypeLayout for
+        unsafe impl #type_layout_impl_generics #crate_path::TypeLayout for
             #ty_name #type_layout_ty_generics #type_layout_where_clause
         {
+            type Inhabited = #inhabited;
+
             const TYPE_LAYOUT: #crate_path::TypeLayoutInfo<'static> = {
                 #crate_path::TypeLayoutInfo {
                     name: ::core::any::type_name::<Self>(),
@@ -75,22 +123,15 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
                     structure: #layout,
                 }
             };
-
-            unsafe fn uninit() -> #crate_path::MaybeUninhabited<
-                ::core::mem::MaybeUninit<Self>
-            > {
-                #uninit
-            }
         }
 
-        unsafe impl #type_graph_impl_generics const #crate_path::TypeGraph for
-            #ty_name #type_graph_ty_generics #type_graph_where_clause
+        unsafe impl #type_set_impl_generics #crate_path::typeset::ComputeTypeSet for
+            #ty_name #type_set_ty_generics #type_set_where_clause
         {
-            fn populate_graph(graph: &mut #crate_path::TypeLayoutGraph<'static>) {
-                if graph.insert(&<Self as #crate_path::TypeLayout>::TYPE_LAYOUT) {
-                    #(<#inner_types as #crate_path::TypeGraph>::populate_graph(graph);)*
-                }
-            }
+            type Output<__TypeSetRest: #crate_path::typeset::ExpandTypeSet> =
+                #crate_path::typeset::tset![
+                    #(#inner_types,)* #discriminant_ty .. @ __TypeSetRest
+                ];
         }
     }
     .into()
@@ -99,49 +140,15 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
 struct Attributes {
     reprs: String,
     extra_bounds: Vec<syn::WherePredicate>,
-    ground: Vec<syn::Ident>,
     crate_path: syn::Path,
 }
 
 #[allow(clippy::too_many_lines)]
-fn parse_attributes(
-    attrs: &[syn::Attribute],
-    type_params: &mut Vec<&syn::Ident>,
-    data: &syn::Data,
-) -> Attributes {
+fn parse_attributes(attrs: &[syn::Attribute], type_params: &mut Vec<&syn::Ident>) -> Attributes {
     // Could parse based on https://github.com/rust-lang/rust/blob/d13e8dd41d44a73664943169d5b7fe39b22c449f/compiler/rustc_attr/src/builtin.rs#L772-L781 instead
     let mut reprs = Vec::new();
 
     let mut extra_bounds: Vec<syn::WherePredicate> = Vec::new();
-
-    let mut ground = match data {
-        syn::Data::Struct(_) => Vec::new(),
-        syn::Data::Enum(syn::DataEnum { variants, .. }) => {
-            let mut ground = Vec::with_capacity(variants.len());
-
-            for variant in variants {
-                if matches!(variant.fields, syn::Fields::Unit) {
-                    ground.push(variant.ident.clone());
-                }
-            }
-
-            for variant in variants {
-                if !matches!(variant.fields, syn::Fields::Unit) {
-                    ground.push(variant.ident.clone());
-                }
-            }
-
-            ground
-        },
-        syn::Data::Union(syn::DataUnion {
-            fields: syn::FieldsNamed { named: fields, .. },
-            ..
-        }) => fields
-            .iter()
-            .map(|field| field.ident.clone().unwrap())
-            .collect(),
-    };
-    let mut groundier = Vec::with_capacity(ground.len());
 
     let mut crate_path = None;
 
@@ -172,18 +179,20 @@ fn parse_attributes(
                         if path.is_ident("free") {
                             match syn::parse_str::<syn::Ident>(&s.value()) {
                                 Ok(param) => {
-                                    if let Some(i) = type_params.iter().position(|ty| **ty == param)
-                                    {
-                                        type_params.swap_remove(i);
-                                    } else {
-                                        emit_error!(
-                                            s.span(),
-                                            "[const-type-layout]: Invalid #[layout(free)] \
-                                             attribute: \"{}\" is either not a type parameter or \
-                                             has already been freed (duplicate attribute).",
-                                            param,
-                                        );
-                                    }
+                                    type_params.iter().position(|ty| **ty == param).map_or_else(
+                                        || {
+                                            emit_error!(
+                                                s.span(),
+                                                "[const-type-layout]: Invalid #[layout(free)] \
+                                                 attribute: \"{}\" is either not a type parameter \
+                                                 or has already been freed (duplicate attribute).",
+                                                param,
+                                            );
+                                        },
+                                        |i| {
+                                            type_params.swap_remove(i);
+                                        },
+                                    );
                                 },
                                 Err(err) => emit_error!(
                                     s.span(),
@@ -199,58 +208,6 @@ fn parse_attributes(
                                     s.span(),
                                     "[const-type-layout]: Invalid #[layout(bound = \
                                      \"<where-predicate>\")] attribute: {}.",
-                                    err
-                                ),
-                            }
-                        } else if path.is_ident("ground") {
-                            match syn::parse_str(&s.value()) {
-                                Ok(g) => match data {
-                                    syn::Data::Struct(_) => emit_error!(
-                                        path.span(),
-                                        "[const-type-layout]: Invalid #[layout(ground)] \
-                                         attribute: structs do not have a ground layout."
-                                    ),
-                                    syn::Data::Union(_) | syn::Data::Enum(_) => {
-                                        let g: syn::Ident = g;
-
-                                        if let Some(i) = ground.iter().position(|e| e == &g) {
-                                            let g = ground.remove(i);
-                                            groundier.push(g);
-                                        } else if groundier.contains(&g) {
-                                            emit_error!(
-                                                path.span(),
-                                                "[const-type-layout]: Duplicate #[layout(ground = \
-                                                 \"{}\")] attribute.",
-                                                g
-                                            );
-                                        } else {
-                                            emit_error!(
-                                                path.span(),
-                                                "[const-type-layout]: Invalid #[layout(ground)] \
-                                                 attribute: \"{}\" is not a {} in this {}.",
-                                                g,
-                                                match data {
-                                                    syn::Data::Enum(_) => "variant",
-                                                    syn::Data::Struct(_) | syn::Data::Union(_) =>
-                                                        "field",
-                                                },
-                                                match data {
-                                                    syn::Data::Enum(_) => "enum",
-                                                    syn::Data::Struct(_) | syn::Data::Union(_) =>
-                                                        "union",
-                                                },
-                                            );
-                                        }
-                                    },
-                                },
-                                Err(err) => emit_error!(
-                                    s.span(),
-                                    "[const-type-layout]: Invalid #[layout(ground = \"{}\")] \
-                                     attribute: {}.",
-                                    match data {
-                                        syn::Data::Enum(_) => "variant",
-                                        syn::Data::Struct(_) | syn::Data::Union(_) => "field",
-                                    },
                                     err
                                 ),
                             }
@@ -280,8 +237,8 @@ fn parse_attributes(
                         } else {
                             emit_error!(
                                 path.span(),
-                                "[const-type-layout]: Unknown attribute, use `bound`, `crate`, \
-                                 `free`, or `ground`."
+                                "[const-type-layout]: Unknown attribute, use `bound`, `crate`, or \
+                                 `free`."
                             );
                         }
                     } else {
@@ -310,12 +267,9 @@ fn parse_attributes(
         .intersperse(String::from(","))
         .collect::<String>();
 
-    groundier.extend(ground);
-
     Attributes {
         reprs,
         extra_bounds,
-        ground: groundier,
         crate_path: crate_path.unwrap_or_else(|| syn::parse_quote!(::const_type_layout)),
     }
 }
@@ -383,57 +337,31 @@ fn extract_inner_types(data: &syn::Data) -> Vec<&syn::Type> {
 
 struct Generics {
     type_layout_input_generics: syn::Generics,
-    type_graph_input_generics: syn::Generics,
+    type_set_input_generics: syn::Generics,
 }
 
 fn generate_generics(
     crate_path: &syn::Path,
-    ty_name: &syn::Ident,
-    ty_generics: &syn::TypeGenerics,
     generics: &syn::Generics,
-    is_enum: bool,
     extra_bounds: &[syn::WherePredicate],
     type_params: &[&syn::Ident],
 ) -> Generics {
     let mut type_layout_input_generics = generics.clone();
-    let mut type_graph_input_generics = generics.clone();
-
-    if is_enum {
-        type_layout_input_generics
-            .make_where_clause()
-            .predicates
-            .push(syn::parse_quote! {
-                [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()]:
-            });
-
-        type_graph_input_generics
-            .make_where_clause()
-            .predicates
-            .push(syn::parse_quote! {
-                [u8; ::core::mem::size_of::<::core::mem::Discriminant<#ty_name #ty_generics>>()]:
-            });
-    }
+    let mut type_set_input_generics = generics.clone();
 
     for ty in type_params {
         type_layout_input_generics
             .make_where_clause()
             .predicates
             .push(syn::parse_quote! {
-                #ty: ~const #crate_path::TypeLayout
+                #ty: #crate_path::TypeLayout
             });
 
-        type_graph_input_generics
+        type_set_input_generics
             .make_where_clause()
             .predicates
             .push(syn::parse_quote! {
-                #ty: ~const #crate_path::TypeLayout
-            });
-
-        type_graph_input_generics
-            .make_where_clause()
-            .predicates
-            .push(syn::parse_quote! {
-                #ty: ~const #crate_path::TypeGraph
+                #ty: #crate_path::typeset::ComputeTypeSet
             });
     }
 
@@ -443,7 +371,7 @@ fn generate_generics(
             .predicates
             .push(bound.clone());
 
-        type_graph_input_generics
+        type_set_input_generics
             .make_where_clause()
             .predicates
             .push(bound.clone());
@@ -451,7 +379,7 @@ fn generate_generics(
 
     Generics {
         type_layout_input_generics,
-        type_graph_input_generics,
+        type_set_input_generics,
     }
 }
 
@@ -464,8 +392,7 @@ fn layout_of_type(
 ) -> proc_macro2::TokenStream {
     match data {
         syn::Data::Struct(data) => {
-            let fields =
-                quote_structlike_fields(crate_path, ty_name, ty_generics, &data.fields, false);
+            let fields = quote_structlike_fields(crate_path, ty_name, ty_generics, &data.fields);
 
             quote! {
                 #crate_path::TypeStructure::Struct { repr: #reprs, fields: &[#(#fields),*] }
@@ -484,7 +411,6 @@ fn layout_of_type(
                 ty_name,
                 ty_generics,
                 &syn::Fields::Named(union.fields.clone()),
-                true,
             );
 
             quote! {
@@ -499,7 +425,6 @@ fn quote_structlike_fields(
     ty_name: &syn::Ident,
     ty_generics: &syn::TypeGenerics,
     fields: &syn::Fields,
-    is_union: bool,
 ) -> Vec<proc_macro2::TokenStream> {
     match fields {
         syn::Fields::Named(fields) => fields
@@ -514,7 +439,7 @@ fn quote_structlike_fields(
                     ty_name,
                     ty_generics,
                     &field_name,
-                    is_union,
+                    field_ty,
                 );
 
                 quote_spanned! { field.span() =>
@@ -539,7 +464,7 @@ fn quote_structlike_fields(
                     ty_name,
                     ty_generics,
                     &field_name,
-                    is_union,
+                    field_ty,
                 );
 
                 quote_spanned! { field.span() =>
@@ -560,12 +485,12 @@ fn quote_structlike_field_offset(
     ty_name: &syn::Ident,
     ty_generics: &syn::TypeGenerics,
     field_name: &impl quote::ToTokens,
-    is_union: bool,
+    field_ty: &syn::Type,
 ) -> proc_macro2::TokenStream {
-    let extra_fields = if is_union { quote!() } else { quote!(..) };
-
     quote! {
-        #crate_path::struct_field_offset!(#ty_name => #ty_name #ty_generics => (*base_ptr).#field_name => #extra_fields)
+        #crate_path::MaybeUninhabited::new::<#field_ty>(
+            ::core::mem::offset_of!(#ty_name #ty_generics, #field_name)
+        )
     }
 }
 
@@ -575,6 +500,12 @@ fn quote_enum_variants(
     ty_generics: &syn::TypeGenerics,
     r#enum: &syn::DataEnum,
 ) -> Vec<proc_macro2::TokenStream> {
+    let mut last_discriminant = syn::Expr::Lit(syn::ExprLit {
+        attrs: vec![],
+        lit: syn::Lit::Int(syn::LitInt::from(proc_macro2::Literal::usize_unsuffixed(0))),
+    });
+    let mut last_discriminant_offset = 0;
+
     r#enum
         .variants
         .iter()
@@ -590,13 +521,47 @@ fn quote_enum_variants(
                 &variant.fields,
             );
 
-            let discriminant = quote_discriminant(
-                crate_path,
-                ty_name,
-                ty_generics,
-                variant_name,
-                &variant.fields,
-            );
+            let discriminant = match variant.discriminant.as_ref() {
+                None => {
+                    let discriminant = syn::Expr::Binary(syn::ExprBinary {
+                        attrs: vec![],
+                        left: Box::new(last_discriminant.clone()),
+                        op: syn::parse_quote!(+),
+                        right: Box::new(syn::Expr::Lit(syn::ExprLit {
+                            attrs: vec![],
+                            lit: syn::Lit::Int(syn::LitInt::from(
+                                proc_macro2::Literal::usize_unsuffixed(last_discriminant_offset),
+                            )),
+                        })),
+                    });
+                    last_discriminant_offset += 1;
+                    discriminant
+                },
+                Some((_, discriminant)) => {
+                    last_discriminant = discriminant.clone();
+                    last_discriminant_offset = 0;
+                    discriminant.clone()
+                },
+            };
+
+            // Variants are inhabited if all of their fields in inhabited
+            let variant_inhabited = match &variant.fields {
+                syn::Fields::Named(syn::FieldsNamed { named: fields, .. })
+                | syn::Fields::Unnamed(syn::FieldsUnnamed {
+                    unnamed: fields, ..
+                }) => {
+                    let field_tys = fields.iter().map(|syn::Field { ty, .. }| ty);
+
+                    quote! { #crate_path::inhabited::all![#(#field_tys),*] }
+                },
+                syn::Fields::Unit => quote! { #crate_path::inhabited::Inhabited },
+            };
+
+            let discriminant = quote! {
+                #crate_path::MaybeUninhabited::new::<#variant_inhabited>(
+                    #crate_path::Discriminant::new::<Self>(#discriminant)
+                )
+            };
 
             quote! {
                 #crate_path::Variant {
@@ -617,313 +582,123 @@ fn quote_variant_fields(
     variant_fields: &syn::Fields,
 ) -> Vec<proc_macro2::TokenStream> {
     match variant_fields {
-        syn::Fields::Named(syn::FieldsNamed { named: fields, .. }) => {
-            let field_descriptors = fields
-                .pairs()
-                .map(|pair| {
-                    let syn::Field {
-                        ident: field_name,
-                        colon_token: field_colon,
-                        ty: field_ty,
-                        ..
-                    } = pair.value();
-                    let field_comma = pair.punct();
-
-                    quote!(#field_name #field_colon #field_ty #field_comma)
-                })
-                .collect::<Vec<_>>();
-
-            fields.iter().map(|field| {
+        syn::Fields::Named(syn::FieldsNamed { named: fields, .. }) => fields
+            .iter()
+            .map(|field| {
                 let field_name_str = Literal::string(&field.ident.as_ref().unwrap().to_string());
-                let field_index = &field.ident;
+                let field_name = &field.ident;
                 let field_ty = &field.ty;
+
+                let offset = quote_structlike_variant_field_offset(
+                    crate_path,
+                    ty_name,
+                    ty_generics,
+                    variant_name,
+                    field_name,
+                    field_ty,
+                );
 
                 quote_spanned! { field.span() =>
                     #crate_path::Field {
                         name: #field_name_str,
-                        offset: #crate_path::struct_variant_field_offset!(
-                            #ty_name => #ty_name #ty_generics => #variant_name { #(#field_descriptors)* } => #field_index
-                        ),
+                        offset: #offset,
                         ty: ::core::any::type_name::<#field_ty>(),
                     }
                 }
-            }).collect()
-        },
+            })
+            .collect(),
         syn::Fields::Unnamed(syn::FieldsUnnamed {
             unnamed: fields, ..
-        }) => {
-            let field_descriptors = fields
-                .pairs()
-                .enumerate()
-                .map(|(i, pair)| {
-                    let syn::Field { ty: field_ty, .. } = pair.value();
-                    let field_name = quote::format_ident!("f_{}", i);
-                    let field_comma = pair.punct();
-
-                    quote!(#field_name: #field_ty #field_comma)
-                })
-                .collect::<Vec<_>>();
-
-            fields.iter().enumerate().map(|(field_index, field)| {
+        }) => fields
+            .iter()
+            .enumerate()
+            .map(|(field_index, field)| {
                 let field_name_str = Literal::string(&field_index.to_string());
                 let field_index = syn::Index::from(field_index);
                 let field_ty = &field.ty;
 
+                let offset = quote_structlike_variant_field_offset(
+                    crate_path,
+                    ty_name,
+                    ty_generics,
+                    variant_name,
+                    &field_index,
+                    field_ty,
+                );
+
                 quote_spanned! { field.span() =>
                     #crate_path::Field {
                         name: #field_name_str,
-                        offset: #crate_path::struct_variant_field_offset!(
-                            #ty_name => #ty_name #ty_generics => #variant_name(#(#field_descriptors)*) => #field_index
-                        ),
+                        offset: #offset,
                         ty: ::core::any::type_name::<#field_ty>(),
                     }
                 }
-            }).collect()
-        },
+            })
+            .collect(),
         syn::Fields::Unit => vec![],
     }
 }
 
-fn quote_discriminant(
+fn quote_structlike_variant_field_offset(
     crate_path: &syn::Path,
     ty_name: &syn::Ident,
     ty_generics: &syn::TypeGenerics,
     variant_name: &syn::Ident,
-    variant_fields: &syn::Fields,
+    field_name: &impl quote::ToTokens,
+    field_ty: &syn::Type,
 ) -> proc_macro2::TokenStream {
-    let variant_descriptor = match variant_fields {
-        syn::Fields::Named(syn::FieldsNamed { named: fields, .. }) => {
-            let field_descriptors = fields
-                .pairs()
-                .map(|pair| {
-                    let syn::Field {
-                        ident: field_name,
-                        colon_token: field_colon,
-                        ty: field_ty,
-                        ..
-                    } = pair.value();
-                    let field_comma = pair.punct();
-
-                    quote!(#field_name #field_colon #field_ty #field_comma)
-                })
-                .collect::<Vec<_>>();
-
-            quote!(#variant_name { #(#field_descriptors)* })
-        },
-        syn::Fields::Unnamed(syn::FieldsUnnamed {
-            unnamed: fields, ..
-        }) => {
-            let field_descriptors = fields
-                .pairs()
-                .enumerate()
-                .map(|(i, pair)| {
-                    let syn::Field { ty: field_ty, .. } = pair.value();
-                    let field_name = quote::format_ident!("f_{}", i);
-                    let field_comma = pair.punct();
-
-                    quote!(#field_name: #field_ty #field_comma)
-                })
-                .collect::<Vec<_>>();
-
-            quote!(#variant_name(#(#field_descriptors)*))
-        },
-        syn::Fields::Unit => quote!(#variant_name),
-    };
-
     quote! {
-        #crate_path::struct_variant_discriminant!(
-            #ty_name => #ty_name #ty_generics => #variant_descriptor
+        #crate_path::MaybeUninhabited::new::<#field_ty>(
+            ::core::mem::offset_of!(#ty_name #ty_generics, #variant_name.#field_name)
         )
     }
 }
 
-#[allow(clippy::too_many_lines)]
-fn uninit_for_type(
-    crate_path: &syn::Path,
-    ty_name: &syn::Ident,
-    data: &syn::Data,
-    ground: &[syn::Ident],
-) -> proc_macro2::TokenStream {
+fn inhabited_for_type(crate_path: &syn::Path, data: &syn::Data) -> proc_macro2::TokenStream {
     match data {
         syn::Data::Struct(data) => {
-            // Structs are uninhabited if any of their fields in uninhabited
-
+            // Structs are inhabited if all of their fields in inhabited
             let fields = match &data.fields {
                 syn::Fields::Named(syn::FieldsNamed { named: fields, .. })
                 | syn::Fields::Unnamed(syn::FieldsUnnamed {
                     unnamed: fields, ..
                 }) => fields,
-                syn::Fields::Unit => {
-                    return quote! {
-                        #crate_path::MaybeUninhabited::Inhabited(
-                            ::core::mem::MaybeUninit::new(#ty_name)
-                        )
-                    }
-                },
+                syn::Fields::Unit => return quote! { #crate_path::inhabited::Inhabited },
             };
 
-            let field_names = fields
-                .iter()
-                .enumerate()
-                .map(|(i, field)| match &field.ident {
-                    Some(name) => name.clone(),
-                    None => quote::format_ident!("f_{}", i),
-                })
-                .collect::<Vec<_>>();
+            let field_tys = fields.iter().map(|syn::Field { ty, .. }| ty);
 
-            let field_initialisers = fields
-                .iter()
-                .map(|syn::Field { ty: field_ty, .. }| {
-                    quote! {
-                        <
-                            #field_ty as #crate_path::TypeLayout
-                        >::uninit()
-                    }
-                })
-                .collect::<Vec<_>>();
-
-            let struct_initialiser = if let syn::Fields::Named(_) = &data.fields {
-                quote!(#ty_name { #(#field_names: #field_names.assume_init()),* })
-            } else {
-                quote!(#ty_name ( #(#field_names.assume_init()),* ))
-            };
-
-            quote! {
-                if let (
-                    #(#crate_path::MaybeUninhabited::Inhabited(#field_names)),*
-                ) = (
-                    #(#field_initialisers),*
-                ) {
-                    #crate_path::MaybeUninhabited::Inhabited(
-                        ::core::mem::MaybeUninit::new(
-                            #struct_initialiser
-                        )
-                    )
-                } else {
-                    #crate_path::MaybeUninhabited::Uninhabited
-                }
-            }
+            quote! { #crate_path::inhabited::all![#(#field_tys),*] }
         },
         syn::Data::Enum(syn::DataEnum { variants, .. }) => {
-            // Enums are uninhabited if
-            //  (a) they have no variants
-            //  (b) all their variants are uninhabited
-            //    (1) unit variants are always inhabited
-            //    (2) tuple and struct variants are uninhabited
-            //        if any of their fields are uninhabited
-
-            let variant_initialisers = ground.iter().filter_map(|g| variants.iter().find(|v| &v.ident == g)).map(|syn::Variant {
-                ident: variant_name,
-                fields: variant_fields,
-                ..
-            }| {
-                let fields = match variant_fields {
+            let variants_inhabited = variants.iter().map(|syn::Variant { fields, .. }| {
+                // Variants are inhabited if all of their fields in inhabited
+                let fields = match fields {
                     syn::Fields::Named(syn::FieldsNamed { named: fields, .. })
                     | syn::Fields::Unnamed(syn::FieldsUnnamed {
                         unnamed: fields, ..
                     }) => fields,
-                    syn::Fields::Unit => return Err(quote! {
-                        #crate_path::MaybeUninhabited::Inhabited(
-                            ::core::mem::MaybeUninit::new(
-                                #ty_name :: #variant_name
-                            )
-                        )
-                    }),
+                    syn::Fields::Unit => return quote! { #crate_path::inhabited::Inhabited },
                 };
 
-                let field_names = fields.iter().enumerate().map(|(i, field)| match &field.ident {
-                    Some(name) => name.clone(),
-                    None => quote::format_ident!("f_{}", i),
-                }).collect::<Vec<_>>();
+                let field_tys = fields.iter().map(|syn::Field { ty, .. }| ty);
 
-                let field_initialisers = fields
-                    .iter()
-                    .map(|syn::Field {
-                        ty: field_ty,
-                        ..
-                    }| {
-                        quote! {
-                            <
-                                #field_ty as #crate_path::TypeLayout
-                            >::uninit()
-                        }
-                    })
-                    .collect::<Vec<_>>();
+                quote! { #crate_path::inhabited::all![#(#field_tys),*] }
+            });
 
-                let variant_initialiser = if let syn::Fields::Named(_) = variant_fields {
-                    quote!(#ty_name :: #variant_name { #(#field_names: #field_names.assume_init()),* })
-                } else {
-                    quote!(#ty_name :: #variant_name ( #(#field_names.assume_init()),* ))
-                };
-
-                Ok(quote!{
-                    if let (
-                        #(#crate_path::MaybeUninhabited::Inhabited(#field_names)),*
-                    ) = (
-                        #(#field_initialisers),*
-                    ) {
-                        return #crate_path::MaybeUninhabited::Inhabited(
-                            ::core::mem::MaybeUninit::new(
-                                #variant_initialiser
-                            )
-                        );
-                    }
-                })
-            }).collect::<Result<Vec<proc_macro2::TokenStream>, proc_macro2::TokenStream>>();
-
-            match variant_initialisers {
-                Ok(variant_initialisers) => quote! {
-                    #(
-                        #variant_initialisers
-                    )*
-
-                    #crate_path::MaybeUninhabited::Uninhabited
-                },
-                Err(unit_variant_initialiser) => unit_variant_initialiser,
+            // Enums are inhabited if they have at least one inhabited variant
+            quote! {
+                #crate_path::inhabited::any![#(#variants_inhabited),*]
             }
         },
         syn::Data::Union(syn::DataUnion {
             fields: syn::FieldsNamed { named: fields, .. },
             ..
         }) => {
-            // Unions are uninhabited if all fields are uninhabited
+            // Unions are inhabited if they have at least one inhabited field
+            let field_tys = fields.iter().map(|syn::Field { ty, .. }| ty);
 
-            let (field_names, field_initialisers) = ground
-                .iter()
-                .filter_map(|g| fields.iter().find(|f| f.ident.as_ref() == Some(g)))
-                .map(
-                    |syn::Field {
-                         ident: field_name,
-                         ty: field_ty,
-                         ..
-                     }| {
-                        (
-                            field_name,
-                            quote! {
-                                <
-                                    #field_ty as #crate_path::TypeLayout
-                                >::uninit()
-                            },
-                        )
-                    },
-                )
-                .unzip::<_, _, Vec<_>, Vec<_>>();
-
-            quote! {
-                #(
-                    if let #crate_path::MaybeUninhabited::Inhabited(
-                        #field_names
-                    ) = #field_initialisers {
-                        return #crate_path::MaybeUninhabited::Inhabited(
-                            ::core::mem::MaybeUninit::new(
-                                #ty_name { #field_names: #field_names.assume_init() }
-                            )
-                        );
-                    }
-                )*
-
-                #crate_path::MaybeUninhabited::Uninhabited
-            }
+            quote! { #crate_path::inhabited::any![#(#field_tys),*] }
         },
     }
 }

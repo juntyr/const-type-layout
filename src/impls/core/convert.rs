@@ -1,8 +1,11 @@
 use crate::{
-    MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
+    TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
-unsafe impl const TypeLayout for core::convert::Infallible {
+unsafe impl TypeLayout for core::convert::Infallible {
+    type Inhabited = crate::inhabited::Uninhabited;
+
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -12,14 +15,8 @@ unsafe impl const TypeLayout for core::convert::Infallible {
             variants: &[],
         },
     };
-
-    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-        MaybeUninhabited::Uninhabited
-    }
 }
 
-unsafe impl const TypeGraph for core::convert::Infallible {
-    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-        graph.insert(&Self::TYPE_LAYOUT);
-    }
+unsafe impl ComputeTypeSet for core::convert::Infallible {
+    type Output<T: ExpandTypeSet> = tset![.. @ T];
 }

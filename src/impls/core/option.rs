@@ -1,12 +1,11 @@
 use crate::{
-    Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
-    Variant,
+    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
+    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure, Variant,
 };
 
-unsafe impl<T: ~const TypeLayout> const TypeLayout for core::option::Option<T>
-where
-    [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
-{
+unsafe impl<T: TypeLayout> TypeLayout for core::option::Option<T> {
+    type Inhabited = crate::inhabited::Inhabited;
+
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -16,38 +15,25 @@ where
             variants: &[
                 Variant {
                     name: "None",
-                    discriminant: crate::struct_variant_discriminant!(
-                        Option => Option<T> => None
-                    ),
+                    discriminant: MaybeUninhabited::Inhabited(crate::Discriminant::new::<Self>(0)),
                     fields: &[],
                 },
                 Variant {
                     name: "Some",
-                    discriminant: crate::struct_variant_discriminant!(
-                        Option => Option<T> => Some(f_0: T)
-                    ),
+                    discriminant: MaybeUninhabited::new::<T>(crate::Discriminant::new::<Self>(1)),
                     fields: &[Field {
                         name: "0",
-                        offset: crate::struct_variant_field_offset!(Option => Option<T> => Some(f_0: T) => 0),
+                        offset: MaybeUninhabited::new::<T>(::core::mem::offset_of!(Self, Some.0)),
                         ty: ::core::any::type_name::<T>(),
                     }],
                 },
             ],
         },
     };
-
-    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(None))
-    }
 }
 
-unsafe impl<T: ~const TypeGraph + ~const TypeLayout> const TypeGraph for core::option::Option<T>
-where
-    [u8; core::mem::size_of::<core::mem::Discriminant<Self>>()]:,
-{
-    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-        if graph.insert(&Self::TYPE_LAYOUT) {
-            <T as TypeGraph>::populate_graph(graph);
-        }
-    }
+unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::option::Option<T> {
+    type Output<R: ExpandTypeSet> = tset![
+        T, <Self as crate::ExtractDiscriminant>::Discriminant, .. @ R
+    ];
 }

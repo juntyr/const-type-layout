@@ -1,26 +1,23 @@
 use crate::{
-    MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
+    TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
 macro_rules! impl_primitive_type_layout {
     (impl $ty:ty => $val:expr) => {
-        unsafe impl const TypeLayout for $ty {
+        unsafe impl TypeLayout for $ty {
+            type Inhabited = crate::inhabited::Inhabited;
+
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
                 structure: TypeStructure::Primitive,
             };
-
-            unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-                MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new($val))
-            }
         }
 
-        unsafe impl const TypeGraph for $ty {
-            fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-                graph.insert(&Self::TYPE_LAYOUT);
-            }
+        unsafe impl ComputeTypeSet for $ty {
+            type Output<T: ExpandTypeSet> = tset![.. @ T];
         }
     };
     ($($ty:ty => $val:expr),*) => {
@@ -35,21 +32,17 @@ impl_primitive_type_layout! {
     char => '\0', bool => false, () => ()
 }
 
-unsafe impl const TypeLayout for ! {
+unsafe impl TypeLayout for ! {
+    type Inhabited = crate::inhabited::Uninhabited;
+
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Primitive,
     };
-
-    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-        MaybeUninhabited::Uninhabited
-    }
 }
 
-unsafe impl const TypeGraph for ! {
-    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-        graph.insert(&Self::TYPE_LAYOUT);
-    }
+unsafe impl ComputeTypeSet for ! {
+    type Output<T: ExpandTypeSet> = tset![.. @ T];
 }

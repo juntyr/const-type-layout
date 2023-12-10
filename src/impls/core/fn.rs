@@ -1,5 +1,6 @@
 use crate::{
-    MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
+    TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
 macro_rules! impl_fn_pointer_type_layout {
@@ -18,29 +19,19 @@ macro_rules! impl_fn_pointer_type_layout {
         }
     };
     (impl extern $abi:literal fn($($T:ident),*) -> $R:ident, $ty:ty, $demo:item) => {
-        unsafe impl<$R: ~const TypeLayout, $($T: ~const TypeLayout),*> const TypeLayout for $ty {
+        unsafe impl<$R: TypeLayout, $($T: TypeLayout),*> TypeLayout for $ty {
+            type Inhabited = crate::inhabited::Inhabited;
+
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
                 structure: TypeStructure::Primitive,
             };
-
-            unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-                #[allow(clippy::too_many_arguments)]
-                $demo
-
-                MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(demo))
-            }
         }
 
-        unsafe impl<$R: ~const TypeGraph, $($T: ~const TypeGraph),*> const TypeGraph for $ty {
-            fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-                if graph.insert(&Self::TYPE_LAYOUT) {
-                    <$R as TypeGraph>::populate_graph(graph);
-                    $(<$T as TypeGraph>::populate_graph(graph);)*
-                }
-            }
+        unsafe impl<$R: ComputeTypeSet, $($T: ComputeTypeSet),*> ComputeTypeSet for $ty {
+            type Output<Z: ExpandTypeSet> = tset![$R $(, $T)*, .. @ Z];
         }
     };
     ($(fn($($T:ident),*) -> $R:ident),*) => {
@@ -69,35 +60,23 @@ impl_fn_pointer_type_layout! {
 
 macro_rules! impl_variadic_extern_fn_pointer_type_layout {
     (impl unsafe extern $abi:literal fn($($T:ident),+, ...) -> $R:ident) => {
-        unsafe impl<$R: ~const TypeLayout, $($T: ~const TypeLayout),*> const TypeLayout
+        unsafe impl<$R: TypeLayout, $($T: TypeLayout),*> TypeLayout
             for unsafe extern $abi fn($($T),*, ...) -> $R
         {
+            type Inhabited = crate::inhabited::Inhabited;
+
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
                 name: ::core::any::type_name::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
                 structure: TypeStructure::Primitive,
             };
-
-            unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-                #[allow(clippy::too_many_arguments)]
-                unsafe extern $abi fn demo<$R, $($T),*>(
-                    $(_: $T),*, _: ...
-                ) -> $R { loop {} }
-
-                MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(demo))
-            }
         }
 
-        unsafe impl<$R: ~const TypeGraph, $($T: ~const TypeGraph),*> const TypeGraph
+        unsafe impl<$R: ComputeTypeSet, $($T: ComputeTypeSet),*> ComputeTypeSet
             for unsafe extern $abi fn($($T),*, ...) -> $R
         {
-            fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-                if graph.insert(&Self::TYPE_LAYOUT) {
-                    <$R as TypeGraph>::populate_graph(graph);
-                    $(<$T as TypeGraph>::populate_graph(graph);)*
-                }
-            }
+            type Output<Z: ExpandTypeSet> = tset![$R $(, $T)*, .. @ Z];
         }
     };
     ($(unsafe extern "C" fn($($T:ident),+, ...) -> $R:ident),*) => {

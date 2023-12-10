@@ -18,21 +18,30 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
-          # override: true
+          override: true
+          profile: minimal
+          components: llvm-tools-preview
 
-      - name: Install the code coverage components
+      - name: Download grcov
         run: |
-          cargo install grcov --force --locked
-          rustup component add llvm-tools-preview
+          curl -sL https://github.com/mozilla/grcov/releases/download/v0.8.18/grcov-x86_64-unknown-linux-gnu.tar.bz2 | tar jxf -
+          chmod +x ./grcov
 
-      - name: Generate the code coverage
+      - name: Generate the coverage data
         run: |
-          RUSTFLAGS="-Zinstrument-coverage" \
-          LLVM_PROFILE_FILE="codecov-%p-%m.profraw" \
-          cargo test --workspace
+          cargo clean
+          cargo test --workspace --all-targets
+        env:
+          CARGO_INCREMENTAL: 0
+          RUSTFLAGS: -Cinstrument-coverage
+          RUSTDOCFLAGS: -Cinstrument-coverage
+          LLVM_PROFILE_FILE: coverage/coverage-%p-%m.profraw
 
-          grcov . -s . --binary-path ./target/debug/ \
-            -t cobertura -o cobertura.xml --branch \
+      - name: Generate the coverage reports
+        run: |
+          ./grcov . -s . --binary-path ./target/debug/deps \
+            -t lcov -o coverage.lcov --branch \
+            --keep-only "src/*" \
             --ignore-not-existing \
             --excl-line GRCOV_EXCL_LINE \
             --excl-start GRCOV_EXCL_START \
@@ -42,4 +51,5 @@ jobs:
         uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.lcov
           fail_ci_if_error: true

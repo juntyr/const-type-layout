@@ -1,8 +1,11 @@
 use crate::{
-    Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
+    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
-unsafe impl<T: ~const TypeLayout + core::ops::Deref> const TypeLayout for core::pin::Pin<T> {
+unsafe impl<T: TypeLayout + core::ops::Deref> TypeLayout for core::pin::Pin<T> {
+    type Inhabited = T::Inhabited;
+
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -11,26 +14,13 @@ unsafe impl<T: ~const TypeLayout + core::ops::Deref> const TypeLayout for core::
             repr: "transparent",
             fields: &[Field {
                 name: "pointer",
-                offset: unsafe { <T as TypeLayout>::uninit() }.map(0),
+                offset: MaybeUninhabited::new::<T>(0),
                 ty: ::core::any::type_name::<T>(),
             }],
         },
     };
-
-    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-        match <T as TypeLayout>::uninit() {
-            MaybeUninhabited::Uninhabited => MaybeUninhabited::Uninhabited,
-            MaybeUninhabited::Inhabited(uninit) => MaybeUninhabited::Inhabited(
-                core::mem::MaybeUninit::new(Self::new_unchecked(uninit.assume_init())),
-            ),
-        }
-    }
 }
 
-unsafe impl<T: ~const TypeGraph + core::ops::Deref> const TypeGraph for core::pin::Pin<T> {
-    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-        if graph.insert(&Self::TYPE_LAYOUT) {
-            <T as TypeGraph>::populate_graph(graph);
-        }
-    }
+unsafe impl<T: ComputeTypeSet + core::ops::Deref> ComputeTypeSet for core::pin::Pin<T> {
+    type Output<R: ExpandTypeSet> = tset![T, .. @ R];
 }

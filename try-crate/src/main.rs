@@ -1,16 +1,15 @@
-#![deny(clippy::pedantic)]
-#![feature(cfg_version)]
+#![deny(clippy::complexity)]
+#![deny(clippy::correctness)]
+#![warn(clippy::nursery)]
+#![warn(clippy::pedantic)]
+#![deny(clippy::perf)]
+#![deny(clippy::style)]
+#![deny(clippy::suspicious)]
 #![feature(const_type_name)]
-#![feature(const_refs_to_cell)]
-#![feature(const_trait_impl)]
-#![feature(const_mut_refs)]
-#![cfg_attr(not(version("1.61.0")), feature(const_fn_trait_bound))]
-#![cfg_attr(not(version("1.61.0")), feature(const_ptr_offset))]
+#![feature(offset_of)]
+#![feature(offset_of_enum)]
 #![feature(never_type)]
-#![allow(incomplete_features)]
-#![feature(generic_const_exprs)]
-
-use std::{borrow::Cow, ops::Deref};
+#![allow(dead_code)]
 
 use const_type_layout::{TypeGraphLayout, TypeLayout};
 
@@ -58,7 +57,6 @@ union SingleUnion {
 }
 
 #[derive(TypeLayout)]
-#[layout(ground = "b")]
 union RecursiveRef<'a> {
     a: &'a RecursiveRef<'a>,
     b: (),
@@ -118,7 +116,6 @@ enum List<T> {
 }
 
 #[derive(TypeLayout)]
-#[layout(ground = "Leaf")]
 enum Tree<T> {
     Node {
         left: Box<Tree<T>>,
@@ -164,7 +161,7 @@ pub struct Wrapper(f64);
 #[derive(TypeLayout)]
 pub struct Bounded<T>(T)
 where
-    T: std::fmt::Debug + ~const TypeGraphLayout;
+    T: std::fmt::Debug + TypeGraphLayout;
 
 fn main() {
     println!("{:#?}", Foo1::TYPE_GRAPH);
@@ -196,6 +193,9 @@ fn main() {
     println!("{:#?}", NoUnit::<u32>::TYPE_GRAPH);
 
     println!("{:#?}", <()>::TYPE_GRAPH);
+    println!("{:#?}", <(u8,)>::TYPE_GRAPH);
+    println!("{:#?}", <(u8, bool)>::TYPE_GRAPH);
+    println!("{:#?}", <(u8, bool, !)>::TYPE_GRAPH);
     println!("{:#?}", <[u32; 3]>::TYPE_GRAPH);
     println!("{:#?}", <std::mem::MaybeUninit<Box<i8>>>::TYPE_GRAPH);
     println!("{:#?}", <Box<u8>>::TYPE_GRAPH);
@@ -222,6 +222,8 @@ fn main() {
 
     println!("{:#?}", <*const u8>::TYPE_GRAPH);
     println!("{:#?}", <*mut u8>::TYPE_GRAPH);
+    println!("{:#?}", <core::ptr::NonNull<u8>>::TYPE_GRAPH);
+    println!("{:#?}", <core::sync::atomic::AtomicPtr<u8>>::TYPE_GRAPH);
     println!("{:#?}", <&u8>::TYPE_GRAPH);
     println!("{:#?}", <&mut u8>::TYPE_GRAPH);
 
@@ -254,17 +256,3 @@ fn non_static_ref<'a>(_val: &'a u128) {
 
 const SERIALISED_LIST_U8_LAYOUT: [u8; const_type_layout::serialised_type_graph_len::<List<u8>>()] =
     const_type_layout::serialise_type_graph::<List<u8>>();
-
-#[derive(
-    Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
-)]
-#[repr(transparent)]
-struct DerefCow<'a, T: Clone + Deref>(Cow<'a, T>);
-
-impl<'a, T: Clone + Deref> Deref for DerefCow<'a, T> {
-    type Target = T::Target;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}

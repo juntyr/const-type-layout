@@ -1,8 +1,11 @@
 use crate::{
-    Field, MaybeUninhabited, TypeGraph, TypeLayout, TypeLayoutGraph, TypeLayoutInfo, TypeStructure,
+    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
+    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
-unsafe impl<T: ~const TypeLayout> const TypeLayout for core::mem::ManuallyDrop<T> {
+unsafe impl<T: TypeLayout> TypeLayout for core::mem::ManuallyDrop<T> {
+    type Inhabited = T::Inhabited;
+
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -11,31 +14,20 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::mem::ManuallyDrop<T
             repr: "transparent",
             fields: &[Field {
                 name: "value",
-                offset: unsafe { <T as TypeLayout>::uninit() }.map(0),
+                offset: MaybeUninhabited::new::<T>(0),
                 ty: ::core::any::type_name::<T>(),
             }],
         },
     };
-
-    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-        match <T as TypeLayout>::uninit() {
-            MaybeUninhabited::Uninhabited => MaybeUninhabited::Uninhabited,
-            MaybeUninhabited::Inhabited(uninit) => MaybeUninhabited::Inhabited(
-                core::mem::MaybeUninit::new(Self::new(uninit.assume_init())),
-            ),
-        }
-    }
 }
 
-unsafe impl<T: ~const TypeGraph> const TypeGraph for core::mem::ManuallyDrop<T> {
-    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-        if graph.insert(&Self::TYPE_LAYOUT) {
-            <T as TypeGraph>::populate_graph(graph);
-        }
-    }
+unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::mem::ManuallyDrop<T> {
+    type Output<R: ExpandTypeSet> = tset![T, .. @ R];
 }
 
-unsafe impl<T: ~const TypeLayout> const TypeLayout for core::mem::MaybeUninit<T> {
+unsafe impl<T: TypeLayout> TypeLayout for core::mem::MaybeUninit<T> {
+    type Inhabited = crate::inhabited::Inhabited;
+
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -50,23 +42,14 @@ unsafe impl<T: ~const TypeLayout> const TypeLayout for core::mem::MaybeUninit<T>
                 },
                 Field {
                     name: "value",
-                    offset: unsafe { <T as TypeLayout>::uninit() }.map(0),
+                    offset: MaybeUninhabited::new::<T>(0),
                     ty: ::core::any::type_name::<core::mem::ManuallyDrop<T>>(),
                 },
             ],
         },
     };
-
-    unsafe fn uninit() -> MaybeUninhabited<core::mem::MaybeUninit<Self>> {
-        MaybeUninhabited::Inhabited(core::mem::MaybeUninit::new(core::mem::MaybeUninit::uninit()))
-    }
 }
 
-unsafe impl<T: ~const TypeGraph> const TypeGraph for core::mem::MaybeUninit<T> {
-    fn populate_graph(graph: &mut TypeLayoutGraph<'static>) {
-        if graph.insert(&Self::TYPE_LAYOUT) {
-            <() as TypeGraph>::populate_graph(graph);
-            <core::mem::ManuallyDrop<T> as TypeGraph>::populate_graph(graph);
-        }
-    }
+unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::mem::MaybeUninit<T> {
+    type Output<R: ExpandTypeSet> = tset![(), core::mem::ManuallyDrop<T>, .. @ R];
 }
