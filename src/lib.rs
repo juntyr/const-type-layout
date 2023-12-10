@@ -47,6 +47,7 @@
 //! The layout of types is only defined if they're `#[repr(C)]`. This crate
 //! works on non-`#[repr(C)]` types, but their layout is unpredictable.
 //!
+#![cfg(feature = "derive")]
 //! ```rust
 //! # #![feature(const_type_name)]
 //! # #![feature(offset_of)]
@@ -92,6 +93,7 @@
 //! Over-aligned types have trailing padding, which can be a source of bugs in
 //! some FFI scenarios:
 //!
+#![cfg(feature = "derive")]
 //! ```rust
 //! # #![feature(const_type_name)]
 //! # #![feature(offset_of)]
