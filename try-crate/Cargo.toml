@@ -8,7 +8,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-const-type-layout = { path = "..", features = ["serde"] }
+const-type-layout = { path = "..", features = ["derive", "serde"] }
 
 serde = "1.0"
 ron = "0.8"

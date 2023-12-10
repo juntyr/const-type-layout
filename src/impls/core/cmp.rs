@@ -1,5 +1,5 @@
 use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeSet, Set},
+    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
     Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
@@ -22,5 +22,5 @@ unsafe impl<T: TypeLayout> TypeLayout for core::cmp::Reverse<T> {
 }
 
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::cmp::Reverse<T> {
-    type Output<R: ExpandTypeSet> = Set<Self, tset![T, .. @ R]>;
+    type Output<R: ExpandTypeSet> = tset![T, .. @ R];
 }

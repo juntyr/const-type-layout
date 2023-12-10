@@ -1,4 +1,45 @@
-#![deny(clippy::pedantic)]
+//! [![CI Status]][workflow] [![MSRV]][repo] [![Latest Version]][crates.io]
+//! [![Rust Doc Crate]][docs.rs] [![Rust Doc Main]][docs]
+//! [![License Status]][fossa] [![Code Coverage]][codecov]
+//! [![Gitpod Ready-to-Code]][gitpod]
+//!
+//! [CI Status]: https://img.shields.io/github/actions/workflow/status/juntyr/const-type-layout/ci.yml?branch=main
+//! [workflow]: https://github.com/juntyr/const-type-layout/actions/workflows/ci.yml?query=branch%3Amain
+//!
+//! [MSRV]: https://img.shields.io/badge/MSRV-1.75.0--nightly-orange
+//! [repo]: https://github.com/juntyr/const-type-layout
+//!
+//! [Latest Version]: https://img.shields.io/crates/v/const-type-layout
+//! [crates.io]: https://crates.io/crates/const-type-layout
+//!
+//! [Rust Doc Crate]: https://img.shields.io/docsrs/const-type-layout
+//! [docs.rs]: https://docs.rs/const-type-layout/
+//!
+//! [Rust Doc Main]: https://img.shields.io/badge/docs-main-blue
+//! [docs]: https://juntyr.github.io/const-type-layout/const_type_layout
+//!
+//! [License Status]: https://app.fossa.com/api/projects/custom%2B26490%2Fgithub.com%2Fjuntyr%2Fconst-type-layout.svg?type=shield
+//! [fossa]: https://app.fossa.com/projects/custom%2B26490%2Fgithub.com%2Fjuntyr%2Fconst-type-layout?ref=badge_shield
+//!
+//! [Code Coverage]: https://img.shields.io/codecov/c/github/juntyr/const-type-layout?token=J39WVBIMZX
+//! [codecov]: https://codecov.io/gh/juntyr/const-type-layout
+//!
+//! [Gitpod Ready-to-Code]: https://img.shields.io/badge/Gitpod-ready-blue?logo=gitpod
+//! [gitpod]: https://gitpod.io/#https://github.com/juntyr/const-type-layout
+//!
+//! `const-type-layout-derive` provides the [`#[derive(TypeLayout)`](TypeLayout)
+//! implementation for the
+//! [`const_type_layout::TypeLayout`](https://docs.rs/const-type-layout/0.2.0/const_type_layout/trait.TypeLayout.html)
+//! trait.
+
+#![deny(clippy::complexity)]
+#![deny(clippy::correctness)]
+#![warn(clippy::nursery)]
+#![warn(clippy::pedantic)]
+#![deny(clippy::perf)]
+#![deny(clippy::style)]
+#![deny(clippy::suspicious)]
+#![deny(missing_docs)]
 #![feature(iter_intersperse)]
 
 extern crate proc_macro;
@@ -14,6 +55,20 @@ use syn::{parse_macro_input, spanned::Spanned};
 
 #[proc_macro_error]
 #[proc_macro_derive(TypeLayout, attributes(layout))]
+/// Provides the `#[derive(TypeLayout)]` implementation for the
+/// [`const_type_layout::TypeLayout`](https://docs.rs/const-type-layout/0.2.0/const_type_layout/trait.TypeLayout.html)
+/// trait.
+///
+/// The derive also accepts a `#[layout(...)]` attribute to configure the
+/// implementation as follows:
+/// - `#[layout(crate = "<crate-path>")]` changes the path to the [`const-type-layout`](https://docs.rs/const-type-layout/0.2.0/const_type_layout)
+///   crate that the derive uses, which by default is `const_type_layout`.
+/// - `#[layout(bound = "<where-predicate>")]` adds the provided predicate to
+///   the where clause of the trait implementation.
+/// - `#[layout(free = "<type>")]` removes the the auto-added trait bounds for
+///   the type parameter `<type>` from the trait implementation, e.g. when
+///   implementing a wrapper around [`PhantomData<T>`](std::marker::PhantomData)
+///   which should implement the trait for any `T`.
 pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     // Parse the input tokens into a syntax tree
     let input = parse_macro_input!(input as syn::DeriveInput);
@@ -40,7 +95,7 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     let inner_types = extract_inner_types(&input.data);
 
     let discriminant_ty = if let syn::Data::Enum(_) = input.data {
-        Some(quote! { <Self as #crate_path::ExtractDiscriminant>::Ty, })
+        Some(quote! { <Self as #crate_path::ExtractDiscriminant>::Discriminant, })
     } else {
         None
     };
@@ -74,9 +129,9 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
             #ty_name #type_set_ty_generics #type_set_where_clause
         {
             type Output<__TypeSetRest: #crate_path::typeset::ExpandTypeSet> =
-                #crate_path::typeset::Set<Self, #crate_path::typeset::tset![
+                #crate_path::typeset::tset![
                     #(#inner_types,)* #discriminant_ty .. @ __TypeSetRest
-                ]>;
+                ];
         }
     }
     .into()
@@ -124,18 +179,20 @@ fn parse_attributes(attrs: &[syn::Attribute], type_params: &mut Vec<&syn::Ident>
                         if path.is_ident("free") {
                             match syn::parse_str::<syn::Ident>(&s.value()) {
                                 Ok(param) => {
-                                    if let Some(i) = type_params.iter().position(|ty| **ty == param)
-                                    {
-                                        type_params.swap_remove(i);
-                                    } else {
-                                        emit_error!(
-                                            s.span(),
-                                            "[const-type-layout]: Invalid #[layout(free)] \
-                                             attribute: \"{}\" is either not a type parameter or \
-                                             has already been freed (duplicate attribute).",
-                                            param,
-                                        );
-                                    }
+                                    type_params.iter().position(|ty| **ty == param).map_or_else(
+                                        || {
+                                            emit_error!(
+                                                s.span(),
+                                                "[const-type-layout]: Invalid #[layout(free)] \
+                                                 attribute: \"{}\" is either not a type parameter \
+                                                 or has already been freed (duplicate attribute).",
+                                                param,
+                                            );
+                                        },
+                                        |i| {
+                                            type_params.swap_remove(i);
+                                        },
+                                    );
                                 },
                                 Err(err) => emit_error!(
                                     s.span(),
@@ -180,8 +237,8 @@ fn parse_attributes(attrs: &[syn::Attribute], type_params: &mut Vec<&syn::Ident>
                         } else {
                             emit_error!(
                                 path.span(),
-                                "[const-type-layout]: Unknown attribute, use `bound`, `crate`, \
-                                 `free`, or `ground`."
+                                "[const-type-layout]: Unknown attribute, use `bound`, `crate`, or \
+                                 `free`."
                             );
                         }
                     } else {

@@ -1,5 +1,5 @@
 use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeSet, Set},
+    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
     Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure, Variant,
 };
 
@@ -37,10 +37,7 @@ unsafe impl<T: TypeLayout, E: TypeLayout> TypeLayout for core::result::Result<T,
 }
 
 unsafe impl<T: ComputeTypeSet, E: ComputeTypeSet> ComputeTypeSet for core::result::Result<T, E> {
-    type Output<R: ExpandTypeSet> = Set<
-        Self,
-        tset![
-            T, E, <Self as crate::ExtractDiscriminant>::Ty, .. @ R
-        ],
-    >;
+    type Output<R: ExpandTypeSet> = tset![
+        T, E, <Self as crate::ExtractDiscriminant>::Discriminant, .. @ R
+    ];
 }

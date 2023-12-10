@@ -2,8 +2,8 @@
 #![allow(clippy::needless_borrow, clippy::borrow_deref_ref)] // FIXME: Deref const trait
 
 use crate::{
-    Asyncness, Constness, Discriminant, Field, MaybeUninhabited, Safety, TypeLayout,
-    TypeLayoutGraph, TypeLayoutInfo, TypeStructure, Variant,
+    Discriminant, Field, MaybeUninhabited, TypeLayout, TypeLayoutGraph, TypeLayoutInfo,
+    TypeStructure, Variant,
 };
 
 pub const fn serialise_str(bytes: &mut [u8], from: usize, value: &str) -> usize {
@@ -49,7 +49,7 @@ pub const fn serialise_usize(bytes: &mut [u8], from: usize, value: usize) -> usi
         bytes[from + i] = ((rem & 0b0111_1111_usize) as u8) | 0b1000_0000_u8;
 
         i += 1;
-        rem >>= 7;
+        rem >>= 7_u8;
     }
 
     bytes[from + i] = (rem & 0b0111_1111_usize) as u8;
@@ -63,7 +63,7 @@ pub const fn serialised_usize_len(from: usize, value: usize) -> usize {
 
     while rem > 127 {
         i += 1;
-        rem >>= 7;
+        rem >>= 7_u8;
     }
 
     from + i + 1
@@ -81,60 +81,6 @@ pub const fn serialise_byte(bytes: &mut [u8], from: usize, value: u8) -> usize {
 }
 
 pub const fn serialised_byte_len(from: usize, _value: u8) -> usize {
-    from + 1
-}
-
-pub const fn serialise_constness(bytes: &mut [u8], from: usize, value: Constness) -> usize {
-    assert!(
-        from < bytes.len(),
-        "bytes is not large enough to contain the serialised Constness."
-    );
-
-    bytes[from] = match value {
-        Constness::NonConst => b'r',
-        Constness::Const => b'c',
-    };
-
-    from + 1
-}
-
-pub const fn serialised_constness_len(from: usize, _value: Constness) -> usize {
-    from + 1
-}
-
-pub const fn serialise_asyncness(bytes: &mut [u8], from: usize, value: Asyncness) -> usize {
-    assert!(
-        from < bytes.len(),
-        "bytes is not large enough to contain the serialised Asyncness."
-    );
-
-    bytes[from] = match value {
-        Asyncness::Sync => b's',
-        Asyncness::Async => b'a',
-    };
-
-    from + 1
-}
-
-pub const fn serialised_asyncness_len(from: usize, _value: Asyncness) -> usize {
-    from + 1
-}
-
-pub const fn serialise_safety(bytes: &mut [u8], from: usize, value: Safety) -> usize {
-    assert!(
-        from < bytes.len(),
-        "bytes is not large enough to contain the serialised Safety."
-    );
-
-    bytes[from] = match value {
-        Safety::Safe => b's',
-        Safety::Unsafe => b'u',
-    };
-
-    from + 1
-}
-
-pub const fn serialised_safety_len(from: usize, _value: Safety) -> usize {
     from + 1
 }
 
@@ -449,22 +395,6 @@ pub const fn serialise_type_structure(
             let from = serialise_str(bytes, from, repr);
             serialise_variants(bytes, from, variants)
         },
-        TypeStructure::Function {
-            constness,
-            asyncness,
-            safety,
-            abi,
-            parameters,
-            r#return,
-        } => {
-            let from = serialise_byte(bytes, from, b'f');
-            let from = serialise_constness(bytes, from, *constness);
-            let from = serialise_asyncness(bytes, from, *asyncness);
-            let from = serialise_safety(bytes, from, *safety);
-            let from = serialise_str(bytes, from, abi);
-            let from = serialise_parameters(bytes, from, parameters);
-            serialise_str(bytes, from, r#return)
-        },
     }
 }
 
@@ -485,22 +415,6 @@ pub const fn serialised_type_structure_len(from: usize, value: &TypeStructure) -
             let from = serialised_byte_len(from, b'e');
             let from = serialised_str_len(from, repr);
             serialised_variants_len(from, variants)
-        },
-        TypeStructure::Function {
-            constness,
-            asyncness,
-            safety,
-            abi,
-            parameters,
-            r#return,
-        } => {
-            let from = serialised_byte_len(from, b'f');
-            let from = serialised_constness_len(from, *constness);
-            let from = serialised_asyncness_len(from, *asyncness);
-            let from = serialised_safety_len(from, *safety);
-            let from = serialised_str_len(from, abi);
-            let from = serialised_parameters_len(from, parameters);
-            serialised_str_len(from, r#return)
         },
     }
 }

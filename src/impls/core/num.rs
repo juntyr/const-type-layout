@@ -1,5 +1,5 @@
 use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeSet, Set},
+    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
     Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
@@ -26,7 +26,7 @@ macro_rules! impl_nonzero_type_layout {
         }
 
         unsafe impl ComputeTypeSet for core::num::$nz {
-            type Output<T: ExpandTypeSet> = Set<Self, tset![$ty, .. @ T]>;
+            type Output<T: ExpandTypeSet> = tset![$ty, .. @ T];
         }
     };
     ($($nz:ident => $ty:ty),*) => {
@@ -60,5 +60,5 @@ unsafe impl<T: TypeLayout> TypeLayout for core::num::Wrapping<T> {
 }
 
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::num::Wrapping<T> {
-    type Output<R: ExpandTypeSet> = Set<Self, tset![T, .. @ R]>;
+    type Output<R: ExpandTypeSet> = tset![T, .. @ R];
 }

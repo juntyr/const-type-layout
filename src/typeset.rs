@@ -1,3 +1,6 @@
+//! Helper module to compute the set of types that a type links to and expand it
+//! into the complete type graph.
+
 #[doc(hidden)]
 pub trait ComputeSet: sealed::ComputeSet {
     const LEN: usize;
@@ -15,22 +18,84 @@ mod sealed {
     impl<H2: super::ComputeTypeSet, T: ComputeSet> ComputeSet for super::private::Cons<H2, T> {}
 }
 
-pub type Set<H, T> = <T as ComputeSet>::Output<H>;
+type Set<H, T> = <T as ComputeSet>::Output<H>;
 
+/// Computes the set of types that a type links to.
+///
 /// # Safety
 ///
 /// It is only safe to implement this trait if it accurately includes
-/// all type components that are referenced by this type's layout. Use
-/// `#[derive(TypeLayout)]` instead.
+/// all inner component types that are referenced by this type's layout. Use
+/// [`#[derive(TypeLayout)]`](const_type_layout_derive::TypeLayout) instead.
+///
+/// # Example
+///
+/// The struct `Foo` with `u8` and `u16` fields links to `u8` and `u16`:
+///
+/// ```rust
+/// # #![feature(const_type_name)]
+/// # #![feature(offset_of)]
+/// # use const_type_layout::{
+/// #    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
+/// # };
+/// # use const_type_layout::inhabited;
+/// # use const_type_layout::typeset::{ComputeTypeSet, ExpandTypeSet, tset};
+/// struct Foo {
+///     a: u8,
+///     b: u16,
+/// }
+///
+/// # unsafe impl TypeLayout for Foo {
+/// #     type Inhabited = inhabited::all![u8, u16];
+/// #
+/// #     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
+/// #         name: ::core::any::type_name::<Self>(),
+/// #         size: ::core::mem::size_of::<Self>(),
+/// #         alignment: ::core::mem::align_of::<Self>(),
+/// #         structure: TypeStructure::Struct {
+/// #             repr: "",
+/// #             fields: &[
+/// #                 Field {
+/// #                     name: "a",
+/// #                     offset: MaybeUninhabited::new::<u8>(::core::mem::offset_of!(Self, a)),
+/// #                     ty: ::core::any::type_name::<u8>(),
+/// #                 },
+/// #                 Field {
+/// #                     name: "b",
+/// #                     offset: MaybeUninhabited::new::<u16>(::core::mem::offset_of!(Self, b)),
+/// #                     ty: ::core::any::type_name::<u16>(),
+/// #                 },
+/// #             ],
+/// #         },
+/// #     };
+/// # }
+///
+/// unsafe impl ComputeTypeSet for Foo {
+///     type Output<T: ExpandTypeSet> = tset![u8, u16];
+/// }
+/// ```
+///
+/// Note that to you implement [`ComputeTypeSet`] you must also implement
+/// [`crate::TypeLayout`] for it.
 pub unsafe trait ComputeTypeSet: crate::TypeLayout {
+    /// Extend the set `T` into a (larger) set containing also the types this
+    /// type links to.
+    ///
+    /// Enums implementing [`crate::TypeLayout`] and [`ComputeTypeSet`]
+    /// manually should include [`crate::ExtractDiscriminant::Discriminant`] in
+    /// their [`ComputeTypeSet::Output`] using the [`tset`] helper macro.
     type Output<T: ExpandTypeSet>: ExpandTypeSet;
 }
 
+/// Helper macro to expand a list of types, e.g. `H, R1, R2`, and an optional
+/// tail, `.. @ T`, into a set of types. This macro is used when implementing
+/// the [`ComputeTypeSet::Output`] associated type to specify the list of types
+/// a type links to.
 pub macro tset {
-    () => { Empty },
+    () => { private::Empty },
     (.. @ $T:tt) => { $T },
-    ($H:ty, $($R:ty,)*) => {
-        Set<$H, tset![$($R,)*]>
+    ($H:ty $(, $R:ty)*) => {
+        Set<$H, tset![$($R),*]>
     },
     ($H:ty, $($R:ty,)* .. @ $T:ty ) => {
         Set<$H, tset![$($R,)* .. @ $T]>
@@ -47,7 +112,8 @@ impl ExpandTypeSet for private::Empty {
 }
 
 impl<H: ComputeTypeSet, T: ExpandTypeSet> ExpandTypeSet for private::Cons<H, T> {
-    type Output<R: ExpandTypeSet> = <T as ExpandTypeSet>::Output<<H as ComputeTypeSet>::Output<R>>;
+    type Output<R: ExpandTypeSet> =
+        <T as ExpandTypeSet>::Output<Set<H, <H as ComputeTypeSet>::Output<R>>>;
 }
 
 #[doc(hidden)]
@@ -76,15 +142,15 @@ mod private {
     }
 
     impl ComputeSet for Empty {
-        type Output<H: ComputeTypeSet> = Cons<H, Empty>;
-        type TyHList = Empty;
+        type Output<H: ComputeTypeSet> = Cons<H, Self>;
+        type TyHList = Self;
 
         const LEN: usize = 0;
-        const TYS: &'static Self::TyHList = &Empty;
+        const TYS: &'static Self::TyHList = &Self;
     }
 
     impl<H2: ComputeTypeSet, T: ExpandTypeSet> ComputeSet for Cons<H2, T> {
-        type Output<H1: ComputeTypeSet> = <Cons<H2, T> as ComputeCons<H1>>::Output;
+        type Output<H1: ComputeTypeSet> = <Self as ComputeCons<H1>>::Output;
         type TyHList = Cons<&'static crate::TypeLayoutInfo<'static>, T::TyHList>;
 
         const LEN: usize = T::LEN + 1;
@@ -99,11 +165,11 @@ mod private {
     }
 
     impl<H: ComputeTypeSet> ComputeCons<H> for Empty {
-        type Output = Cons<H, Empty>;
+        type Output = Cons<H, Self>;
     }
 
     impl<H: ComputeTypeSet, T: ExpandTypeSet> ComputeCons<H> for Cons<H, T> {
-        type Output = Cons<H, T>;
+        type Output = Self;
     }
 
     impl<H1: ComputeTypeSet, H2: ComputeTypeSet, T: ExpandTypeSet> ComputeCons<H1> for Cons<H2, T> {
@@ -130,4 +196,5 @@ mod private {
     }
 }
 
-pub type TypeSet<T> = <<T as ComputeTypeSet>::Output<private::Empty> as TypeSetFixedPoint>::Output;
+pub(super) type TypeSet<T> =
+    <Set<T, <T as ComputeTypeSet>::Output<private::Empty>> as TypeSetFixedPoint>::Output;

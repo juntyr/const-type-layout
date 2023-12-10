@@ -1,5 +1,5 @@
 use crate::{
-    typeset::{ComputeTypeSet, ExpandTypeSet, Set},
+    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
     TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
@@ -18,7 +18,7 @@ unsafe impl<T> TypeLayout for core::marker::PhantomData<T> {
 }
 
 unsafe impl<T> ComputeTypeSet for core::marker::PhantomData<T> {
-    type Output<R: ExpandTypeSet> = Set<Self, R>;
+    type Output<R: ExpandTypeSet> = tset![.. @ R];
 }
 
 unsafe impl TypeLayout for core::marker::PhantomPinned {
@@ -36,5 +36,5 @@ unsafe impl TypeLayout for core::marker::PhantomPinned {
 }
 
 unsafe impl ComputeTypeSet for core::marker::PhantomPinned {
-    type Output<T: ExpandTypeSet> = Set<Self, T>;
+    type Output<T: ExpandTypeSet> = tset![.. @ T];
 }

@@ -1,5 +1,5 @@
 use crate::{
-    typeset::{ComputeTypeSet, ExpandTypeSet, Set},
+    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
     TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
@@ -18,5 +18,5 @@ unsafe impl TypeLayout for core::convert::Infallible {
 }
 
 unsafe impl ComputeTypeSet for core::convert::Infallible {
-    type Output<T: ExpandTypeSet> = Set<Self, T>;
+    type Output<T: ExpandTypeSet> = tset![.. @ T];
 }

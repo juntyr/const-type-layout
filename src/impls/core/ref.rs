@@ -1,5 +1,5 @@
 use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeSet, Set},
+    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
     TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
@@ -15,7 +15,7 @@ unsafe impl<'a, T: TypeLayout + 'a> TypeLayout for &'a T {
 }
 
 unsafe impl<'a, T: ComputeTypeSet + 'a> ComputeTypeSet for &'a T {
-    type Output<R: ExpandTypeSet> = Set<Self, tset![T, .. @ R]>;
+    type Output<R: ExpandTypeSet> = tset![T, .. @ R];
 }
 
 unsafe impl<'a, T: TypeLayout + 'a> TypeLayout for &'a mut T {
@@ -30,5 +30,5 @@ unsafe impl<'a, T: TypeLayout + 'a> TypeLayout for &'a mut T {
 }
 
 unsafe impl<'a, T: ComputeTypeSet + 'a> ComputeTypeSet for &'a mut T {
-    type Output<R: ExpandTypeSet> = Set<Self, tset![T, .. @ R]>;
+    type Output<R: ExpandTypeSet> = tset![T, .. @ R];
 }

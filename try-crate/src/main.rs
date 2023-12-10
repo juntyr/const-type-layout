@@ -1,4 +1,10 @@
-#![deny(clippy::pedantic)]
+#![deny(clippy::complexity)]
+#![deny(clippy::correctness)]
+#![warn(clippy::nursery)]
+#![warn(clippy::pedantic)]
+#![deny(clippy::perf)]
+#![deny(clippy::style)]
+#![deny(clippy::suspicious)]
 #![feature(const_type_name)]
 #![feature(offset_of)]
 #![feature(offset_of_enum)]
@@ -158,18 +164,6 @@ where
     T: std::fmt::Debug + TypeGraphLayout;
 
 fn main() {
-    println!("{}", std::any::type_name::<ctl::typeset::TypeSet::<Foo1>>());
-    println!("{}", std::any::type_name::<ctl::typeset::TypeSet::<Foo2>>());
-    println!("{}", std::any::type_name::<ctl::typeset::TypeSet::<Foo3>>());
-    println!(
-        "{}",
-        std::any::type_name::<ctl::typeset::TypeSet::<List<u8>>>()
-    );
-    println!(
-        "{}",
-        std::any::type_name::<ctl::typeset::TypeSet::<Tree<Foo1>>>()
-    );
-
     println!("{:#?}", Foo1::TYPE_GRAPH);
     println!("{:#?}", Foo2::TYPE_GRAPH);
     println!("{:#?}", Foo3::TYPE_GRAPH);

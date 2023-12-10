@@ -17,10 +17,15 @@ rust-version = "1.75" # nightly
 [workspace]
 members = ["const-type-layout-derive", "try-crate"]
 
+[features]
+derive = ["dep:const-type-layout-derive"]
+serde = ["dep:serde"]
+
 [dependencies]
-const-type-layout-derive = { version = "0.1.0", path = "const-type-layout-derive" }
+const-type-layout-derive = { version = "0.2.0", path = "const-type-layout-derive", optional = true }
 
 serde = { version = "1.0", features = ["derive"], optional = true }
 
 [package.metadata.docs.rs]
 rustc-args = ["--cfg", "docsrs"]
+all-features = true
