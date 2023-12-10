@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":["Uninhabited"],"macro":["all","any"],"struct":["Inhabited"]};

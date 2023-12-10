@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-ba5701c5741a7b69.css" id="mainThemeStyle"><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="const_type_layout" data-themes="" data-resource-suffix="" data-rustdoc-version="1.71.0-nightly (c609da59d 2023-04-18)" data-search-js="search-e077946657036a58.js" data-settings-js="settings-298e1ea74db45b39.js" data-settings-css="settings-7bfb4c59cc6bc502.css" data-theme-light-css="light-0f8c037637f9eb3e.css" data-theme-dark-css="dark-1097f8e92a01e3cf.css" data-theme-ayu-css="ayu-614652228113ac93.css" ></div><script src="../../static.files/storage-62ce34ea385b278a.js"></script><script defer src="../../static.files/source-script-905937fbbdc8e9ea.js"></script><script defer src="../../source-files.js"></script><script defer src="../../static.files/main-1a524efa7bd4ab32.js"></script><noscript><link rel="stylesheet" media="(prefers-color-scheme:light)" href="../../static.files/light-0f8c037637f9eb3e.css"><link rel="stylesheet" media="(prefers-color-scheme:dark)" href="../../static.files/dark-1097f8e92a01e3cf.css"><link rel="stylesheet" href="../../static.files/noscript-13285aec31fa243e.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc source"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><a class="sub-logo-container" href="../../const_type_layout/index.html"><img class="rust-logo" src="../../static.files/rust-logo-151179464ae7ed46.svg" alt="logo"></a><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-e883e87179a81222.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="const_type_layout" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (06e02d5b2 2023-12-09)" data-channel="nightly" data-search-js="search-5a66c239c06b3a66.js" data-settings-js="settings-fe03fdc259827cd2.js" ><script src="../../static.files/storage-bc37acceda91d44a.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-77dede896d6ac08e.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -719,80 +719,6 @@
 <a href="#719" id="719">719</a>
 <a href="#720" id="720">720</a>
 <a href="#721" id="721">721</a>
-<a href="#722" id="722">722</a>
-<a href="#723" id="723">723</a>
-<a href="#724" id="724">724</a>
-<a href="#725" id="725">725</a>
-<a href="#726" id="726">726</a>
-<a href="#727" id="727">727</a>
-<a href="#728" id="728">728</a>
-<a href="#729" id="729">729</a>
-<a href="#730" id="730">730</a>
-<a href="#731" id="731">731</a>
-<a href="#732" id="732">732</a>
-<a href="#733" id="733">733</a>
-<a href="#734" id="734">734</a>
-<a href="#735" id="735">735</a>
-<a href="#736" id="736">736</a>
-<a href="#737" id="737">737</a>
-<a href="#738" id="738">738</a>
-<a href="#739" id="739">739</a>
-<a href="#740" id="740">740</a>
-<a href="#741" id="741">741</a>
-<a href="#742" id="742">742</a>
-<a href="#743" id="743">743</a>
-<a href="#744" id="744">744</a>
-<a href="#745" id="745">745</a>
-<a href="#746" id="746">746</a>
-<a href="#747" id="747">747</a>
-<a href="#748" id="748">748</a>
-<a href="#749" id="749">749</a>
-<a href="#750" id="750">750</a>
-<a href="#751" id="751">751</a>
-<a href="#752" id="752">752</a>
-<a href="#753" id="753">753</a>
-<a href="#754" id="754">754</a>
-<a href="#755" id="755">755</a>
-<a href="#756" id="756">756</a>
-<a href="#757" id="757">757</a>
-<a href="#758" id="758">758</a>
-<a href="#759" id="759">759</a>
-<a href="#760" id="760">760</a>
-<a href="#761" id="761">761</a>
-<a href="#762" id="762">762</a>
-<a href="#763" id="763">763</a>
-<a href="#764" id="764">764</a>
-<a href="#765" id="765">765</a>
-<a href="#766" id="766">766</a>
-<a href="#767" id="767">767</a>
-<a href="#768" id="768">768</a>
-<a href="#769" id="769">769</a>
-<a href="#770" id="770">770</a>
-<a href="#771" id="771">771</a>
-<a href="#772" id="772">772</a>
-<a href="#773" id="773">773</a>
-<a href="#774" id="774">774</a>
-<a href="#775" id="775">775</a>
-<a href="#776" id="776">776</a>
-<a href="#777" id="777">777</a>
-<a href="#778" id="778">778</a>
-<a href="#779" id="779">779</a>
-<a href="#780" id="780">780</a>
-<a href="#781" id="781">781</a>
-<a href="#782" id="782">782</a>
-<a href="#783" id="783">783</a>
-<a href="#784" id="784">784</a>
-<a href="#785" id="785">785</a>
-<a href="#786" id="786">786</a>
-<a href="#787" id="787">787</a>
-<a href="#788" id="788">788</a>
-<a href="#789" id="789">789</a>
-<a href="#790" id="790">790</a>
-<a href="#791" id="791">791</a>
-<a href="#792" id="792">792</a>
-<a href="#793" id="793">793</a>
-<a href="#794" id="794">794</a>
-<a href="#795" id="795">795</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! [![CI Status]][workflow] [![MSRV]][repo] [![Latest Version]][crates.io]
 //! [![Rust Doc Crate]][docs.rs] [![Rust Doc Main]][docs]
 //! [![License Status]][fossa] [![Code Coverage]][codecov]
@@ -801,7 +727,7 @@
 //! [CI Status]: https://img.shields.io/github/actions/workflow/status/juntyr/const-type-layout/ci.yml?branch=main
 //! [workflow]: https://github.com/juntyr/const-type-layout/actions/workflows/ci.yml?query=branch%3Amain
 //!
-//! [MSRV]: https://img.shields.io/badge/MSRV-1.60.0-orange
+//! [MSRV]: https://img.shields.io/badge/MSRV-1.75.0--nightly-orange
 //! [repo]: https://github.com/juntyr/const-type-layout
 //!
 //! [Latest Version]: https://img.shields.io/crates/v/const-type-layout
@@ -823,32 +749,29 @@
 //! [gitpod]: https://gitpod.io/#https://github.com/juntyr/const-type-layout
 //!
 //! `const-type-layout` is a type layout comparison aid, providing a
-//! `#[derive]`able `TypeLayout` trait that reports:
-//! - The type&#39;s name, size, and minimum alignment
-//! - The type&#39;s structure, i.e. struct vs. union vs. enum
-//! - Each field&#39;s name and offset
-//! - Each variant&#39;s name and discriminant
+//! [`#[derive]`](const_type_layout_derive::TypeLayout)able [`TypeLayout`] trait
+//! that provides a const [`TypeLayoutInfo`] struct containing:
+//! - The type's name, size, and minimum alignment
+//! - The type's structure, i.e. struct vs. union vs. enum
+//! - Each field's name and offset
+//! - Each variant's name and discriminant
+//! - Whether each variant / field is inhabited or uninhabited
 //!
-//! Through the auto-implemented `TypeGraphLayout` trait, the deep type layout
-//! is also reported as a graph.
+//! The auto-implemented [`TypeGraphLayout`] trait also provides a const
+//! [`TypeLayoutGraph`] struct that describes the deep type layout, including
+//! the layouts of all the types mentioned by this type, e.g. in its fields.
 //!
 //! This crate heavily builds on the original runtime [type-layout](https://github.com/LPGhatguy/type-layout) crate by Lucien Greathouse.
 //!
 //! ## Examples
 //!
-//! The layout of types is only defined if they&#39;re `#[repr(C)]`. This crate
+//! The layout of types is only defined if they're `#[repr(C)]`. This crate
 //! works on non-`#[repr(C)]` types, but their layout is unpredictable.
-//!
-//! ```rust
-//! # #![feature(cfg_version)]
+</span><span class="attr">#![cfg(feature = <span class="string">"derive"</span>)]
+</span><span class="doccomment">//! ```rust
 //! # #![feature(const_type_name)]
-//! # #![feature(const_refs_to_cell)]
-//! # #![feature(const_trait_impl)]
-//! # #![feature(const_mut_refs)]
-//! # #![cfg_attr(not(version(&quot;1.61.0&quot;)), feature(const_fn_trait_bound))]
-//! # #![cfg_attr(not(version(&quot;1.61.0&quot;)), feature(const_ptr_offset))]
-//! # #![allow(incomplete_features)]
-//! # #![feature(generic_const_exprs)]
+//! # #![feature(offset_of)]
+//! # #![feature(offset_of_enum)]
 //! use const_type_layout::TypeLayout;
 //!
 //! #[derive(TypeLayout)]
@@ -859,47 +782,41 @@
 //! }
 //!
 //! assert_eq!(
-//!     format!(&quot;{:#?}&quot;, Foo::TYPE_LAYOUT),
-//! r#&quot;TypeLayoutInfo {
-//!     name: &quot;rust_out::main::_doctest_main_src_lib_rs_47_0::Foo&quot;,
+//!     format!("{:#?}", Foo::TYPE_LAYOUT),
+//! r#"TypeLayoutInfo {
+//!     name: "rust_out::main::_doctest_main_src_lib_rs_49_0::Foo",
 //!     size: 8,
 //!     alignment: 4,
 //!     structure: Struct {
-//!         repr: &quot;C&quot;,
+//!         repr: "C",
 //!         fields: [
 //!             Field {
-//!                 name: &quot;a&quot;,
+//!                 name: "a",
 //!                 offset: Inhabited(
 //!                     0,
 //!                 ),
-//!                 ty: &quot;u8&quot;,
+//!                 ty: "u8",
 //!             },
 //!             Field {
-//!                 name: &quot;b&quot;,
+//!                 name: "b",
 //!                 offset: Inhabited(
 //!                     4,
 //!                 ),
-//!                 ty: &quot;u32&quot;,
+//!                 ty: "u32",
 //!             },
 //!         ],
 //!     },
-//! }&quot;#
+//! }"#
 //! )
 //! ```
 //!
 //! Over-aligned types have trailing padding, which can be a source of bugs in
 //! some FFI scenarios:
-//!
-//! ```rust
-//! # #![feature(cfg_version)]
+</span><span class="attr">#![cfg(feature = <span class="string">"derive"</span>)]
+</span><span class="doccomment">//! ```rust
 //! # #![feature(const_type_name)]
-//! # #![feature(const_refs_to_cell)]
-//! # #![feature(const_trait_impl)]
-//! # #![feature(const_mut_refs)]
-//! # #![cfg_attr(not(version(&quot;1.61.0&quot;)), feature(const_fn_trait_bound))]
-//! # #![cfg_attr(not(version(&quot;1.61.0&quot;)), feature(const_ptr_offset))]
-//! # #![allow(incomplete_features)]
-//! # #![feature(generic_const_exprs)]
+//! # #![feature(offset_of)]
+//! # #![feature(offset_of_enum)]
 //! use const_type_layout::TypeLayout;
 //!
 //! #[derive(TypeLayout)]
@@ -909,85 +826,100 @@
 //! }
 //!
 //! assert_eq!(
-//!     format!(&quot;{:#?}&quot;, OverAligned::TYPE_LAYOUT),
-//! r#&quot;TypeLayoutInfo {
-//!     name: &quot;rust_out::main::_doctest_main_src_lib_rs_98_0::OverAligned&quot;,
+//!     format!("{:#?}", OverAligned::TYPE_LAYOUT),
+//! r#"TypeLayoutInfo {
+//!     name: "rust_out::main::_doctest_main_src_lib_rs_93_0::OverAligned",
 //!     size: 128,
 //!     alignment: 128,
 //!     structure: Struct {
-//!         repr: &quot;C,align(128)&quot;,
+//!         repr: "C,align(128)",
 //!         fields: [
 //!             Field {
-//!                 name: &quot;value&quot;,
+//!                 name: "value",
 //!                 offset: Inhabited(
 //!                     0,
 //!                 ),
-//!                 ty: &quot;u8&quot;,
+//!                 ty: "u8",
 //!             },
 //!         ],
 //!     },
-//! }&quot;#
+//! }"#
 //! )
 //! ```
 
-</span><span class="attr">#![deny(clippy::pedantic)]
+</span><span class="attr">#![deny(clippy::complexity)]
+#![deny(clippy::correctness)]
+#![warn(clippy::nursery)]
+#![warn(clippy::pedantic)]
+#![deny(clippy::perf)]
+#![deny(clippy::style)]
+#![deny(clippy::suspicious)]
+#![deny(clippy::default_union_representation)]
+#![deny(clippy::multiple_unsafe_ops_per_block)]
+#![deny(clippy::undocumented_unsafe_blocks)]
+#![deny(unused_unsafe)]
+#![deny(missing_docs)]
 #![no_std]
-#![feature(cfg_version)]
 #![feature(const_type_name)]
-#![cfg_attr(not(version(<span class="string">&quot;1.61.0&quot;</span>)), feature(const_ptr_offset))]
 #![feature(const_mut_refs)]
-#![feature(const_trait_impl)]
-#![cfg_attr(not(version(<span class="string">&quot;1.61.0&quot;</span>)), feature(const_fn_trait_bound))]
 #![feature(cfg_target_has_atomic)]
-#![feature(const_discriminant)]
-#![cfg_attr(not(version(<span class="string">&quot;1.65.0&quot;</span>)), feature(const_ptr_offset_from))]
-#![feature(const_refs_to_cell)]
-#![feature(const_option)]
-#![cfg_attr(not(version(<span class="string">&quot;1.66.0&quot;</span>)), feature(let_else))]
-#![feature(core_intrinsics)]
-#![feature(const_heap)]
-#![feature(allow_internal_unstable)]
 #![feature(decl_macro)]
-#![feature(allocator_api)]
-#![feature(const_pin)]
-#![feature(const_ptr_write)]
-#![feature(inline_const)]
-#![feature(const_eval_select)]
 #![feature(never_type)]
-#![feature(maybe_uninit_uninit_array)]
-#![feature(const_maybe_uninit_uninit_array)]
-#![feature(maybe_uninit_array_assume_init)]
-#![feature(const_maybe_uninit_array_assume_init)]
 #![feature(c_variadic)]
+#![feature(ptr_from_ref)]
+#![feature(discriminant_kind)]
+#![feature(offset_of)]
+#![feature(offset_of_enum)]
+#![feature(doc_auto_cfg)]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
+#![feature(specialization)]
 #![cfg_attr(
     all(doc, not(docsrs)),
-    doc(html_root_url = <span class="string">&quot;https://juntyr.github.io/const-type-layout&quot;</span>)
+    doc(html_root_url = <span class="string">"https://juntyr.github.io/const-type-layout"</span>)
 )]
-#![cfg_attr(feature = <span class="string">&quot;serde&quot;</span>, allow(clippy::type_repetition_in_bounds))]
+#![cfg_attr(feature = <span class="string">"serde"</span>, allow(clippy::type_repetition_in_bounds))]
 
-#[doc(hidden)]
-</span><span class="kw">pub extern crate </span>alloc;
-
-<span class="kw">use </span>core::{marker::Destruct, ops::Deref};
+</span><span class="kw">extern crate </span>alloc;
 
 <span class="kw">use </span>alloc::fmt;
+<span class="kw">use </span>core::ops::Deref;
 
-<span class="kw">pub use </span>const_type_layout_derive::TypeLayout;
+<span class="attr">#[cfg(feature = <span class="string">"derive"</span>)]
+</span><span class="kw">pub use </span>const_type_layout_derive::TypeLayout;
 
-<span class="attr">#[doc(hidden)]
-</span><span class="kw">pub mod </span>impls;
+<span class="kw">mod </span>impls;
+<span class="kw">pub mod </span>inhabited;
 <span class="kw">mod </span>ser;
-<span class="attr">#[cfg(feature = <span class="string">&quot;serde&quot;</span>)]
-</span><span class="kw">mod </span>serde;
+<span class="kw">pub mod </span>typeset;
 
 <span class="attr">#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = <span class="string">&quot;serde&quot;</span>, derive(::serde::Serialize))]
-#[cfg_attr(feature = <span class="string">&quot;serde&quot;</span>, derive(::serde::Deserialize))]
+#[cfg_attr(feature = <span class="string">"serde"</span>, derive(::serde::Serialize))]
+#[cfg_attr(feature = <span class="string">"serde"</span>, derive(::serde::Deserialize))]
+</span><span class="doccomment">/// Optional value that exists if some other type is
+/// [inhabited](https://doc.rust-lang.org/reference/glossary.html#inhabited).
 </span><span class="kw">pub enum </span>MaybeUninhabited&lt;T&gt; {
-    Uninhabited,
-    Inhabited(T),
+    <span class="doccomment">/// The type is [uninhabited](https://doc.rust-lang.org/reference/glossary.html#uninhabited),
+    /// no value.
+    </span>Uninhabited,
+    <span class="doccomment">/// The type is [inhabited](https://doc.rust-lang.org/reference/glossary.html#inhabited),
+    /// some value of type `T`.
+    </span>Inhabited(T),
+}
+
+<span class="kw">impl</span>&lt;T: Copy&gt; MaybeUninhabited&lt;T&gt; {
+    <span class="attr">#[must_use]
+    </span><span class="doccomment">/// Construct [`MaybeUninhabited::Inhabited`] iff [`&lt;U as
+    /// TypeLayout&gt;::Inhabited`](TypeLayout::Inhabited) is
+    /// [`inhabited::Inhabited`], [`MaybeUninhabited::Uninhabited`]
+    /// otherwise.
+    </span><span class="kw">pub const fn </span>new&lt;U: TypeLayout&gt;(v: T) -&gt; <span class="self">Self </span>{
+        <span class="kw">if </span>&lt;U::Inhabited <span class="kw">as </span>Same&lt;inhabited::Inhabited&gt;&gt;::EQ {
+            <span class="self">Self</span>::Inhabited(v)
+        } <span class="kw">else </span>{
+            <span class="self">Self</span>::Uninhabited
+        }
+    }
 }
 
 <span class="kw">impl</span>&lt;T: Default&gt; Default <span class="kw">for </span>MaybeUninhabited&lt;T&gt; {
@@ -996,93 +928,93 @@
     }
 }
 
-<span class="kw">impl</span>&lt;T&gt; MaybeUninhabited&lt;T&gt; {
-    <span class="attr">#[must_use]
-    </span><span class="kw">pub const fn </span>map&lt;U: ~<span class="kw">const </span>Destruct&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, value: U) -&gt; MaybeUninhabited&lt;U&gt; {
-        <span class="kw">match </span><span class="self">self </span>{
-            <span class="self">Self</span>::Inhabited(<span class="kw">_</span>) =&gt; MaybeUninhabited::Inhabited(value),
-            <span class="self">Self</span>::Uninhabited =&gt; MaybeUninhabited::Uninhabited,
-        }
-    }
-}
-
-<span class="attr">#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = <span class="string">&quot;serde&quot;</span>, derive(::serde::Serialize))]
-#[cfg_attr(feature = <span class="string">&quot;serde&quot;</span>, derive(::serde::Deserialize))]
-</span><span class="kw">pub enum </span>Constness {
-    NonConst,
-    Const,
-}
-
-<span class="attr">#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = <span class="string">&quot;serde&quot;</span>, derive(::serde::Serialize))]
-#[cfg_attr(feature = <span class="string">&quot;serde&quot;</span>, derive(::serde::Deserialize))]
-</span><span class="kw">pub enum </span>Asyncness {
-    Sync,
-    Async,
-}
-
-<span class="attr">#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = <span class="string">&quot;serde&quot;</span>, derive(::serde::Serialize))]
-#[cfg_attr(feature = <span class="string">&quot;serde&quot;</span>, derive(::serde::Deserialize))]
-</span><span class="kw">pub enum </span>Safety {
-    Safe,
-    Unsafe,
-}
-
-<span class="doccomment">/// # Safety
+<span class="doccomment">/// Utility trait that provides the shallow layout of a type.
+///
+/// # Safety
 ///
 /// It is only safe to implement this trait if it accurately describes the
-///  type&#39;s layout. Use `#[derive(TypeLayout)]` instead.
-</span><span class="attr">#[const_trait]
-</span><span class="kw">pub unsafe trait </span>TypeLayout: Sized {
-    <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">&#39;static</span>&gt;;
-
-    <span class="attr">#[must_use]
-    </span><span class="doccomment">/// # Safety
-    ///
-    /// 1. The returned value is not safe to be used in any other way than
-    ///    to calculate field offsets and discriminants.
-    ///
-    /// 2. The value and any value built with it must NOT be dropped.
-    ///
-    /// 3. Must return `MaybeUninhabited::Uninhabited` iff the type is
-    ///    uninhabited.
-    </span><span class="kw">unsafe fn </span>uninit() -&gt; MaybeUninhabited&lt;core::mem::MaybeUninit&lt;<span class="self">Self</span>&gt;&gt;;
-}
-
-<span class="doccomment">/// # Safety
+///  type's layout. Use
+/// [`#[derive(TypeLayout)]`](const_type_layout_derive::TypeLayout) instead.
 ///
-/// It is only safe to implement this trait if it accurately populates the
-///  type&#39;s layout graph. Use `#[derive(TypeLayout)]` instead.
-</span><span class="attr">#[const_trait]
-</span><span class="kw">pub unsafe trait </span>TypeGraph: ~<span class="kw">const </span>TypeLayout {
-    <span class="kw">fn </span>populate_graph(graph: <span class="kw-2">&amp;mut </span>TypeLayoutGraph&lt;<span class="lifetime">&#39;static</span>&gt;);
+/// # Example
+///
+/// The struct `Foo` with `u8` and `u16` fields implements [`TypeLayout`] as
+/// follows:
+///
+/// ```rust
+/// # #![feature(const_type_name)]
+/// # #![feature(offset_of)]
+/// # use const_type_layout::{
+/// #    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
+/// # };
+/// # use const_type_layout::inhabited;
+/// # use const_type_layout::typeset::{ComputeTypeSet, ExpandTypeSet, tset};
+/// struct Foo {
+///     a: u8,
+///     b: u16,
+/// }
+///
+/// unsafe impl TypeLayout for Foo {
+///     type Inhabited = inhabited::all![u8, u16];
+///
+///     const TYPE_LAYOUT: TypeLayoutInfo&lt;'static&gt; = TypeLayoutInfo {
+///         name: ::core::any::type_name::&lt;Self&gt;(),
+///         size: ::core::mem::size_of::&lt;Self&gt;(),
+///         alignment: ::core::mem::align_of::&lt;Self&gt;(),
+///         structure: TypeStructure::Struct {
+///             repr: "",
+///             fields: &amp;[
+///                 Field {
+///                     name: "a",
+///                     offset: MaybeUninhabited::new::&lt;u8&gt;(::core::mem::offset_of!(Self, a)),
+///                     ty: ::core::any::type_name::&lt;u8&gt;(),
+///                 },
+///                 Field {
+///                     name: "b",
+///                     offset: MaybeUninhabited::new::&lt;u16&gt;(::core::mem::offset_of!(Self, b)),
+///                     ty: ::core::any::type_name::&lt;u16&gt;(),
+///                 },
+///             ],
+///         },
+///     };
+/// }
+/// ```
+///
+/// Note that if you implement [`TypeLayout`], you should also implement
+/// [`typeset::ComputeTypeSet`] for it.
+</span><span class="kw">pub unsafe trait </span>TypeLayout: Sized {
+    <span class="doccomment">/// Marker type for whether the type is
+    /// [inhabited](https://doc.rust-lang.org/reference/glossary.html#inhabited) or
+    /// [uninhabited](https://doc.rust-lang.org/reference/glossary.html#uninhabited).
+    /// The associated type must be either [`inhabited::Inhabited`]
+    /// or [`inhabited::Uninhabited`].
+    </span><span class="kw">type </span>Inhabited: inhabited::OutputMaybeInhabited;
+
+    <span class="doccomment">/// Shallow layout of the type.
+    </span><span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">'static</span>&gt;;
 }
 
-<span class="attr">#[const_trait]
-</span><span class="kw">pub trait </span>TypeGraphLayout: ~<span class="kw">const </span>TypeLayout + ~<span class="kw">const </span>TypeGraph {
-    <span class="kw">const </span>TYPE_GRAPH: TypeLayoutGraph&lt;<span class="lifetime">&#39;static</span>&gt;;
+<span class="doccomment">/// Utility trait that provides the deep layout of a type.
+</span><span class="kw">pub trait </span>TypeGraphLayout: TypeLayout + typeset::ComputeTypeSet {
+    <span class="doccomment">/// Shallow layout of the type.
+    </span><span class="kw">const </span>TYPE_GRAPH: TypeLayoutGraph&lt;<span class="lifetime">'static</span>&gt;;
 }
 
-<span class="kw">impl</span>&lt;T: ~<span class="kw">const </span>TypeLayout + ~<span class="kw">const </span>TypeGraph&gt; <span class="kw">const </span>TypeGraphLayout <span class="kw">for </span>T {
-    <span class="kw">const </span>TYPE_GRAPH: TypeLayoutGraph&lt;<span class="lifetime">&#39;static</span>&gt; = {
-        <span class="kw">let </span><span class="kw-2">mut </span>graph = TypeLayoutGraph::new::&lt;T&gt;();
-
-        &lt;T <span class="kw">as </span>TypeGraph&gt;::populate_graph(<span class="kw-2">&amp;mut </span>graph);
-
-        graph
-    };
+<span class="kw">impl</span>&lt;T: TypeLayout + typeset::ComputeTypeSet&gt; TypeGraphLayout <span class="kw">for </span>T {
+    <span class="kw">const </span>TYPE_GRAPH: TypeLayoutGraph&lt;<span class="lifetime">'static</span>&gt; = TypeLayoutGraph::new::&lt;T&gt;();
 }
 
 <span class="attr">#[must_use]
-</span><span class="kw">pub const fn </span>serialised_type_graph_len&lt;T: ~<span class="kw">const </span>TypeGraphLayout&gt;() -&gt; usize {
+</span><span class="doccomment">/// Compute the number of bytes that this type's [`TypeLayoutGraph`] serialises
+/// into.
+</span><span class="kw">pub const fn </span>serialised_type_graph_len&lt;T: TypeGraphLayout&gt;() -&gt; usize {
     T::TYPE_GRAPH.serialised_len()
 }
 
 <span class="attr">#[must_use]
-</span><span class="kw">pub const fn </span>serialise_type_graph&lt;T: ~<span class="kw">const </span>TypeGraphLayout&gt;(
-) -&gt; [u8; serialised_type_graph_len::&lt;T&gt;()] {
+</span><span class="doccomment">/// Serialise this type's [`TypeLayoutGraph`] into an array of bytes of length
+/// [`serialised_type_graph_len`].
+</span><span class="kw">pub const fn </span>serialise_type_graph&lt;T: TypeGraphLayout&gt;() -&gt; [u8; serialised_type_graph_len::&lt;T&gt;()] {
     <span class="kw">let </span><span class="kw-2">mut </span>bytes = [<span class="number">0_u8</span>; serialised_type_graph_len::&lt;T&gt;()];
 
     T::TYPE_GRAPH.serialise(<span class="kw-2">&amp;mut </span>bytes);
@@ -1091,166 +1023,333 @@
 }
 
 <span class="attr">#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = <span class="string">&quot;serde&quot;</span>, derive(::serde::Serialize, ::serde::Deserialize))]
+#[cfg_attr(feature = <span class="string">"serde"</span>, allow(clippy::unsafe_derive_deserialize))]
+#[cfg_attr(feature = <span class="string">"serde"</span>, derive(::serde::Serialize, ::serde::Deserialize))]
 #[cfg_attr(
-    feature = <span class="string">&quot;serde&quot;</span>,
-    serde(bound(
-        serialize = <span class="string">&quot;F: ::serde::Serialize, V: ::serde::Serialize, I: ::serde::Serialize&quot;
-    </span>))
+    feature = <span class="string">"serde"</span>,
+    serde(bound(serialize = <span class="string">"F: ::serde::Serialize, V: ::serde::Serialize, I: \
+                             ::serde::Serialize, G: ::serde::Serialize"</span>))
 )]
 #[cfg_attr(
-    feature = <span class="string">&quot;serde&quot;</span>,
-    serde(bound(deserialize = <span class="string">&quot;&#39;a: &#39;de, F: ::serde::Deserialize&lt;&#39;a&gt;, V: \
-                               ::serde::Deserialize&lt;&#39;a&gt;, I: ::serde::Deserialize&lt;&#39;a&gt;&quot;</span>))
+    feature = <span class="string">"serde"</span>,
+    serde(bound(deserialize = <span class="string">"'a: 'de, F: ::serde::Deserialize&lt;'a&gt;, V: \
+                               ::serde::Deserialize&lt;'a&gt;, I: ::serde::Deserialize&lt;'a&gt;, G: \
+                               ::serde::Deserialize&lt;'a&gt;"</span>))
 )]
+</span><span class="doccomment">/// Description of the deep layout of a type.
 </span><span class="kw">pub struct </span>TypeLayoutGraph&lt;
-    <span class="lifetime">&#39;a</span>,
-    F: Deref&lt;Target = [Field&lt;<span class="lifetime">&#39;a</span>&gt;]&gt; = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[Field&lt;<span class="lifetime">&#39;a</span>&gt;],
-    V: Deref&lt;Target = [Variant&lt;<span class="lifetime">&#39;a</span>, F&gt;]&gt; = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[Variant&lt;<span class="lifetime">&#39;a</span>, F&gt;],
-    I: Deref&lt;Target = TypeLayoutInfo&lt;<span class="lifetime">&#39;a</span>, F, V&gt;&gt; = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>TypeLayoutInfo&lt;<span class="lifetime">&#39;a</span>, F, V&gt;,
+    <span class="lifetime">'a</span>,
+    F: Deref&lt;Target = [Field&lt;<span class="lifetime">'a</span>&gt;]&gt; = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[Field&lt;<span class="lifetime">'a</span>&gt;],
+    V: Deref&lt;Target = [Variant&lt;<span class="lifetime">'a</span>, F&gt;]&gt; = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[Variant&lt;<span class="lifetime">'a</span>, F&gt;],
+    I: Deref&lt;Target = TypeLayoutInfo&lt;<span class="lifetime">'a</span>, F, V&gt;&gt; = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>TypeLayoutInfo&lt;<span class="lifetime">'a</span>, F, V&gt;,
+    G: Deref&lt;Target = [I]&gt; = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[I],
 &gt; {
-    ty: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str,
-    <span class="attr">#[cfg_attr(feature = <span class="string">&quot;serde&quot;</span>, serde(with = <span class="string">&quot;serde&quot;</span>))]
-    </span>tys: [<span class="prelude-ty">Option</span>&lt;I&gt;; TypeLayoutGraph::CAPACITY],
+    <span class="doccomment">/// The type's fully-qualified name.
+    </span><span class="kw">pub </span>ty: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
+    <span class="doccomment">/// The list of types that make up the complete graph describing the deep
+    /// layout of this type.
+    </span><span class="kw">pub </span>tys: G,
 }
 
-<span class="attr">#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = <span class="string">&quot;serde&quot;</span>, derive(::serde::Serialize, ::serde::Deserialize))]
+<span class="attr">#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = <span class="string">"serde"</span>, derive(::serde::Serialize, ::serde::Deserialize))]
+</span><span class="doccomment">/// Description of the shallow layout of a type.
 </span><span class="kw">pub struct </span>TypeLayoutInfo&lt;
-    <span class="lifetime">&#39;a</span>,
-    F: Deref&lt;Target = [Field&lt;<span class="lifetime">&#39;a</span>&gt;]&gt; = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[Field&lt;<span class="lifetime">&#39;a</span>&gt;],
-    V: Deref&lt;Target = [Variant&lt;<span class="lifetime">&#39;a</span>, F&gt;]&gt; = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[Variant&lt;<span class="lifetime">&#39;a</span>, F&gt;],
-    P: Deref&lt;Target = [<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str]&gt; = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str],
+    <span class="lifetime">'a</span>,
+    F: Deref&lt;Target = [Field&lt;<span class="lifetime">'a</span>&gt;]&gt; = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[Field&lt;<span class="lifetime">'a</span>&gt;],
+    V: Deref&lt;Target = [Variant&lt;<span class="lifetime">'a</span>, F&gt;]&gt; = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[Variant&lt;<span class="lifetime">'a</span>, F&gt;],
 &gt; {
-    <span class="kw">pub </span>name: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str,
-    <span class="kw">pub </span>size: usize,
-    <span class="kw">pub </span>alignment: usize,
-    <span class="kw">pub </span>structure: TypeStructure&lt;<span class="lifetime">&#39;a</span>, F, V, P&gt;,
+    <span class="doccomment">/// The type's fully-qualified name.
+    </span><span class="kw">pub </span>name: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
+    <span class="doccomment">/// The type's size.
+    </span><span class="kw">pub </span>size: usize,
+    <span class="doccomment">/// The type's minimum alignment.
+    </span><span class="kw">pub </span>alignment: usize,
+    <span class="doccomment">/// The type's shallow structure.
+    </span><span class="kw">pub </span>structure: TypeStructure&lt;<span class="lifetime">'a</span>, F, V&gt;,
 }
 
-<span class="attr">#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = <span class="string">&quot;serde&quot;</span>, derive(::serde::Serialize, ::serde::Deserialize))]
+<span class="attr">#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = <span class="string">"serde"</span>, derive(::serde::Serialize, ::serde::Deserialize))]
+</span><span class="doccomment">/// Description of the shallow structure of a type.
 </span><span class="kw">pub enum </span>TypeStructure&lt;
-    <span class="lifetime">&#39;a</span>,
-    F: Deref&lt;Target = [Field&lt;<span class="lifetime">&#39;a</span>&gt;]&gt; = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[Field&lt;<span class="lifetime">&#39;a</span>&gt;],
-    V: Deref&lt;Target = [Variant&lt;<span class="lifetime">&#39;a</span>, F&gt;]&gt; = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[Variant&lt;<span class="lifetime">&#39;a</span>, F&gt;],
-    P: Deref&lt;Target = [<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str]&gt; = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str],
+    <span class="lifetime">'a</span>,
+    F: Deref&lt;Target = [Field&lt;<span class="lifetime">'a</span>&gt;]&gt; = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[Field&lt;<span class="lifetime">'a</span>&gt;],
+    V: Deref&lt;Target = [Variant&lt;<span class="lifetime">'a</span>, F&gt;]&gt; = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[Variant&lt;<span class="lifetime">'a</span>, F&gt;],
 &gt; {
-    Primitive,
-    Struct {
-        repr: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str,
-        fields: F,
+    <span class="doccomment">/// A primitive type, e.g. `()`, `u8`, `*const i32`, `&amp;mut bool`, `[char;
+    /// 4]`, or `fn(f32) -&gt; !`.
+    </span>Primitive,
+    <span class="doccomment">/// A struct-like type, including unit structs, tuple structs, structs, and
+    /// tuples.
+    </span>Struct {
+        <span class="doccomment">/// The string representation of the type's `#[repr(...)]` attributes.
+        </span>repr: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
+        <span class="doccomment">/// The fields of the struct.
+        </span>fields: F,
     },
-    Union {
-        repr: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str,
-        fields: F,
+    <span class="doccomment">/// A union type.
+    </span>Union {
+        <span class="doccomment">/// The string representation of the type's `#[repr(...)]` attributes.
+        </span>repr: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
+        <span class="doccomment">/// The fields of the union.
+        </span>fields: F,
     },
-    Enum {
-        repr: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str,
-        variants: V,
-    },
-    Function {
-        constness: Constness,
-        asyncness: Asyncness,
-        safety: Safety,
-        abi: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str,
-        parameters: P,
-        r#return: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str,
+    <span class="doccomment">/// An enum type.
+    </span>Enum {
+        <span class="doccomment">/// The string representation of the type's `#[repr(...)]` attributes.
+        </span>repr: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
+        <span class="doccomment">/// The variants of the union.
+        </span>variants: V,
     },
 }
 
-<span class="attr">#[derive(Clone, Debug, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = <span class="string">&quot;serde&quot;</span>, derive(::serde::Serialize, ::serde::Deserialize))]
-</span><span class="kw">pub struct </span>Variant&lt;<span class="lifetime">&#39;a</span>, F: Deref&lt;Target = [Field&lt;<span class="lifetime">&#39;a</span>&gt;]&gt; = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[Field&lt;<span class="lifetime">&#39;a</span>&gt;]&gt; {
-    <span class="kw">pub </span>name: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str,
-    <span class="kw">pub </span>discriminant: MaybeUninhabited&lt;Discriminant&lt;<span class="lifetime">&#39;a</span>&gt;&gt;,
-    <span class="kw">pub </span>fields: F,
+<span class="attr">#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = <span class="string">"serde"</span>, derive(::serde::Serialize, ::serde::Deserialize))]
+</span><span class="doccomment">/// Description of the shallow layout of a variant
+</span><span class="kw">pub struct </span>Variant&lt;<span class="lifetime">'a</span>, F: Deref&lt;Target = [Field&lt;<span class="lifetime">'a</span>&gt;]&gt; = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[Field&lt;<span class="lifetime">'a</span>&gt;]&gt; {
+    <span class="doccomment">/// The variant's name.
+    </span><span class="kw">pub </span>name: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
+    <span class="doccomment">/// The variant's descriminant, iff the variant is
+    /// [inhabited](https://doc.rust-lang.org/reference/glossary.html#inhabited).
+    </span><span class="kw">pub </span>discriminant: MaybeUninhabited&lt;Discriminant&gt;,
+    <span class="doccomment">/// The variant's fields.
+    </span><span class="kw">pub </span>fields: F,
 }
 
-<span class="attr">#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = <span class="string">&quot;serde&quot;</span>, derive(::serde::Serialize, ::serde::Deserialize))]
-#[repr(transparent)]
-</span><span class="kw">pub struct </span>Discriminant&lt;<span class="lifetime">&#39;a</span>&gt; {
-    <span class="kw">pub </span>big_endian_bytes: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8],
+<span class="attr">#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(feature = <span class="string">"serde"</span>, allow(clippy::unsafe_derive_deserialize))]
+#[cfg_attr(feature = <span class="string">"serde"</span>, derive(::serde::Serialize, ::serde::Deserialize))]
+</span><span class="doccomment">/// Discriminant value of a type.
+</span><span class="kw">pub enum </span>Discriminant {
+    <span class="doccomment">/// `#[repr(i8)]` discriminant.
+    </span>I8(i8),
+    <span class="doccomment">/// `#[repr(i16)]` discriminant.
+    </span>I16(i16),
+    <span class="doccomment">/// `#[repr(i32)]` discriminant.
+    </span>I32(i32),
+    <span class="doccomment">/// `#[repr(i64)]` discriminant.
+    </span>I64(i64),
+    <span class="doccomment">/// `#[repr(i128)]` discriminant.
+    </span>I128(i128),
+    <span class="doccomment">/// `#[repr(isize)]` discriminant (default).
+    </span>Isize(isize),
+    <span class="doccomment">/// `#[repr(u8)]` discriminant.
+    </span>U8(u8),
+    <span class="doccomment">/// `#[repr(u16)]` discriminant.
+    </span>U16(u16),
+    <span class="doccomment">/// `#[repr(u32)]` discriminant.
+    </span>U32(u32),
+    <span class="doccomment">/// `#[repr(u64)]` discriminant.
+    </span>U64(u64),
+    <span class="doccomment">/// `#[repr(u128)]` discriminant.
+    </span>U128(u128),
+    <span class="doccomment">/// `#[repr(usize)]` discriminant.
+    </span>Usize(usize),
 }
 
-<span class="attr">#[derive(Clone, Debug, Hash)]
-#[cfg_attr(feature = <span class="string">&quot;serde&quot;</span>, derive(::serde::Serialize, ::serde::Deserialize))]
-</span><span class="kw">pub struct </span>Field&lt;<span class="lifetime">&#39;a</span>&gt; {
-    <span class="kw">pub </span>name: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str,
-    <span class="kw">pub </span>offset: MaybeUninhabited&lt;usize&gt;,
-    <span class="kw">pub </span>ty: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str,
+<span class="kw">impl </span>Discriminant {
+    <span class="attr">#[allow(clippy::missing_panics_doc)]
+    #[must_use]
+    </span><span class="doccomment">/// Constructs a [`Discriminant`] value with the given value `v` of the type
+    /// `T`'s [`core::marker::DiscriminantKind::Discriminant`].
+    </span><span class="kw">pub const fn </span>new&lt;T: ExtractDiscriminant&gt;(v: T::Discriminant) -&gt; <span class="self">Self </span>{
+        <span class="attr">#[repr(C)]
+        </span><span class="kw">union </span>Transmute&lt;T: Copy&gt; {
+            v: T,
+            i8: i8,
+            i16: i16,
+            i32: i32,
+            i64: i64,
+            i128: i128,
+            isize: isize,
+            u8: u8,
+            u16: u16,
+            u32: u32,
+            u64: u64,
+            u128: u128,
+            usize: usize,
+        }
+
+        <span class="kw">if </span>&lt;T::Discriminant <span class="kw">as </span>Same&lt;i8&gt;&gt;::EQ {
+            <span class="comment">// SAFETY: v is of type T::TY which is equivalent to i8
+            </span><span class="kw">return </span><span class="self">Self</span>::I8(<span class="kw">unsafe </span>{ Transmute { v }.i8 });
+        } <span class="kw">else if </span>&lt;T::Discriminant <span class="kw">as </span>Same&lt;i16&gt;&gt;::EQ {
+            <span class="comment">// SAFETY: v is of type T::TY which is equivalent to i16
+            </span><span class="kw">return </span><span class="self">Self</span>::I16(<span class="kw">unsafe </span>{ Transmute { v }.i16 });
+        } <span class="kw">else if </span>&lt;T::Discriminant <span class="kw">as </span>Same&lt;i32&gt;&gt;::EQ {
+            <span class="comment">// SAFETY: v is of type T::TY which is equivalent to i32
+            </span><span class="kw">return </span><span class="self">Self</span>::I32(<span class="kw">unsafe </span>{ Transmute { v }.i32 });
+        } <span class="kw">else if </span>&lt;T::Discriminant <span class="kw">as </span>Same&lt;i64&gt;&gt;::EQ {
+            <span class="comment">// SAFETY: v is of type T::TY which is equivalent to i64
+            </span><span class="kw">return </span><span class="self">Self</span>::I64(<span class="kw">unsafe </span>{ Transmute { v }.i64 });
+        } <span class="kw">else if </span>&lt;T::Discriminant <span class="kw">as </span>Same&lt;i128&gt;&gt;::EQ {
+            <span class="comment">// SAFETY: v is of type T::TY which is equivalent to i128
+            </span><span class="kw">return </span><span class="self">Self</span>::I128(<span class="kw">unsafe </span>{ Transmute { v }.i128 });
+        } <span class="kw">else if </span>&lt;T::Discriminant <span class="kw">as </span>Same&lt;isize&gt;&gt;::EQ {
+            <span class="comment">// SAFETY: v is of type T::TY which is equivalent to isize
+            </span><span class="kw">return </span><span class="self">Self</span>::Isize(<span class="kw">unsafe </span>{ Transmute { v }.isize });
+        } <span class="kw">else if </span>&lt;T::Discriminant <span class="kw">as </span>Same&lt;u8&gt;&gt;::EQ {
+            <span class="comment">// SAFETY: v is of type T::TY which is equivalent to u8
+            </span><span class="kw">return </span><span class="self">Self</span>::U8(<span class="kw">unsafe </span>{ Transmute { v }.u8 });
+        } <span class="kw">else if </span>&lt;T::Discriminant <span class="kw">as </span>Same&lt;u16&gt;&gt;::EQ {
+            <span class="comment">// SAFETY: v is of type T::TY which is equivalent to u16
+            </span><span class="kw">return </span><span class="self">Self</span>::U16(<span class="kw">unsafe </span>{ Transmute { v }.u16 });
+        } <span class="kw">else if </span>&lt;T::Discriminant <span class="kw">as </span>Same&lt;u32&gt;&gt;::EQ {
+            <span class="comment">// SAFETY: v is of type T::TY which is equivalent to u32
+            </span><span class="kw">return </span><span class="self">Self</span>::U32(<span class="kw">unsafe </span>{ Transmute { v }.u32 });
+        } <span class="kw">else if </span>&lt;T::Discriminant <span class="kw">as </span>Same&lt;u64&gt;&gt;::EQ {
+            <span class="comment">// SAFETY: v is of type T::TY which is equivalent to u64
+            </span><span class="kw">return </span><span class="self">Self</span>::U64(<span class="kw">unsafe </span>{ Transmute { v }.u64 });
+        } <span class="kw">else if </span>&lt;T::Discriminant <span class="kw">as </span>Same&lt;u128&gt;&gt;::EQ {
+            <span class="comment">// SAFETY: v is of type T::TY which is equivalent to u128
+            </span><span class="kw">return </span><span class="self">Self</span>::U128(<span class="kw">unsafe </span>{ Transmute { v }.u128 });
+        } <span class="kw">else if </span>&lt;T::Discriminant <span class="kw">as </span>Same&lt;usize&gt;&gt;::EQ {
+            <span class="comment">// SAFETY: v is of type T::TY which is equivalent to usize
+            </span><span class="kw">return </span><span class="self">Self</span>::Usize(<span class="kw">unsafe </span>{ Transmute { v }.usize });
+        }
+
+        <span class="macro">panic!</span>(<span class="string">"bug: unknown discriminant kind"</span>)
+    }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; TypeLayoutGraph&lt;<span class="lifetime">&#39;a</span>&gt; {
-    <span class="kw">const </span>CAPACITY: usize = <span class="number">1024</span>;
+<span class="kw">trait </span>Same&lt;T&gt; {
+    <span class="kw">const </span>EQ: bool;
+}
 
+<span class="kw">impl</span>&lt;T, U&gt; Same&lt;U&gt; <span class="kw">for </span>T {
+    default <span class="kw">const </span>EQ: bool = <span class="bool-val">false</span>;
+}
+
+<span class="kw">impl</span>&lt;T&gt; Same&lt;T&gt; <span class="kw">for </span>T {
+    <span class="kw">const </span>EQ: bool = <span class="bool-val">true</span>;
+}
+
+<span class="doccomment">/// Helper trait to extract the [`core::marker::DiscriminantKind::Discriminant`]
+/// of a type and prove that it implements [`typeset::ComputeTypeSet`] and that
+/// its values can be represented by [`Discriminant`].
+</span><span class="kw">pub trait </span>ExtractDiscriminant {
+    <span class="doccomment">/// The type of the discriminant, which must satisfy the trait bounds
+    /// required by [`core::mem::Discriminant`].
+    ///
+    /// Enums implementing [`TypeLayout`] and [`typeset::ComputeTypeSet`]
+    /// manually should include [`ExtractDiscriminant::Discriminant`] in
+    /// their [`typeset::ComputeTypeSet::Output`] using the [`typeset::tset`]
+    /// helper macro.
+    </span><span class="kw">type </span>Discriminant: Clone
+        + Copy
+        + fmt::Debug
+        + Eq
+        + PartialEq
+        + core::hash::Hash
+        + Send
+        + Sync
+        + Unpin
+        + typeset::ComputeTypeSet;
+}
+
+<span class="kw">impl</span>&lt;T&gt; ExtractDiscriminant <span class="kw">for </span>T {
+    <span class="kw">type </span>Discriminant =
+        &lt;T <span class="kw">as </span>ExtractDiscriminantSpec&lt;&lt;T <span class="kw">as </span>core::marker::DiscriminantKind&gt;::Discriminant&gt;&gt;::Ty;
+}
+
+<span class="attr">#[doc(hidden)]
+</span><span class="kw">pub trait </span>ExtractDiscriminantSpec&lt;T&gt; {
+    <span class="kw">type </span>Ty: Clone
+        + Copy
+        + fmt::Debug
+        + Eq
+        + PartialEq
+        + core::hash::Hash
+        + Send
+        + Sync
+        + Unpin
+        + typeset::ComputeTypeSet;
+}
+
+<span class="kw">impl</span>&lt;T&gt; ExtractDiscriminantSpec&lt;&lt;T <span class="kw">as </span>core::marker::DiscriminantKind&gt;::Discriminant&gt; <span class="kw">for </span>T {
+    default <span class="kw">type </span>Ty = !;
+}
+
+<span class="macro">macro_rules! </span>impl_extract_discriminant {
+    (<span class="macro-nonterminal">$variant</span>:ident(<span class="macro-nonterminal">$ty</span>:ty)) =&gt; {
+        <span class="kw">impl</span>&lt;T: core::marker::DiscriminantKind&lt;Discriminant = <span class="macro-nonterminal">$ty</span>&gt;&gt; ExtractDiscriminantSpec&lt;<span class="macro-nonterminal">$ty</span>&gt; <span class="kw">for </span>T {
+            <span class="kw">type </span>Ty = <span class="macro-nonterminal">$ty</span>;
+        }
+    };
+    ($(<span class="macro-nonterminal">$variant</span>:ident(<span class="macro-nonterminal">$ty</span>:ty)),<span class="kw-2">*</span>) =&gt; {
+        $(<span class="macro">impl_extract_discriminant! </span>{ <span class="macro-nonterminal">$variant</span>(<span class="macro-nonterminal">$ty</span>) })*
+    };
+}
+
+<span class="macro">impl_extract_discriminant! </span>{
+    I8(i8), I16(i16), I32(i32), I64(i64), I128(i128), Isize(isize),
+    U8(u8), U16(u16), U32(u32), U64(u64), U128(u128), Usize(usize)
+}
+
+<span class="attr">#[derive(Clone, Copy, Debug, Hash)]
+#[cfg_attr(feature = <span class="string">"serde"</span>, derive(::serde::Serialize, ::serde::Deserialize))]
+</span><span class="doccomment">/// Descriptor of the shallow layout of a field.
+</span><span class="kw">pub struct </span>Field&lt;<span class="lifetime">'a</span>&gt; {
+    <span class="doccomment">/// The field's name.
+    </span><span class="kw">pub </span>name: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
+    <span class="doccomment">/// The field's byte offset, iff the field is
+    /// [inhabited](https://doc.rust-lang.org/reference/glossary.html#inhabited).
+    </span><span class="kw">pub </span>offset: MaybeUninhabited&lt;usize&gt;,
+    <span class="doccomment">/// The fully-qualified name of the field's type. This is used as a key
+    /// inside [`TypeLayoutGraph::tys`] to find the field's type's layout by
+    /// its [`TypeLayoutInfo::name`].
+    </span><span class="kw">pub </span>ty: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
+}
+
+<span class="kw">impl </span>TypeLayoutGraph&lt;<span class="lifetime">'static</span>&gt; {
     <span class="attr">#[must_use]
-    #[doc(hidden)]
-    </span><span class="kw">pub const fn </span>new&lt;T: ~<span class="kw">const </span>TypeLayout&gt;() -&gt; <span class="self">Self </span>{
+    </span><span class="doccomment">/// Construct the deep type layout descriptor for a type `T`.
+    </span><span class="kw">pub const fn </span>new&lt;T: TypeLayout + typeset::ComputeTypeSet&gt;() -&gt; <span class="self">Self </span>{
         <span class="self">Self </span>{
             ty: &lt;T <span class="kw">as </span>TypeLayout&gt;::TYPE_LAYOUT.name,
-            tys: [<span class="prelude-val">None</span>; <span class="self">Self</span>::CAPACITY],
+            <span class="comment">// SAFETY:
+            // - ComputeSet is a sealed trait and its TYS const is always a HList made of only Cons
+            //   of &amp;'static TypeLayoutInfo and Empty
+            // - Cons is a repr(C) struct with a head followed by a tail, Empty is a zero-sized
+            //   repr(C) struct
+            // - the HList is layout-equivalent to an array of the same length as ComputeSet::LEN
+            // - ComputeSet::TYS provides a static non-dangling reference that we can use to produce
+            //   the data pointer for a slice
+            </span>tys: <span class="kw">unsafe </span>{
+                core::slice::from_raw_parts(
+                    core::ptr::from_ref(&lt;typeset::TypeSet&lt;T&gt; <span class="kw">as </span>typeset::ComputeSet&gt;::TYS).cast(),
+                    &lt;typeset::TypeSet&lt;T&gt; <span class="kw">as </span>typeset::ComputeSet&gt;::LEN,
+                )
+            },
         }
-    }
-
-    <span class="attr">#[doc(hidden)]
-    </span><span class="kw">pub const fn </span>insert(<span class="kw-2">&amp;mut </span><span class="self">self</span>, ty: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>TypeLayoutInfo&lt;<span class="lifetime">&#39;a</span>&gt;) -&gt; bool {
-        <span class="kw">let </span>ty_name_bytes = ty.name.as_bytes();
-
-        <span class="kw">let </span><span class="kw-2">mut </span>i = <span class="number">0</span>;
-
-        <span class="kw">while </span>i &lt; <span class="self">self</span>.tys.len() {
-            <span class="comment">// The first free slot can be used to insert the ty
-            </span><span class="kw">let </span><span class="prelude-val">Some</span>(cached_ty) = <span class="self">self</span>.tys[i] <span class="kw">else </span>{
-                <span class="self">self</span>.tys[i] = <span class="prelude-val">Some</span>(ty);
-
-                <span class="kw">return </span><span class="bool-val">true</span>;
-            };
-
-            <span class="kw">let </span>cached_ty_name_bytes = cached_ty.name.as_bytes();
-
-            <span class="comment">// The type names can only be equal if they are the same length
-            </span><span class="kw">if </span>ty_name_bytes.len() == cached_ty_name_bytes.len() {
-                <span class="kw">let </span><span class="kw-2">mut </span>j = <span class="number">0</span>;
-
-                <span class="kw">while </span>j &lt; ty_name_bytes.len() {
-                    <span class="comment">// Break early, i.e. j &lt; ty_name_bytes.len(),
-                    //  if the type names do NOT match
-                    </span><span class="kw">if </span>ty_name_bytes[j] != cached_ty_name_bytes[j] {
-                        <span class="kw">break</span>;
-                    }
-
-                    j += <span class="number">1</span>;
-                }
-
-                <span class="comment">// j == ty_name_bytes.len() IFF the type names match
-                </span><span class="kw">if </span>j &gt;= ty_name_bytes.len() {
-                    <span class="kw">return </span><span class="bool-val">false</span>;
-                }
-            }
-
-            i += <span class="number">1</span>;
-        }
-
-        <span class="macro">panic!</span>(<span class="string">&quot;TypeLayoutGraph is not large enough for this complex type.&quot;</span>)
     }
 }
 
 <span class="kw">impl</span>&lt;
-        <span class="lifetime">&#39;a</span>,
-        F: Deref&lt;Target = [Field&lt;<span class="lifetime">&#39;a</span>&gt;]&gt;,
-        V: Deref&lt;Target = [Variant&lt;<span class="lifetime">&#39;a</span>, F&gt;]&gt;,
-        I: Deref&lt;Target = TypeLayoutInfo&lt;<span class="lifetime">&#39;a</span>, F, V&gt;&gt;,
-    &gt; TypeLayoutGraph&lt;<span class="lifetime">&#39;a</span>, F, V, I&gt;
+        <span class="lifetime">'a</span>,
+        <span class="comment">// F: Deref&lt;Target = [Field&lt;'a&gt;]&gt;,
+        // V: Deref&lt;Target = [Variant&lt;'a, F&gt;]&gt;,
+        // P: Deref&lt;Target = [&amp;'a str]&gt;,
+        // I: Deref&lt;Target = TypeLayoutInfo&lt;'a, F, V, P&gt;&gt;,
+        // G: Deref&lt;Target = [I]&gt;,
+    </span>&gt;
+    TypeLayoutGraph&lt;
+        <span class="lifetime">'a</span>,
+        <span class="comment">// F, V, P, I, G,
+    </span>&gt;
 {
     <span class="attr">#[must_use]
+    </span><span class="doccomment">/// Compute the number of bytes that this [`TypeLayoutGraph`] serialises
+    /// into.
     </span><span class="kw">pub const fn </span>serialised_len(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; usize
-    <span class="kw">where
-        </span>F: ~<span class="kw">const </span>Deref&lt;Target = [Field&lt;<span class="lifetime">&#39;a</span>&gt;]&gt;,
-        V: ~<span class="kw">const </span>Deref&lt;Target = [Variant&lt;<span class="lifetime">&#39;a</span>, F&gt;]&gt;,
-        I: ~<span class="kw">const </span>Deref&lt;Target = TypeLayoutInfo&lt;<span class="lifetime">&#39;a</span>, F, V&gt;&gt;,
-    {
+<span class="comment">// where
+    //     F: ~const Deref&lt;Target = [Field&lt;'a&gt;]&gt;,
+    //     V: ~const Deref&lt;Target = [Variant&lt;'a, F&gt;]&gt;,
+    //     P: ~const Deref&lt;Target = [&amp;'a str]&gt;,
+    //     I: ~const Deref&lt;Target = TypeLayoutInfo&lt;'a, F, V, P&gt;&gt;,
+    //     G: ~const Deref&lt;Target = [I]&gt;,
+    </span>{
         <span class="kw">let </span>len = ser::serialised_type_layout_graph_len(<span class="number">0</span>, <span class="self">self</span>);
 
         <span class="kw">let </span><span class="kw-2">mut </span>last_full_len = len;
@@ -1264,12 +1363,25 @@
         full_len
     }
 
-    <span class="kw">pub const fn </span>serialise(<span class="kw-2">&amp;</span><span class="self">self</span>, bytes: <span class="kw-2">&amp;mut </span>[u8])
-    <span class="kw">where
-        </span>F: ~<span class="kw">const </span>Deref&lt;Target = [Field&lt;<span class="lifetime">&#39;a</span>&gt;]&gt;,
-        V: ~<span class="kw">const </span>Deref&lt;Target = [Variant&lt;<span class="lifetime">&#39;a</span>, F&gt;]&gt;,
-        I: ~<span class="kw">const </span>Deref&lt;Target = TypeLayoutInfo&lt;<span class="lifetime">&#39;a</span>, F, V&gt;&gt;,
-    {
+    <span class="doccomment">/// Serialise this [`TypeLayoutGraph`] into the mutable byte slice.
+    /// `bytes` must have a length of at least [`Self::serialised_len`].
+    ///
+    /// Use [`serialise_type_graph`] instead to serialise the
+    /// [`TypeLayoutGraph`] of a type `T` into a byte array of the
+    /// appropriate length.
+    ///
+    /// # Panics
+    ///
+    /// This method panics iff `bytes` has a length of less than
+    /// [`Self::serialised_len`].
+    </span><span class="kw">pub const fn </span>serialise(<span class="kw-2">&amp;</span><span class="self">self</span>, bytes: <span class="kw-2">&amp;mut </span>[u8])
+    <span class="comment">// where
+    //     F: ~const Deref&lt;Target = [Field&lt;'a&gt;]&gt;,
+    //     V: ~const Deref&lt;Target = [Variant&lt;'a, F&gt;]&gt;,
+    //     P: ~const Deref&lt;Target = [&amp;'a str]&gt;,
+    //     I: ~const Deref&lt;Target = TypeLayoutInfo&lt;'a, F, V, P&gt;&gt;,
+    //     G: ~const Deref&lt;Target = [I]&gt;,
+    </span>{
         <span class="kw">let </span>from = ser::serialise_usize(bytes, <span class="number">0</span>, <span class="self">self</span>.serialised_len());
 
         ser::serialise_type_layout_graph(bytes, from, <span class="self">self</span>);
@@ -1277,31 +1389,19 @@
 }
 
 <span class="kw">impl</span>&lt;
-        <span class="lifetime">&#39;a</span>,
-        F: Deref&lt;Target = [Field&lt;<span class="lifetime">&#39;a</span>&gt;]&gt; + fmt::Debug,
-        V: Deref&lt;Target = [Variant&lt;<span class="lifetime">&#39;a</span>, F&gt;]&gt; + fmt::Debug,
-        I: Deref&lt;Target = TypeLayoutInfo&lt;<span class="lifetime">&#39;a</span>, F, V&gt;&gt; + fmt::Debug,
-    &gt; fmt::Debug <span class="kw">for </span>TypeLayoutGraph&lt;<span class="lifetime">&#39;a</span>, F, V, I&gt;
+        <span class="lifetime">'a</span>,
+        F: Deref&lt;Target = [Field&lt;<span class="lifetime">'a</span>&gt;]&gt; + fmt::Debug,
+        V: Deref&lt;Target = [Variant&lt;<span class="lifetime">'a</span>, F&gt;]&gt; + fmt::Debug,
+        I: Deref&lt;Target = TypeLayoutInfo&lt;<span class="lifetime">'a</span>, F, V&gt;&gt; + fmt::Debug,
+        G: Deref&lt;Target = [I]&gt; + fmt::Debug,
+    &gt; fmt::Debug <span class="kw">for </span>TypeLayoutGraph&lt;<span class="lifetime">'a</span>, F, V, I, G&gt;
 {
     <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
-        <span class="macro">write!</span>(fmt, <span class="string">&quot;TypeLayoutGraph&lt;{}&gt;(&quot;</span>, <span class="self">self</span>.ty)<span class="question-mark">?</span>;
-
-        <span class="kw">let </span><span class="kw-2">mut </span>debug = fmt.debug_list();
-
-        <span class="kw">for </span>ty <span class="kw">in </span><span class="kw-2">&amp;</span><span class="self">self</span>.tys {
-            <span class="kw">match </span>ty {
-                <span class="prelude-val">Some</span>(ty) =&gt; debug.entry(<span class="kw-2">&amp;</span>ty),
-                <span class="prelude-val">None </span>=&gt; <span class="kw">break</span>,
-            };
-        }
-
-        debug.finish()<span class="question-mark">?</span>;
-
-        <span class="macro">write!</span>(fmt, <span class="string">&quot;)&quot;</span>)
+        fmt.write_fmt(<span class="macro">format_args!</span>(<span class="string">"TypeLayoutGraph&lt;{}&gt;({:?})"</span>, <span class="self">self</span>.ty, <span class="self">self</span>.tys))
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, F: Deref&lt;Target = [Field&lt;<span class="lifetime">&#39;a</span>&gt;]&gt; + Ord&gt; Ord <span class="kw">for </span>Variant&lt;<span class="lifetime">&#39;a</span>, F&gt; {
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, F: Deref&lt;Target = [Field&lt;<span class="lifetime">'a</span>&gt;]&gt; + Ord&gt; Ord <span class="kw">for </span>Variant&lt;<span class="lifetime">'a</span>, F&gt; {
     <span class="kw">fn </span>cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; core::cmp::Ordering {
         (<span class="kw-2">&amp;</span><span class="self">self</span>.discriminant, <span class="kw-2">&amp;</span><span class="self">self</span>.name, <span class="kw-2">&amp;</span><span class="self">self</span>.fields).cmp(<span class="kw-2">&amp;</span>(
             <span class="kw-2">&amp;</span>other.discriminant,
@@ -1311,7 +1411,7 @@
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, F: Deref&lt;Target = [Field&lt;<span class="lifetime">&#39;a</span>&gt;]&gt; + PartialOrd&gt; PartialOrd <span class="kw">for </span>Variant&lt;<span class="lifetime">&#39;a</span>, F&gt; {
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>, F: Deref&lt;Target = [Field&lt;<span class="lifetime">'a</span>&gt;]&gt; + PartialOrd&gt; PartialOrd <span class="kw">for </span>Variant&lt;<span class="lifetime">'a</span>, F&gt; {
     <span class="kw">fn </span>partial_cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;core::cmp::Ordering&gt; {
         (<span class="kw-2">&amp;</span><span class="self">self</span>.discriminant, <span class="kw-2">&amp;</span><span class="self">self</span>.name, <span class="kw-2">&amp;</span><span class="self">self</span>.fields).partial_cmp(<span class="kw-2">&amp;</span>(
             <span class="kw-2">&amp;</span>other.discriminant,
@@ -1321,271 +1421,23 @@
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; fmt::Debug <span class="kw">for </span>Discriminant&lt;<span class="lifetime">&#39;a</span>&gt; {
-    <span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
-        <span class="macro">write!</span>(fmt, <span class="string">&quot;0x&quot;</span>)<span class="question-mark">?</span>;
-
-        <span class="kw">let </span><span class="kw-2">mut </span>is_zero = <span class="bool-val">true</span>;
-
-        <span class="kw">for </span>byte <span class="kw">in </span><span class="self">self</span>.big_endian_bytes.iter().copied() {
-            <span class="kw">if </span>byte != <span class="number">0_u8 </span>{
-                is_zero = <span class="bool-val">false</span>;
-
-                <span class="macro">write!</span>(fmt, <span class="string">&quot;{byte:x}&quot;</span>)<span class="question-mark">?</span>;
-            }
-        }
-
-        <span class="kw">if </span>is_zero {
-            <span class="macro">write!</span>(fmt, <span class="string">&quot;0&quot;</span>)<span class="question-mark">?</span>;
-        }
-
-        <span class="prelude-val">Ok</span>(())
-    }
-}
-
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; PartialEq <span class="kw">for </span>Field&lt;<span class="lifetime">&#39;a</span>&gt; {
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; PartialEq <span class="kw">for </span>Field&lt;<span class="lifetime">'a</span>&gt; {
     <span class="kw">fn </span>eq(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; bool {
         <span class="self">self</span>.name == other.name &amp;&amp; <span class="self">self</span>.offset == other.offset &amp;&amp; core::ptr::eq(<span class="self">self</span>.ty, other.ty)
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; Eq <span class="kw">for </span>Field&lt;<span class="lifetime">&#39;a</span>&gt; {}
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; Eq <span class="kw">for </span>Field&lt;<span class="lifetime">'a</span>&gt; {}
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; Ord <span class="kw">for </span>Field&lt;<span class="lifetime">&#39;a</span>&gt; {
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; Ord <span class="kw">for </span>Field&lt;<span class="lifetime">'a</span>&gt; {
     <span class="kw">fn </span>cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; core::cmp::Ordering {
         (<span class="kw-2">&amp;</span><span class="self">self</span>.offset, <span class="kw-2">&amp;</span><span class="self">self</span>.name, <span class="kw-2">&amp;</span><span class="self">self</span>.ty).cmp(<span class="kw-2">&amp;</span>(<span class="kw-2">&amp;</span>other.offset, <span class="kw-2">&amp;</span>other.name, <span class="kw-2">&amp;</span>other.ty))
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; PartialOrd <span class="kw">for </span>Field&lt;<span class="lifetime">&#39;a</span>&gt; {
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; PartialOrd <span class="kw">for </span>Field&lt;<span class="lifetime">'a</span>&gt; {
     <span class="kw">fn </span>partial_cmp(<span class="kw-2">&amp;</span><span class="self">self</span>, other: <span class="kw-2">&amp;</span><span class="self">Self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;core::cmp::Ordering&gt; {
         <span class="prelude-val">Some</span>(<span class="self">self</span>.cmp(other))
     }
-}
-
-<span class="attr">#[doc(hidden)]
-#[allow_internal_unstable(const_ptr_offset_from)]
-</span><span class="kw">pub macro </span>struct_field_offset(<span class="macro-nonterminal">$ty_name</span>:ident =&gt; <span class="macro-nonterminal">$ty</span>:ty =&gt; (<span class="kw-2">*</span><span class="macro-nonterminal">$base</span>:ident).<span class="macro-nonterminal">$field</span>:tt =&gt; $(<span class="macro-nonterminal">$extra_fields</span>:tt)<span class="question-mark">?</span>) {
-    {
-        <span class="attr">#[allow(clippy::unneeded_field_pattern)]
-        </span><span class="kw">let </span><span class="macro-nonterminal">$ty_name </span>{ <span class="macro-nonterminal">$field</span>: <span class="kw">_</span>, $(<span class="macro-nonterminal">$extra_fields</span>)<span class="question-mark">? </span>}: <span class="macro-nonterminal">$ty</span>;
-
-        <span class="kw">if let </span><span class="macro-nonterminal">$crate::MaybeUninhabited::Inhabited</span>(uninit) = <span class="kw">unsafe </span>{ &lt;<span class="macro-nonterminal">$ty </span><span class="kw">as </span><span class="macro-nonterminal">$crate::TypeLayout</span>&gt;::uninit() } {
-            <span class="kw">let </span><span class="macro-nonterminal">$base</span>: <span class="kw-2">*const </span><span class="macro-nonterminal">$ty </span>= <span class="macro">::core::ptr::addr_of!</span>(uninit).cast();
-
-            <span class="attr">#[allow(unused_unsafe)]
-            </span><span class="kw">let </span>field_ptr = <span class="kw">unsafe </span>{
-                <span class="macro">::core::ptr::addr_of!</span>((<span class="kw-2">*</span><span class="macro-nonterminal">$base</span>).<span class="macro-nonterminal">$field</span>)
-            };
-
-            <span class="attr">#[allow(clippy::cast_sign_loss)]
-            </span><span class="kw">let </span>offset = <span class="kw">unsafe </span>{ field_ptr.cast::&lt;u8&gt;().offset_from(<span class="macro-nonterminal">$base</span>.cast()) <span class="kw">as </span>usize };
-
-            <span class="attr">#[allow(clippy::forget_non_drop, clippy::forget_copy)]
-            </span>::core::mem::forget(uninit);
-
-            <span class="macro-nonterminal">$crate::MaybeUninhabited::Inhabited</span>(offset)
-        } <span class="kw">else </span>{
-            <span class="macro-nonterminal">$crate::MaybeUninhabited::Uninhabited
-        </span>}
-    }
-}
-
-<span class="attr">#[doc(hidden)]
-#[allow_internal_unstable(const_discriminant)]
-</span><span class="kw">pub macro </span>struct_variant_discriminant {
-    (<span class="macro-nonterminal">$ty_name</span>:ident =&gt; <span class="macro-nonterminal">$ty</span>:ty =&gt; <span class="macro-nonterminal">$variant_name</span>:ident) =&gt; {
-        <span class="macro-nonterminal">$crate::MaybeUninhabited::Inhabited </span>{
-            <span class="number">0</span>: <span class="macro-nonterminal">$crate::Discriminant </span>{
-                big_endian_bytes: <span class="kw-2">&amp;</span>{
-                    <span class="kw">let </span>uninit: <span class="macro-nonterminal">$ty </span>= <span class="macro-nonterminal">$ty_name</span>::<span class="macro-nonterminal">$variant_name</span>;
-
-                    <span class="kw">let </span>system_endian_bytes: [u8; ::core::mem::size_of::&lt;::core::mem::Discriminant&lt;<span class="macro-nonterminal">$ty</span>&gt;&gt;()] = <span class="kw">unsafe </span>{
-                        ::core::mem::transmute(::core::mem::discriminant(<span class="kw-2">&amp;</span>uninit))
-                    };
-
-                    <span class="attr">#[allow(clippy::forget_non_drop, clippy::forget_copy)]
-                    </span>::core::mem::forget(uninit);
-
-                    <span class="kw">let </span><span class="kw-2">mut </span>big_endian_bytes = [<span class="number">0_u8</span>; ::core::mem::size_of::&lt;::core::mem::Discriminant&lt;<span class="macro-nonterminal">$ty</span>&gt;&gt;()];
-
-                    <span class="kw">let </span><span class="kw-2">mut </span>i = <span class="number">0</span>;
-
-                    <span class="kw">while </span>i &lt; system_endian_bytes.len() {
-                        big_endian_bytes[i] = system_endian_bytes[<span class="kw">if </span><span class="macro">cfg!</span>(target_endian = <span class="string">&quot;big&quot;</span>) {
-                            i
-                        } <span class="kw">else </span>{
-                            system_endian_bytes.len() - i - <span class="number">1
-                        </span>}];
-
-                        i += <span class="number">1</span>;
-                    }
-
-                    big_endian_bytes
-                },
-            },
-        }
-    },
-    (<span class="macro-nonterminal">$ty_name</span>:ident =&gt; <span class="macro-nonterminal">$ty</span>:ty =&gt; <span class="macro-nonterminal">$variant_name</span>:ident($(<span class="macro-nonterminal">$field_name</span>:ident: <span class="macro-nonterminal">$field_ty</span>:ty),* $(,)<span class="question-mark">?</span>)) =&gt; {{
-        <span class="attr">#[allow(unused_parens)]
-        </span><span class="kw">if let </span>(
-            $(<span class="macro-nonterminal">$crate::MaybeUninhabited::Inhabited</span>(<span class="macro-nonterminal">$field_name</span>)),*
-        ) = (
-            $(<span class="kw">unsafe </span>{ &lt;<span class="macro-nonterminal">$field_ty </span><span class="kw">as </span><span class="macro-nonterminal">$crate::TypeLayout</span>&gt;::uninit() }),*
-        ) {
-            <span class="macro-nonterminal">$crate::MaybeUninhabited::Inhabited </span>{
-                <span class="number">0</span>: <span class="macro-nonterminal">$crate::Discriminant </span>{
-                    big_endian_bytes: {
-                        <span class="kw">let </span>uninit: <span class="macro-nonterminal">$ty </span>= <span class="macro-nonterminal">$ty_name</span>::<span class="macro-nonterminal">$variant_name</span>(
-                            $(<span class="kw">unsafe </span>{ <span class="macro-nonterminal">$field_name</span>.assume_init() }),*
-                        );
-
-                        <span class="kw">let </span>system_endian_bytes: [u8; ::core::mem::size_of::&lt;::core::mem::Discriminant&lt;<span class="macro-nonterminal">$ty</span>&gt;&gt;()] = <span class="kw">unsafe </span>{
-                            ::core::mem::transmute(::core::mem::discriminant(<span class="kw-2">&amp;</span>uninit))
-                        };
-
-                        <span class="attr">#[allow(clippy::forget_non_drop, clippy::forget_copy)]
-                        </span>::core::mem::forget(uninit);
-
-                        <span class="kw">let </span>big_endian_bytes = <span class="kw">unsafe </span>{
-                            <span class="kw-2">&amp;mut *</span><span class="macro-nonterminal">$crate::impls::leak_uninit_ptr</span>::&lt;
-                                [u8; ::core::mem::size_of::&lt;::core::mem::Discriminant&lt;<span class="macro-nonterminal">$ty</span>&gt;&gt;()]
-                            &gt;()
-                        };
-
-                        <span class="kw">let </span><span class="kw-2">mut </span>i = <span class="number">0</span>;
-
-                        <span class="kw">while </span>i &lt; system_endian_bytes.len() {
-                            (<span class="kw-2">*</span>big_endian_bytes)[i] = system_endian_bytes[<span class="kw">if </span><span class="macro">cfg!</span>(target_endian = <span class="string">&quot;big&quot;</span>) {
-                                i
-                            } <span class="kw">else </span>{
-                                system_endian_bytes.len() - i - <span class="number">1
-                            </span>}];
-
-                            i += <span class="number">1</span>;
-                        }
-
-                        big_endian_bytes
-                    }
-                },
-            }
-        } <span class="kw">else </span>{
-            <span class="macro-nonterminal">$crate::MaybeUninhabited::Uninhabited
-        </span>}
-    }},
-    (<span class="macro-nonterminal">$ty_name</span>:ident =&gt; <span class="macro-nonterminal">$ty</span>:ty =&gt; <span class="macro-nonterminal">$variant_name</span>:ident { $(<span class="macro-nonterminal">$field_name</span>:ident: <span class="macro-nonterminal">$field_ty</span>:ty),* $(,)<span class="question-mark">? </span>}) =&gt; {{
-        <span class="attr">#[allow(unused_parens)]
-        </span><span class="kw">if let </span>(
-            $(<span class="macro-nonterminal">$crate::MaybeUninhabited::Inhabited</span>(<span class="macro-nonterminal">$field_name</span>)),*
-        ) = (
-            $(<span class="kw">unsafe </span>{ &lt;<span class="macro-nonterminal">$field_ty </span><span class="kw">as </span><span class="macro-nonterminal">$crate::TypeLayout</span>&gt;::uninit() }),*
-        ) {
-            <span class="macro-nonterminal">$crate::MaybeUninhabited::Inhabited </span>{
-                <span class="number">0</span>: <span class="macro-nonterminal">$crate::Discriminant </span>{
-                    big_endian_bytes: {
-                        <span class="kw">let </span>uninit: <span class="macro-nonterminal">$ty </span>= <span class="macro-nonterminal">$ty_name</span>::<span class="macro-nonterminal">$variant_name </span>{
-                            $(<span class="macro-nonterminal">$field_name</span>: <span class="kw">unsafe </span>{ <span class="macro-nonterminal">$field_name</span>.assume_init() }),*
-                        };
-
-                        <span class="kw">let </span>system_endian_bytes: [u8; ::core::mem::size_of::&lt;::core::mem::Discriminant&lt;<span class="macro-nonterminal">$ty</span>&gt;&gt;()] = <span class="kw">unsafe </span>{
-                            ::core::mem::transmute(::core::mem::discriminant(<span class="kw-2">&amp;</span>uninit))
-                        };
-
-                        <span class="attr">#[allow(clippy::forget_non_drop, clippy::forget_copy)]
-                        </span>::core::mem::forget(uninit);
-
-                        <span class="kw">let </span>big_endian_bytes = <span class="kw">unsafe </span>{
-                            <span class="kw-2">&amp;mut *</span><span class="macro-nonterminal">$crate::impls::leak_uninit_ptr</span>::&lt;
-                                [u8; ::core::mem::size_of::&lt;::core::mem::Discriminant&lt;<span class="macro-nonterminal">$ty</span>&gt;&gt;()]
-                            &gt;()
-                        };
-
-                        <span class="kw">let </span><span class="kw-2">mut </span>i = <span class="number">0</span>;
-
-                        <span class="kw">while </span>i &lt; system_endian_bytes.len() {
-                            (<span class="kw-2">*</span>big_endian_bytes)[i] = system_endian_bytes[<span class="kw">if </span><span class="macro">cfg!</span>(target_endian = <span class="string">&quot;big&quot;</span>) {
-                                i
-                            } <span class="kw">else </span>{
-                                system_endian_bytes.len() - i - <span class="number">1
-                            </span>}];
-
-                            i += <span class="number">1</span>;
-                        }
-
-                        big_endian_bytes
-                    }
-                },
-            }
-        } <span class="kw">else </span>{
-            <span class="macro-nonterminal">$crate::MaybeUninhabited::Uninhabited
-        </span>}
-    }},
-}
-
-<span class="attr">#[doc(hidden)]
-#[allow_internal_unstable(const_ptr_offset_from)]
-</span><span class="kw">pub macro </span>struct_variant_field_offset {
-    (<span class="macro-nonterminal">$ty_name</span>:ident =&gt; <span class="macro-nonterminal">$ty</span>:ty =&gt; <span class="macro-nonterminal">$variant_name</span>:ident($(<span class="macro-nonterminal">$field_name</span>:ident: <span class="macro-nonterminal">$field_ty</span>:ty),* $(,)<span class="question-mark">?</span>) =&gt; <span class="macro-nonterminal">$field_index</span>:tt) =&gt; {{
-        <span class="attr">#[allow(unused_parens)]
-        </span><span class="kw">if let </span>(
-            $(<span class="macro-nonterminal">$crate::MaybeUninhabited::Inhabited</span>(<span class="macro-nonterminal">$field_name</span>)),*
-        ) = (
-            $(<span class="kw">unsafe </span>{ &lt;<span class="macro-nonterminal">$field_ty </span><span class="kw">as </span><span class="macro-nonterminal">$crate::TypeLayout</span>&gt;::uninit() }),*
-        ) {
-            <span class="kw">let </span>uninit: <span class="macro-nonterminal">$ty </span>= <span class="macro-nonterminal">$ty_name</span>::<span class="macro-nonterminal">$variant_name</span>(
-                $(<span class="kw">unsafe </span>{ <span class="macro-nonterminal">$field_name</span>.assume_init() }),*
-            );
-            <span class="kw">let </span>base_ptr: <span class="kw-2">*const </span><span class="macro-nonterminal">$ty </span>= <span class="macro">::core::ptr::addr_of!</span>(uninit).cast();
-
-            <span class="kw">let </span>field_ptr: <span class="kw-2">*const </span>u8 = <span class="kw">match </span><span class="kw-2">&amp;</span>uninit {
-                <span class="attr">#[allow(clippy::unneeded_field_pattern, clippy::ptr_as_ptr)]
-                </span><span class="macro-nonterminal">$ty_name</span>::<span class="macro-nonterminal">$variant_name </span>{ <span class="macro-nonterminal">$field_index</span>: field, .. } =&gt; {
-                    field <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span><span class="kw-2">*const </span>u8
-                },
-                <span class="kw">_ </span>=&gt; <span class="macro">unreachable!</span>(),
-            };
-
-            <span class="attr">#[allow(clippy::cast_sign_loss)]
-            </span><span class="kw">let </span>offset = <span class="kw">unsafe </span>{ field_ptr.cast::&lt;u8&gt;().offset_from(base_ptr.cast()) <span class="kw">as </span>usize };
-
-            <span class="attr">#[allow(clippy::forget_non_drop, clippy::forget_copy)]
-            </span>::core::mem::forget(uninit);
-
-            <span class="macro-nonterminal">$crate::MaybeUninhabited::Inhabited</span>(offset)
-        } <span class="kw">else </span>{
-            <span class="macro-nonterminal">$crate::MaybeUninhabited::Uninhabited
-        </span>}
-    }},
-    (<span class="macro-nonterminal">$ty_name</span>:ident =&gt; <span class="macro-nonterminal">$ty</span>:ty =&gt; <span class="macro-nonterminal">$variant_name</span>:ident { $(<span class="macro-nonterminal">$field_name</span>:ident: <span class="macro-nonterminal">$field_ty</span>:ty),* $(,)<span class="question-mark">? </span>} =&gt; <span class="macro-nonterminal">$field_index</span>:ident) =&gt; {{
-        <span class="attr">#[allow(unused_parens)]
-        </span><span class="kw">if let </span>(
-            $(<span class="macro-nonterminal">$crate::MaybeUninhabited::Inhabited</span>(<span class="macro-nonterminal">$field_name</span>)),*
-        ) = (
-            $(<span class="kw">unsafe </span>{ &lt;<span class="macro-nonterminal">$field_ty </span><span class="kw">as </span><span class="macro-nonterminal">$crate::TypeLayout</span>&gt;::uninit() }),*
-        ) {
-            <span class="kw">let </span>uninit: <span class="macro-nonterminal">$ty </span>= <span class="macro-nonterminal">$ty_name</span>::<span class="macro-nonterminal">$variant_name </span>{
-                $(<span class="macro-nonterminal">$field_name</span>: <span class="kw">unsafe </span>{ <span class="macro-nonterminal">$field_name</span>.assume_init() }),*
-            };
-            <span class="kw">let </span>base_ptr: <span class="kw-2">*const </span><span class="macro-nonterminal">$ty </span>= <span class="macro">::core::ptr::addr_of!</span>(uninit).cast();
-
-            <span class="kw">let </span>field_ptr: <span class="kw-2">*const </span>u8 = <span class="kw">match </span><span class="kw-2">&amp;</span>uninit {
-                <span class="attr">#[allow(clippy::unneeded_field_pattern)]
-                </span><span class="macro-nonterminal">$ty_name</span>::<span class="macro-nonterminal">$variant_name </span>{ <span class="macro-nonterminal">$field_index</span>: field, .. } =&gt; {
-                    field <span class="kw">as </span><span class="kw-2">*const </span><span class="kw">_ as </span><span class="kw-2">*const </span>u8
-                },
-                <span class="kw">_ </span>=&gt; <span class="macro">unreachable!</span>(),
-            };
-
-            <span class="attr">#[allow(clippy::cast_sign_loss)]
-            </span><span class="kw">let </span>offset = <span class="kw">unsafe </span>{ field_ptr.cast::&lt;u8&gt;().offset_from(base_ptr.cast()) <span class="kw">as </span>usize };
-
-            <span class="attr">#[allow(clippy::forget_non_drop, clippy::forget_copy)]
-            </span>::core::mem::forget(uninit);
-
-            <span class="macro-nonterminal">$crate::MaybeUninhabited::Inhabited</span>(offset)
-        } <span class="kw">else </span>{
-            <span class="macro-nonterminal">$crate::MaybeUninhabited::Uninhabited
-        </span>}
-    }},
 }
 </code></pre></div></section></main></body></html>
