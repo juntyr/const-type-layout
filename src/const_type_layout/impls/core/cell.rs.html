@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/impls/core/cell.rs`."><title>cell.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-804b98a1284a310a.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="const_type_layout" data-themes="" data-resource-suffix="" data-rustdoc-version="1.76.0-nightly (6a6287132 2023-12-17)" data-channel="nightly" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/impls/core/cell.rs`."><title>cell.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../../static.files/rustdoc-804b98a1284a310a.css"><meta name="rustdoc-vars" data-root-path="../../../../" data-static-root-path="../../../../static.files/" data-current-crate="const_type_layout" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (2d7be7393 2023-12-23)" data-channel="nightly" data-search-js="search-2b6ce74ff89ae146.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../../static.files/src-script-39ed315d46fb705f.js"></script><script defer src="../../../../src-files.js"></script><script defer src="../../../../static.files/main-305769736d49e732.js"></script><noscript><link rel="stylesheet" href="../../../../static.files/noscript-feafe1bb7466e4bd.css"></noscript><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><div class="sidebar-resizer"></div>
     <main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -47,6 +47,50 @@
 <a href="#46" id="46">46</a>
 <a href="#47" id="47">47</a>
 <a href="#48" id="48">48</a>
+<a href="#49" id="49">49</a>
+<a href="#50" id="50">50</a>
+<a href="#51" id="51">51</a>
+<a href="#52" id="52">52</a>
+<a href="#53" id="53">53</a>
+<a href="#54" id="54">54</a>
+<a href="#55" id="55">55</a>
+<a href="#56" id="56">56</a>
+<a href="#57" id="57">57</a>
+<a href="#58" id="58">58</a>
+<a href="#59" id="59">59</a>
+<a href="#60" id="60">60</a>
+<a href="#61" id="61">61</a>
+<a href="#62" id="62">62</a>
+<a href="#63" id="63">63</a>
+<a href="#64" id="64">64</a>
+<a href="#65" id="65">65</a>
+<a href="#66" id="66">66</a>
+<a href="#67" id="67">67</a>
+<a href="#68" id="68">68</a>
+<a href="#69" id="69">69</a>
+<a href="#70" id="70">70</a>
+<a href="#71" id="71">71</a>
+<a href="#72" id="72">72</a>
+<a href="#73" id="73">73</a>
+<a href="#74" id="74">74</a>
+<a href="#75" id="75">75</a>
+<a href="#76" id="76">76</a>
+<a href="#77" id="77">77</a>
+<a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
 </pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
     typeset::{tset, ComputeTypeSet, ExpandTypeSet},
     Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
@@ -94,5 +138,49 @@
 
 <span class="kw">unsafe impl</span>&lt;T: ComputeTypeSet&gt; ComputeTypeSet <span class="kw">for </span>core::cell::Cell&lt;T&gt; {
     <span class="kw">type </span>Output&lt;R: ExpandTypeSet&gt; = <span class="macro">tset!</span>[core::cell::UnsafeCell&lt;T&gt;, .. @ R];
+}
+
+<span class="kw">unsafe impl</span>&lt;T: TypeLayout&gt; TypeLayout <span class="kw">for </span>core::cell::SyncUnsafeCell&lt;T&gt; {
+    <span class="kw">type </span>Inhabited = T::Inhabited;
+
+    <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">'static</span>&gt; = TypeLayoutInfo {
+        name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
+        size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
+        alignment: ::core::mem::align_of::&lt;<span class="self">Self</span>&gt;(),
+        structure: TypeStructure::Struct {
+            repr: <span class="string">"transparent"</span>,
+            fields: <span class="kw-2">&amp;</span>[Field {
+                name: <span class="string">"value"</span>,
+                offset: MaybeUninhabited::new::&lt;T&gt;(<span class="number">0</span>),
+                ty: ::core::any::type_name::&lt;core::cell::UnsafeCell&lt;T&gt;&gt;(),
+            }],
+        },
+    };
+}
+
+<span class="kw">unsafe impl</span>&lt;T: ComputeTypeSet&gt; ComputeTypeSet <span class="kw">for </span>core::cell::SyncUnsafeCell&lt;T&gt; {
+    <span class="kw">type </span>Output&lt;R: ExpandTypeSet&gt; = <span class="macro">tset!</span>[core::cell::UnsafeCell&lt;T&gt;, .. @ R];
+}
+
+<span class="kw">unsafe impl</span>&lt;T: TypeLayout&gt; TypeLayout <span class="kw">for </span>core::cell::OnceCell&lt;T&gt; {
+    <span class="kw">type </span>Inhabited = T::Inhabited;
+
+    <span class="kw">const </span>TYPE_LAYOUT: TypeLayoutInfo&lt;<span class="lifetime">'static</span>&gt; = TypeLayoutInfo {
+        name: ::core::any::type_name::&lt;<span class="self">Self</span>&gt;(),
+        size: ::core::mem::size_of::&lt;<span class="self">Self</span>&gt;(),
+        alignment: ::core::mem::align_of::&lt;<span class="self">Self</span>&gt;(),
+        structure: TypeStructure::Struct {
+            repr: <span class="string">""</span>,
+            fields: <span class="kw-2">&amp;</span>[Field {
+                name: <span class="string">"inner"</span>,
+                offset: MaybeUninhabited::new::&lt;T&gt;(<span class="number">0</span>),
+                ty: ::core::any::type_name::&lt;core::cell::UnsafeCell&lt;core::option::Option&lt;T&gt;&gt;&gt;(),
+            }],
+        },
+    };
+}
+
+<span class="kw">unsafe impl</span>&lt;T: ComputeTypeSet&gt; ComputeTypeSet <span class="kw">for </span>core::cell::OnceCell&lt;T&gt; {
+    <span class="kw">type </span>Output&lt;R: ExpandTypeSet&gt; = <span class="macro">tset!</span>[core::cell::UnsafeCell&lt;core::option::Option&lt;T&gt;&gt;, .. @ R];
 }
 </code></pre></div></section></main></body></html>
