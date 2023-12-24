@@ -148,6 +148,8 @@
 #![feature(discriminant_kind)]
 #![feature(offset_of)]
 #![feature(offset_of_enum)]
+#![feature(sync_unsafe_cell)]
+#![feature(exclusive_wrapper)]
 #![feature(doc_auto_cfg)]
 #![feature(cfg_version)]
 #![cfg_attr(not(version("1.76.0")), feature(ptr_from_ref))]
@@ -525,7 +527,7 @@ pub trait ExtractDiscriminant {
         + Send
         + Sync
         + Unpin
-        + typeset::ComputeTypeSet;
+        + TypeGraphLayout;
 }
 
 impl<T> ExtractDiscriminant for T {
@@ -544,7 +546,7 @@ pub trait ExtractDiscriminantSpec<T> {
         + Send
         + Sync
         + Unpin
-        + typeset::ComputeTypeSet;
+        + TypeGraphLayout;
 }
 
 impl<T> ExtractDiscriminantSpec<<T as core::marker::DiscriminantKind>::Discriminant> for T {

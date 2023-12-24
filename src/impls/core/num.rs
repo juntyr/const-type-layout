@@ -62,3 +62,25 @@ unsafe impl<T: TypeLayout> TypeLayout for core::num::Wrapping<T> {
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::num::Wrapping<T> {
     type Output<R: ExpandTypeSet> = tset![T, .. @ R];
 }
+
+unsafe impl<T: TypeLayout> TypeLayout for core::num::Saturating<T> {
+    type Inhabited = T::Inhabited;
+
+    const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
+        name: ::core::any::type_name::<Self>(),
+        size: ::core::mem::size_of::<Self>(),
+        alignment: ::core::mem::align_of::<Self>(),
+        structure: TypeStructure::Struct {
+            repr: "transparent",
+            fields: &[Field {
+                name: "0",
+                offset: MaybeUninhabited::new::<T>(0),
+                ty: ::core::any::type_name::<T>(),
+            }],
+        },
+    };
+}
+
+unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::num::Saturating<T> {
+    type Output<R: ExpandTypeSet> = tset![T, .. @ R];
+}

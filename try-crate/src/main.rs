@@ -209,6 +209,12 @@ fn main() {
     println!("{:#?}", <Option<std::num::NonZeroU64>>::TYPE_GRAPH);
     println!("{:#?}", <Result<bool, u8>>::TYPE_GRAPH);
 
+    println!("{:#?}", <std::cmp::Ordering>::TYPE_GRAPH);
+    println!(
+        "{:#?}",
+        <std::mem::Discriminant<std::cmp::Ordering>>::TYPE_GRAPH
+    );
+
     println!("{:#?}", <std::convert::Infallible>::TYPE_GRAPH);
     println!("{:#?}", <!>::TYPE_GRAPH);
 

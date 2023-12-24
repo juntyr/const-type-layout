@@ -7,6 +7,7 @@ mod r#fn;
 mod marker;
 mod mem;
 mod num;
+mod ops;
 mod option;
 mod pin;
 mod primitive;
