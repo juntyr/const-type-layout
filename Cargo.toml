@@ -1,7 +1,7 @@
 [package]
 name = "const-type-layout"
 description = "Derivable const trait to view and compare the layout of a struct, union, or enum."
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["Juniper Tyree <juniper.tyree@helsinki.fi>", "Lucien Greathouse <me@lpghatguy.com>"]
 documentation = "https://docs.rs/const-type-layout/"
