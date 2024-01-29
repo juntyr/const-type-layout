@@ -6,9 +6,11 @@
 #![deny(clippy::style)]
 #![deny(clippy::suspicious)]
 #![feature(const_type_name)]
-#![feature(offset_of)]
 #![feature(offset_of_enum)]
 #![feature(never_type)]
+#![feature(cfg_version)]
+#![cfg_attr(not(version("1.77.0")), feature(offset_of))]
+#![cfg_attr(version("1.77.0"), feature(offset_of_nested))]
 #![allow(dead_code)]
 
 use const_type_layout::{TypeGraphLayout, TypeLayout};
