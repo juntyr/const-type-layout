@@ -1,8 +1,6 @@
 // use core::ops::Deref;
 #![allow(clippy::needless_borrow, clippy::borrow_deref_ref)] // FIXME: Deref const trait
 
-use core::ops::BitXor;
-
 use crate::{
     Discriminant, Field, MaybeUninhabited, TypeLayout, TypeLayoutGraph, TypeLayoutInfo,
     TypeStructure, Variant,
@@ -284,11 +282,11 @@ pub const fn serialise_field(
         MaybeUninhabited::Uninhabited => from,
     };
 
-    let ty = hash(value.ty);//const_fnv1a_hash::fnv1a_hash_str_32(value.ty);
+    let ty = hash(value.ty); // const_fnv1a_hash::fnv1a_hash_str_32(value.ty);
 
     let mut i = 0;
     while i < tys.len() {
-        if tys[i].1 == ty /* && str_equal(tys[i].0, value.ty) */ {
+        if tys[i].1 == ty && str_equal(tys[i].0, value.ty) {
             break;
         }
         i += 1;
@@ -336,23 +334,26 @@ const fn str_equal(a: &str, b: &str) -> bool {
         return false;
     }
 
-    let a = a.as_bytes();
-    let b = b.as_bytes();
+    // Safety: a and b are both valid strs and their lenght is equal
+    unsafe { core::intrinsics::compare_bytes(a.as_ptr(), b.as_ptr(), a.len()) == 0 }
 
-    let mut i = 0;
+    // let a = a.as_bytes();
+    // let b = b.as_bytes();
 
-    while i < a.len() {
-        if a[i] != b[i] {
-            return false;
-        }
+    // let mut i = 0;
 
-        i += 1;
-    }
+    // while i < a.len() {
+    //     if a[i] != b[i] {
+    //         return false;
+    //     }
 
-    true
+    //     i += 1;
+    // }
+
+    // true
 }
 
-pub const fn serialised_field_len(from: usize, value: &Field, tys_len: usize) -> usize {
+pub const fn serialised_field_len(from: usize, value: &Field, _tys_len: usize) -> usize {
     let from = serialised_str_len(from, value.name);
     let from = serialised_maybe_uninhabited_len(
         from,
@@ -366,7 +367,7 @@ pub const fn serialised_field_len(from: usize, value: &Field, tys_len: usize) ->
         MaybeUninhabited::Uninhabited => from,
     };
     // TODO: no longer truncate once comparisons have been made
-    serialised_index_len(from, tys_len) // serialised_str_len(from, value.ty)
+    serialised_str_len(from, value.ty) // serialised_index_len(from, tys_len)
 }
 
 pub const fn serialise_fields(

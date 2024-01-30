@@ -158,6 +158,9 @@
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 #![feature(specialization)]
+#![allow(internal_features)]
+#![feature(core_intrinsics)]
+#![feature(const_intrinsic_compare_bytes)]
 #![cfg_attr(
     all(doc, not(docsrs)),
     doc(html_root_url = "https://juntyr.github.io/const-type-layout")
@@ -678,7 +681,7 @@ impl<
             tys[i] = (
                 self.tys[i].name,
                 ser::hash(self.tys[i].name),
-                //const_fnv1a_hash::fnv1a_hash_str_32(self.tys[i].name),
+                // const_fnv1a_hash::fnv1a_hash_str_32(self.tys[i].name),
             );
             i += 1;
         }
