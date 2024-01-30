@@ -286,7 +286,7 @@ pub const fn serialise_field(
 
     let mut i = 0;
     while i < tys.len() {
-        if tys[i].1 == ty && str_equal(tys[i].0, value.ty) {
+        if tys[i].1 == ty /* && str_equal(tys[i].0, value.ty) */ {
             break;
         }
         i += 1;
