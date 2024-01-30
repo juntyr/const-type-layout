@@ -266,7 +266,7 @@ pub const fn serialise_field(
     bytes: &mut [u8],
     from: usize,
     value: &Field,
-    tys: &[(&str, u64)],
+    tys: &[(&str, u128)],
 ) -> usize {
     let from = serialise_str(bytes, from, value.name);
     let from = serialise_maybe_uninhabited(
@@ -282,7 +282,7 @@ pub const fn serialise_field(
         MaybeUninhabited::Uninhabited => from,
     };
 
-    let ty = hash(value.ty); // const_fnv1a_hash::fnv1a_hash_str_32(value.ty);
+    let ty = hash(value.ty);
 
     let mut i = 0;
     while i < tys.len() {
@@ -296,33 +296,41 @@ pub const fn serialise_field(
     serialise_index(bytes, from, ty_index, tys.len())
 }
 
-pub const fn hash(a: &str) -> u64 {
-    const K: u64 = 0x517c_c1b7_2722_0a95;
+// adapted from rustc-hash, i.e. fxhash
+pub const fn hash(a: &str) -> u128 {
+    // (2^128 - 1) / pi, rounded to be odd
+    const K: u128 = 0x517c_c1b7_2722_0a94_fe13_abe8_fa9a_6ee1;
 
     let mut a = a.as_bytes();
 
-    let mut hash = 1_u64; // different from rustc-hash
+    let mut hash = 1_u128; // different from rustc-hash
 
-    while let [a0, a1, a2, a3, a4, a5, a6, a7, ar @ ..] = a {
-        let value = u64::from_le_bytes([*a0, *a1, *a2, *a3, *a4, *a5, *a6, *a7]);
+    while let Some((a16, ar)) = a.split_first_chunk() {
+        let value = u128::from_le_bytes(*a16);
         hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
         a = ar;
     }
 
-    if let [a0, a1, a2, a3, ar @ ..] = a {
-        let value = u32::from_le_bytes([*a0, *a1, *a2, *a3]) as u64;
+    if let Some((a8, ar)) = a.split_first_chunk() {
+        let value = u64::from_le_bytes(*a8) as u128;
         hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
         a = ar;
     }
 
-    if let [a0, a1, ar @ ..] = a {
-        let value = u16::from_le_bytes([*a0, *a1]) as u64;
+    if let Some((a4, ar)) = a.split_first_chunk() {
+        let value = u32::from_le_bytes(*a4) as u128;
         hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
         a = ar;
     }
 
-    if let [a0, ..] = a {
-        let value = *a0 as u64;
+    if let Some((a2, ar)) = a.split_first_chunk() {
+        let value = u16::from_le_bytes(*a2) as u128;
+        hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
+        a = ar;
+    }
+
+    if let Some(a1) = a.first() {
+        let value = *a1 as u128;
         hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
     }
 
@@ -335,6 +343,7 @@ const fn str_equal(a: &str, b: &str) -> bool {
     }
 
     // Safety: a and b are both valid strs and their lenght is equal
+    //         compare_bytes is used since it has O(1) const eval cost
     unsafe { core::intrinsics::compare_bytes(a.as_ptr(), b.as_ptr(), a.len()) == 0 }
 
     // let a = a.as_bytes();
@@ -374,7 +383,7 @@ pub const fn serialise_fields(
     bytes: &mut [u8],
     from: usize,
     value: &[Field],
-    tys: &[(&str, u64)],
+    tys: &[(&str, u128)],
 ) -> usize {
     let mut from = serialise_usize(bytes, from, value.len());
 
@@ -407,7 +416,7 @@ pub const fn serialise_variant(
     bytes: &mut [u8],
     from: usize,
     value: &Variant,
-    tys: &[(&str, u64)],
+    tys: &[(&str, u128)],
 ) -> usize {
     let from = serialise_str(bytes, from, value.name);
     let from = serialise_maybe_uninhabited(
@@ -449,7 +458,7 @@ pub const fn serialise_variants(
     bytes: &mut [u8],
     from: usize,
     value: &[Variant],
-    tys: &[(&str, u64)],
+    tys: &[(&str, u128)],
 ) -> usize {
     let mut from = serialise_usize(bytes, from, value.len());
 
@@ -510,7 +519,7 @@ pub const fn serialise_type_structure(
     bytes: &mut [u8],
     from: usize,
     value: &TypeStructure,
-    tys: &[(&str, u64)],
+    tys: &[(&str, u128)],
 ) -> usize {
     match value {
         TypeStructure::Primitive => serialise_byte(bytes, from, b'p'),
@@ -561,7 +570,7 @@ pub const fn serialise_type_layout_info(
     bytes: &mut [u8],
     from: usize,
     value: &TypeLayoutInfo,
-    tys: &[(&str, u64)],
+    tys: &[(&str, u128)],
 ) -> usize {
     let from = serialise_str(bytes, from, value.name);
     let from = serialise_usize(bytes, from, value.size);
@@ -586,7 +595,7 @@ pub const fn serialise_type_layout_graph(
     bytes: &mut [u8],
     from: usize,
     value: &TypeLayoutGraph,
-    tys: &[(&str, u64)],
+    tys: &[(&str, u128)],
 ) -> usize {
     // Include the crate version of `type_layout` for cross-version comparison
     let from = serialise_str(bytes, from, LAYOUT_VERSION);

@@ -150,6 +150,7 @@
 #![feature(sync_unsafe_cell)]
 #![feature(exclusive_wrapper)]
 #![feature(const_slice_split_at_mut)]
+#![feature(const_raw_ptr_comparison)]
 #![feature(doc_auto_cfg)]
 #![feature(cfg_version)]
 #![cfg_attr(not(version("1.76.0")), feature(ptr_from_ref))]
@@ -306,7 +307,7 @@ pub const fn serialise_type_graph<T: TypeGraphLayout>() -> [u8; serialised_type_
 
     let layout = T::TYPE_GRAPH;
 
-    let mut tys = [("", 0_u64); serialised_type_graph_len::<T>()];
+    let mut tys = [("", 0_u128); serialised_type_graph_len::<T>()];
     let (tys, _) = tys.split_at_mut(layout.tys.len());
 
     layout.serialise(&mut bytes, tys);
@@ -666,7 +667,7 @@ impl<
     ///
     /// This method panics iff `bytes` has a length of less than
     /// [`Self::serialised_len`].
-    pub const fn serialise(&self, bytes: &mut [u8], tys: &mut [(&'a str, u64)])
+    pub const fn serialise(&self, bytes: &mut [u8], tys: &mut [(&'a str, u128)])
     // where
     //     F: ~const Deref<Target = [Field<'a>]>,
     //     V: ~const Deref<Target = [Variant<'a, F>]>,
@@ -681,7 +682,6 @@ impl<
             tys[i] = (
                 self.tys[i].name,
                 ser::hash(self.tys[i].name),
-                // const_fnv1a_hash::fnv1a_hash_str_32(self.tys[i].name),
             );
             i += 1;
         }
