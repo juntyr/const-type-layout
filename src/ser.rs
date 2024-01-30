@@ -1,6 +1,8 @@
 // use core::ops::Deref;
 #![allow(clippy::needless_borrow, clippy::borrow_deref_ref)] // FIXME: Deref const trait
 
+use core::ops::BitXor;
+
 use crate::{
     Discriminant, Field, MaybeUninhabited, TypeLayout, TypeLayoutGraph, TypeLayoutInfo,
     TypeStructure, Variant,
@@ -266,7 +268,7 @@ pub const fn serialise_field(
     bytes: &mut [u8],
     from: usize,
     value: &Field,
-    tys: &[(&str, u32)],
+    tys: &[(&str, u64)],
 ) -> usize {
     let from = serialise_str(bytes, from, value.name);
     let from = serialise_maybe_uninhabited(
@@ -296,21 +298,34 @@ pub const fn serialise_field(
     serialise_index(bytes, from, ty_index, tys.len())
 }
 
-pub const fn hash(a: &str) -> u32 {
+pub const fn hash(a: &str) -> u64 {
+    const K: u64 = 0x517c_c1b7_2722_0a95;
+
     let mut a = a.as_bytes();
 
-    let mut hash = 0x811c_9dc5_u32;
+    let mut hash = 1_u64; // different from rustc-hash
 
-    while let [a0, a1, a2, a3, ar @ ..] = a {
-        hash ^= u32::from_le_bytes([*a0, *a1, *a2, *a3]);
-        hash = hash.wrapping_mul(0x0100_0193_u32);
+    while let [a0, a1, a2, a3, a4, a5, a6, a7, ar @ ..] = a {
+        let value = u64::from_le_bytes([*a0, *a1, *a2, *a3, *a4, *a5, *a6, *a7]);
+        hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
         a = ar;
     }
 
-    while let [a0, ar @ ..] = a {
-        hash ^= *a0 as u32;
-        hash = hash.wrapping_mul(0x0100_0193_u32);
+    if let [a0, a1, a2, a3, ar @ ..] = a {
+        let value = u32::from_le_bytes([*a0, *a1, *a2, *a3]) as u64;
+        hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
         a = ar;
+    }
+
+    if let [a0, a1, ar @ ..] = a {
+        let value = u16::from_le_bytes([*a0, *a1]) as u64;
+        hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
+        a = ar;
+    }
+
+    if let [a0, ..] = a {
+        let value = *a0 as u64;
+        hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
     }
 
     hash
@@ -358,7 +373,7 @@ pub const fn serialise_fields(
     bytes: &mut [u8],
     from: usize,
     value: &[Field],
-    tys: &[(&str, u32)],
+    tys: &[(&str, u64)],
 ) -> usize {
     let mut from = serialise_usize(bytes, from, value.len());
 
@@ -391,7 +406,7 @@ pub const fn serialise_variant(
     bytes: &mut [u8],
     from: usize,
     value: &Variant,
-    tys: &[(&str, u32)],
+    tys: &[(&str, u64)],
 ) -> usize {
     let from = serialise_str(bytes, from, value.name);
     let from = serialise_maybe_uninhabited(
@@ -433,7 +448,7 @@ pub const fn serialise_variants(
     bytes: &mut [u8],
     from: usize,
     value: &[Variant],
-    tys: &[(&str, u32)],
+    tys: &[(&str, u64)],
 ) -> usize {
     let mut from = serialise_usize(bytes, from, value.len());
 
@@ -494,7 +509,7 @@ pub const fn serialise_type_structure(
     bytes: &mut [u8],
     from: usize,
     value: &TypeStructure,
-    tys: &[(&str, u32)],
+    tys: &[(&str, u64)],
 ) -> usize {
     match value {
         TypeStructure::Primitive => serialise_byte(bytes, from, b'p'),
@@ -545,7 +560,7 @@ pub const fn serialise_type_layout_info(
     bytes: &mut [u8],
     from: usize,
     value: &TypeLayoutInfo,
-    tys: &[(&str, u32)],
+    tys: &[(&str, u64)],
 ) -> usize {
     let from = serialise_str(bytes, from, value.name);
     let from = serialise_usize(bytes, from, value.size);
@@ -570,7 +585,7 @@ pub const fn serialise_type_layout_graph(
     bytes: &mut [u8],
     from: usize,
     value: &TypeLayoutGraph,
-    tys: &[(&str, u32)],
+    tys: &[(&str, u64)],
 ) -> usize {
     // Include the crate version of `type_layout` for cross-version comparison
     let from = serialise_str(bytes, from, LAYOUT_VERSION);

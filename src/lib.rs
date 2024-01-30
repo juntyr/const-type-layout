@@ -303,7 +303,7 @@ pub const fn serialise_type_graph<T: TypeGraphLayout>() -> [u8; serialised_type_
 
     let layout = T::TYPE_GRAPH;
 
-    let mut tys = [("", 0_u32); serialised_type_graph_len::<T>()];
+    let mut tys = [("", 0_u64); serialised_type_graph_len::<T>()];
     let (tys, _) = tys.split_at_mut(layout.tys.len());
 
     layout.serialise(&mut bytes, tys);
@@ -663,7 +663,7 @@ impl<
     ///
     /// This method panics iff `bytes` has a length of less than
     /// [`Self::serialised_len`].
-    pub const fn serialise(&self, bytes: &mut [u8], tys: &mut [(&'a str, u32)])
+    pub const fn serialise(&self, bytes: &mut [u8], tys: &mut [(&'a str, u64)])
     // where
     //     F: ~const Deref<Target = [Field<'a>]>,
     //     V: ~const Deref<Target = [Variant<'a, F>]>,
