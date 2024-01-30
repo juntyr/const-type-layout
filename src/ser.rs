@@ -266,7 +266,8 @@ pub const fn serialise_field(
     bytes: &mut [u8],
     from: usize,
     value: &Field,
-    tys: &[(&str, u128)],
+    tys: &[(&str, u128, usize)],
+    tys_len: usize,
 ) -> usize {
     let from = serialise_str(bytes, from, value.name);
     let from = serialise_maybe_uninhabited(
@@ -284,16 +285,13 @@ pub const fn serialise_field(
 
     let ty = hash(value.ty);
 
-    let mut i = 0;
-    while i < tys.len() {
-        if tys[i].1 == ty && str_equal(tys[i].0, value.ty) {
-            break;
-        }
-        i += 1;
+    let mut i = (ty % (tys.len() as u128)) as usize;
+    while (tys[i].1 != ty) || !str_equal(tys[i].0, value.ty) {
+        i = (i + 1) % tys.len();
     }
-    let ty_index = i;
+    let ty_index = tys[i].2;
 
-    serialise_index(bytes, from, ty_index, tys.len())
+    serialise_index(bytes, from, ty_index, tys_len)
 }
 
 // adapted from rustc-hash, i.e. fxhash
@@ -383,14 +381,15 @@ pub const fn serialise_fields(
     bytes: &mut [u8],
     from: usize,
     value: &[Field],
-    tys: &[(&str, u128)],
+    tys: &[(&str, u128, usize)],
+    tys_len: usize,
 ) -> usize {
     let mut from = serialise_usize(bytes, from, value.len());
 
     let mut i = 0;
 
     while i < value.len() {
-        from = serialise_field(bytes, from, &value[i], tys);
+        from = serialise_field(bytes, from, &value[i], tys, tys_len);
 
         i += 1;
     }
@@ -416,7 +415,8 @@ pub const fn serialise_variant(
     bytes: &mut [u8],
     from: usize,
     value: &Variant,
-    tys: &[(&str, u128)],
+    tys: &[(&str, u128, usize)],
+    tys_len: usize,
 ) -> usize {
     let from = serialise_str(bytes, from, value.name);
     let from = serialise_maybe_uninhabited(
@@ -433,7 +433,7 @@ pub const fn serialise_variant(
         },
         MaybeUninhabited::Uninhabited => from,
     };
-    serialise_fields(bytes, from, &value.fields, tys)
+    serialise_fields(bytes, from, &value.fields, tys, tys_len)
 }
 
 pub const fn serialised_variant_len(from: usize, value: &Variant, tys_len: usize) -> usize {
@@ -458,14 +458,15 @@ pub const fn serialise_variants(
     bytes: &mut [u8],
     from: usize,
     value: &[Variant],
-    tys: &[(&str, u128)],
+    tys: &[(&str, u128, usize)],
+    tys_len: usize,
 ) -> usize {
     let mut from = serialise_usize(bytes, from, value.len());
 
     let mut i = 0;
 
     while i < value.len() {
-        from = serialise_variant(bytes, from, &value[i], tys);
+        from = serialise_variant(bytes, from, &value[i], tys, tys_len);
 
         i += 1;
     }
@@ -519,24 +520,25 @@ pub const fn serialise_type_structure(
     bytes: &mut [u8],
     from: usize,
     value: &TypeStructure,
-    tys: &[(&str, u128)],
+    tys: &[(&str, u128, usize)],
+    tys_len: usize,
 ) -> usize {
     match value {
         TypeStructure::Primitive => serialise_byte(bytes, from, b'p'),
         TypeStructure::Struct { repr, fields } => {
             let from = serialise_byte(bytes, from, b's');
             let from = serialise_str(bytes, from, repr);
-            serialise_fields(bytes, from, fields, tys)
+            serialise_fields(bytes, from, fields, tys, tys_len)
         },
         TypeStructure::Union { repr, fields } => {
             let from = serialise_byte(bytes, from, b'u');
             let from = serialise_str(bytes, from, repr);
-            serialise_fields(bytes, from, fields, tys)
+            serialise_fields(bytes, from, fields, tys, tys_len)
         },
         TypeStructure::Enum { repr, variants } => {
             let from = serialise_byte(bytes, from, b'e');
             let from = serialise_str(bytes, from, repr);
-            serialise_variants(bytes, from, variants, tys)
+            serialise_variants(bytes, from, variants, tys, tys_len)
         },
     }
 }
@@ -570,12 +572,13 @@ pub const fn serialise_type_layout_info(
     bytes: &mut [u8],
     from: usize,
     value: &TypeLayoutInfo,
-    tys: &[(&str, u128)],
+    tys: &[(&str, u128, usize)],
+    tys_len: usize,
 ) -> usize {
     let from = serialise_str(bytes, from, value.name);
     let from = serialise_usize(bytes, from, value.size);
     let from = serialise_usize(bytes, from, value.alignment);
-    serialise_type_structure(bytes, from, &value.structure, tys)
+    serialise_type_structure(bytes, from, &value.structure, tys, tys_len)
 }
 
 pub const fn serialised_type_layout_info_len(
@@ -595,7 +598,8 @@ pub const fn serialise_type_layout_graph(
     bytes: &mut [u8],
     from: usize,
     value: &TypeLayoutGraph,
-    tys: &[(&str, u128)],
+    tys: &[(&str, u128, usize)],
+    tys_len: usize,
 ) -> usize {
     // Include the crate version of `type_layout` for cross-version comparison
     let from = serialise_str(bytes, from, LAYOUT_VERSION);
@@ -607,7 +611,7 @@ pub const fn serialise_type_layout_graph(
     let mut i = 0;
 
     while i < value.tys.len() {
-        from = serialise_type_layout_info(bytes, from, &*value.tys[i], tys);
+        from = serialise_type_layout_info(bytes, from, &*value.tys[i], tys, tys_len);
 
         i += 1;
     }

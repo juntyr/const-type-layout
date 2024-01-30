@@ -307,10 +307,10 @@ pub const fn serialise_type_graph<T: TypeGraphLayout>() -> [u8; serialised_type_
 
     let layout = T::TYPE_GRAPH;
 
-    let mut tys = [("", 0_u128); serialised_type_graph_len::<T>()];
-    let (tys, _) = tys.split_at_mut(layout.tys.len());
+    let mut tys = [("", 0_u128, usize::MAX); serialised_type_graph_len::<T>()];
+    // let (tys, _) = tys.split_at_mut(layout.tys.len());
 
-    layout.serialise(&mut bytes, tys);
+    layout.serialise(&mut bytes, &mut tys);
 
     bytes
 }
@@ -667,7 +667,7 @@ impl<
     ///
     /// This method panics iff `bytes` has a length of less than
     /// [`Self::serialised_len`].
-    pub const fn serialise(&self, bytes: &mut [u8], tys: &mut [(&'a str, u128)])
+    pub const fn serialise(&self, bytes: &mut [u8], tys: &mut [(&'a str, u128, usize)])
     // where
     //     F: ~const Deref<Target = [Field<'a>]>,
     //     V: ~const Deref<Target = [Variant<'a, F>]>,
@@ -679,14 +679,19 @@ impl<
 
         let mut i = 0;
         while i < self.tys.len() {
-            tys[i] = (
-                self.tys[i].name,
-                ser::hash(self.tys[i].name),
-            );
+            let hash = ser::hash(self.tys[i].name);
+            let mut j = (hash % (tys.len() as u128)) as usize;
+
+            while tys[j].2 != usize::MAX {
+                j = (j + 1) % tys.len();
+            }
+
+            tys[j] = (self.tys[i].name, hash, i);
+
             i += 1;
         }
 
-        ser::serialise_type_layout_graph(bytes, from, self, tys);
+        ser::serialise_type_layout_graph(bytes, from, self, tys, self.tys.len());
     }
 }
 
