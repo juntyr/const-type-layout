@@ -282,7 +282,7 @@ pub const fn serialise_field(
         MaybeUninhabited::Uninhabited => from,
     };
 
-    let ty = const_fnv1a_hash::fnv1a_hash_str_32(value.ty);
+    let ty = hash(value.ty);//const_fnv1a_hash::fnv1a_hash_str_32(value.ty);
 
     let mut i = 0;
     while i < tys.len() {
@@ -294,6 +294,26 @@ pub const fn serialise_field(
     let ty_index = i;
 
     serialise_index(bytes, from, ty_index, tys.len())
+}
+
+pub const fn hash(a: &str) -> u32 {
+    let mut a = a.as_bytes();
+
+    let mut hash = 0x811c_9dc5_u32;
+
+    while let [a0, a1, a2, a3, ar @ ..] = a {
+        hash ^= u32::from_le_bytes([*a0, *a1, *a2, *a3]);
+        hash = hash.wrapping_mul(0x0100_0193_u32);
+        a = ar;
+    }
+
+    while let [a0, ar @ ..] = a {
+        hash ^= *a0 as u32;
+        hash = hash.wrapping_mul(0x0100_0193_u32);
+        a = ar;
+    }
+
+    hash
 }
 
 const fn str_equal(a: &str, b: &str) -> bool {

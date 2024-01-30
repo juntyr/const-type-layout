@@ -677,7 +677,8 @@ impl<
         while i < self.tys.len() {
             tys[i] = (
                 self.tys[i].name,
-                const_fnv1a_hash::fnv1a_hash_str_32(self.tys[i].name),
+                ser::hash(self.tys[i].name),
+                //const_fnv1a_hash::fnv1a_hash_str_32(self.tys[i].name),
             );
             i += 1;
         }
