@@ -352,7 +352,7 @@ const fn str_equal(a: &str, b: &str) -> bool {
     true
 }
 
-pub const fn serialised_field_len(from: usize, value: &Field, _tys_len: usize) -> usize {
+pub const fn serialised_field_len(from: usize, value: &Field, tys_len: usize) -> usize {
     let from = serialised_str_len(from, value.name);
     let from = serialised_maybe_uninhabited_len(
         from,
@@ -366,7 +366,7 @@ pub const fn serialised_field_len(from: usize, value: &Field, _tys_len: usize) -
         MaybeUninhabited::Uninhabited => from,
     };
     // TODO: no longer truncate once comparisons have been made
-    serialised_str_len(from, value.ty) // serialised_index_len(from, tys_len)
+    serialised_index_len(from, tys_len) // serialised_str_len(from, value.ty)
 }
 
 pub const fn serialise_fields(
