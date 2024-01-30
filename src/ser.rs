@@ -298,45 +298,43 @@ pub const fn serialise_field(
 
 // adapted from rustc-hash, i.e. fxhash
 pub const fn hash(a: &str) -> u128 {
-    // // (2^128 - 1) / pi, rounded to be odd
-    // const K: u128 = 0x517c_c1b7_2722_0a94_fe13_abe8_fa9a_6ee1;
+    // (2^128 - 1) / pi, rounded to be odd
+    const K: u128 = 0x517c_c1b7_2722_0a94_fe13_abe8_fa9a_6ee1;
 
-    // let mut a = a.as_bytes();
+    let mut a = a.as_bytes();
 
-    // let mut hash = 1_u128; // different from rustc-hash
+    let mut hash = 1_u128; // different from rustc-hash
 
-    // while let Some((a16, ar)) = a.split_first_chunk() {
-    //     let value = u128::from_le_bytes(*a16);
-    //     hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
-    //     a = ar;
-    // }
+    while let Some((a16, ar)) = a.split_first_chunk() {
+        let value = u128::from_le_bytes(*a16);
+        hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
+        a = ar;
+    }
 
-    // if let Some((a8, ar)) = a.split_first_chunk() {
-    //     let value = u64::from_le_bytes(*a8) as u128;
-    //     hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
-    //     a = ar;
-    // }
+    if let Some((a8, ar)) = a.split_first_chunk() {
+        let value = u64::from_le_bytes(*a8) as u128;
+        hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
+        a = ar;
+    }
 
-    // if let Some((a4, ar)) = a.split_first_chunk() {
-    //     let value = u32::from_le_bytes(*a4) as u128;
-    //     hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
-    //     a = ar;
-    // }
+    if let Some((a4, ar)) = a.split_first_chunk() {
+        let value = u32::from_le_bytes(*a4) as u128;
+        hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
+        a = ar;
+    }
 
-    // if let Some((a2, ar)) = a.split_first_chunk() {
-    //     let value = u16::from_le_bytes(*a2) as u128;
-    //     hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
-    //     a = ar;
-    // }
+    if let Some((a2, ar)) = a.split_first_chunk() {
+        let value = u16::from_le_bytes(*a2) as u128;
+        hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
+        a = ar;
+    }
 
-    // if let Some(a1) = a.first() {
-    //     let value = *a1 as u128;
-    //     hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
-    // }
+    if let Some(a1) = a.first() {
+        let value = *a1 as u128;
+        hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
+    }
 
-    // hash
-
-    0
+    hash
 }
 
 const fn str_equal(a: &str, b: &str) -> bool {
