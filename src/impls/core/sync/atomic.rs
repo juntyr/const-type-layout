@@ -114,7 +114,7 @@ macro_rules! impl_atomic_ptr_layout {
         #[cfg(target_has_atomic_load_store = "ptr")]
         #[cfg(target_pointer_width = $cfg)]
         unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::sync::atomic::AtomicPtr<T> {
-            type Output<R: ExpandTypeSet> = tset![core::cell::UnsafeCell<T>, .. @ R];
+            type Output<R: ExpandTypeSet> = tset![core::cell::UnsafeCell<*mut T>, .. @ R];
         }
     };
     ($(( $align:literal : $cfg:literal )),*) => {

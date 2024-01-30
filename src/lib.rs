@@ -149,6 +149,7 @@
 #![feature(offset_of_enum)]
 #![feature(sync_unsafe_cell)]
 #![feature(exclusive_wrapper)]
+#![feature(const_slice_split_at_mut)]
 #![feature(doc_auto_cfg)]
 #![feature(cfg_version)]
 #![cfg_attr(not(version("1.76.0")), feature(ptr_from_ref))]
@@ -300,7 +301,12 @@ pub const fn serialised_type_graph_len<T: TypeGraphLayout>() -> usize {
 pub const fn serialise_type_graph<T: TypeGraphLayout>() -> [u8; serialised_type_graph_len::<T>()] {
     let mut bytes = [0_u8; serialised_type_graph_len::<T>()];
 
-    T::TYPE_GRAPH.serialise(&mut bytes);
+    let layout = T::TYPE_GRAPH;
+
+    let mut tys = [("", 0_u32); serialised_type_graph_len::<T>()];
+    let (tys, _) = tys.split_at_mut(layout.tys.len());
+
+    layout.serialise(&mut bytes, tys);
 
     bytes
 }
@@ -633,7 +639,7 @@ impl<
     //     I: ~const Deref<Target = TypeLayoutInfo<'a, F, V, P>>,
     //     G: ~const Deref<Target = [I]>,
     {
-        let len = ser::serialised_type_layout_graph_len(0, self);
+        let len = ser::serialised_type_layout_graph_len(0, self, self.tys.len());
 
         let mut last_full_len = len;
         let mut full_len = ser::serialised_usize_len(len, last_full_len);
@@ -657,7 +663,7 @@ impl<
     ///
     /// This method panics iff `bytes` has a length of less than
     /// [`Self::serialised_len`].
-    pub const fn serialise(&self, bytes: &mut [u8])
+    pub const fn serialise(&self, bytes: &mut [u8], tys: &mut [(&'a str, u32)])
     // where
     //     F: ~const Deref<Target = [Field<'a>]>,
     //     V: ~const Deref<Target = [Variant<'a, F>]>,
@@ -667,7 +673,16 @@ impl<
     {
         let from = ser::serialise_usize(bytes, 0, self.serialised_len());
 
-        ser::serialise_type_layout_graph(bytes, from, self);
+        let mut i = 0;
+        while i < self.tys.len() {
+            tys[i] = (
+                self.tys[i].name,
+                const_fnv1a_hash::fnv1a_hash_str_32(self.tys[i].name),
+            );
+            i += 1;
+        }
+
+        ser::serialise_type_layout_graph(bytes, from, self, tys);
     }
 }
 
