@@ -9,7 +9,7 @@ macro_rules! impl_tuple_type_layout {
             type Inhabited = crate::inhabited::all![$($T),*];
 
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-                name: ::core::any::type_name::<Self>(),
+                ty: crate::TypeRef::of::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
                 // Even though tuples are primitives, their field layout is non-trivial
@@ -18,7 +18,7 @@ macro_rules! impl_tuple_type_layout {
                     fields: &[$(Field {
                         name: stringify!($a),
                         offset: MaybeUninhabited::new::<$T>(core::mem::offset_of!(Self, $a)),
-                        ty: ::core::any::type_name::<$T>(),
+                        ty: crate::TypeRef::of::<$T>(),
                     }),*],
                 },
             };

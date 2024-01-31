@@ -9,7 +9,7 @@ macro_rules! impl_nonzero_type_layout {
             type Inhabited = crate::inhabited::Inhabited;
 
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-                name: ::core::any::type_name::<Self>(),
+                ty: crate::TypeRef::of::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
                 structure: TypeStructure::Struct {
@@ -18,7 +18,7 @@ macro_rules! impl_nonzero_type_layout {
                         Field {
                             name: "0",
                             offset: MaybeUninhabited::Inhabited(0),
-                            ty: ::core::any::type_name::<$ty>(),
+                            ty: crate::TypeRef::of::<$ty>(),
                         },
                     ],
                 },
@@ -45,7 +45,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::num::Wrapping<T> {
     type Inhabited = T::Inhabited;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-        name: ::core::any::type_name::<Self>(),
+        ty: crate::TypeRef::of::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Struct {
@@ -53,7 +53,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::num::Wrapping<T> {
             fields: &[Field {
                 name: "0",
                 offset: MaybeUninhabited::new::<T>(0),
-                ty: ::core::any::type_name::<T>(),
+                ty: crate::TypeRef::of::<T>(),
             }],
         },
     };
@@ -67,7 +67,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::num::Saturating<T> {
     type Inhabited = T::Inhabited;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-        name: ::core::any::type_name::<Self>(),
+        ty: crate::TypeRef::of::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Struct {
@@ -75,7 +75,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::num::Saturating<T> {
             fields: &[Field {
                 name: "0",
                 offset: MaybeUninhabited::new::<T>(0),
-                ty: ::core::any::type_name::<T>(),
+                ty: crate::TypeRef::of::<T>(),
             }],
         },
     };

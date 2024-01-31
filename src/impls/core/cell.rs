@@ -7,7 +7,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::cell::UnsafeCell<T> {
     type Inhabited = T::Inhabited;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-        name: ::core::any::type_name::<Self>(),
+        ty: crate::TypeRef::of::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Struct {
@@ -15,7 +15,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::cell::UnsafeCell<T> {
             fields: &[Field {
                 name: "value",
                 offset: MaybeUninhabited::new::<T>(0),
-                ty: ::core::any::type_name::<T>(),
+                ty: crate::TypeRef::of::<T>(),
             }],
         },
     };
@@ -29,7 +29,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::cell::Cell<T> {
     type Inhabited = T::Inhabited;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-        name: ::core::any::type_name::<Self>(),
+        ty: crate::TypeRef::of::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Struct {
@@ -37,7 +37,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::cell::Cell<T> {
             fields: &[Field {
                 name: "value",
                 offset: MaybeUninhabited::new::<T>(0),
-                ty: ::core::any::type_name::<core::cell::UnsafeCell<T>>(),
+                ty: crate::TypeRef::of::<core::cell::UnsafeCell<T>>(),
             }],
         },
     };
@@ -51,7 +51,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::cell::SyncUnsafeCell<T> {
     type Inhabited = T::Inhabited;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-        name: ::core::any::type_name::<Self>(),
+        ty: crate::TypeRef::of::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Struct {
@@ -59,7 +59,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::cell::SyncUnsafeCell<T> {
             fields: &[Field {
                 name: "value",
                 offset: MaybeUninhabited::new::<T>(0),
-                ty: ::core::any::type_name::<core::cell::UnsafeCell<T>>(),
+                ty: crate::TypeRef::of::<core::cell::UnsafeCell<T>>(),
             }],
         },
     };
@@ -73,7 +73,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::cell::OnceCell<T> {
     type Inhabited = T::Inhabited;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-        name: ::core::any::type_name::<Self>(),
+        ty: crate::TypeRef::of::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Struct {
@@ -81,7 +81,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::cell::OnceCell<T> {
             fields: &[Field {
                 name: "inner",
                 offset: MaybeUninhabited::new::<T>(0),
-                ty: ::core::any::type_name::<core::cell::UnsafeCell<core::option::Option<T>>>(),
+                ty: crate::TypeRef::of::<core::cell::UnsafeCell<Option<T>>>(),
             }],
         },
     };

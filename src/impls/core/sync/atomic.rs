@@ -10,7 +10,7 @@ macro_rules! impl_atomic_int_layout {
             type Inhabited = crate::inhabited::Inhabited;
 
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-                name: ::core::any::type_name::<Self>(),
+                ty: crate::TypeRef::of::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
                 structure: TypeStructure::Struct {
@@ -19,7 +19,7 @@ macro_rules! impl_atomic_int_layout {
                         Field {
                             name: "v",
                             offset: MaybeUninhabited::Inhabited(0),
-                            ty: core::any::type_name::<core::cell::UnsafeCell<$ty>>(),
+                            ty: crate::TypeRef::of::<core::cell::UnsafeCell<$ty>>(),
                         },
                     ],
                 },
@@ -53,7 +53,7 @@ macro_rules! impl_atomic_int_ptr_sized_layout {
             type Inhabited = crate::inhabited::Inhabited;
 
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-                name: ::core::any::type_name::<Self>(),
+                ty: crate::TypeRef::of::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
                 structure: TypeStructure::Struct {
@@ -62,7 +62,7 @@ macro_rules! impl_atomic_int_ptr_sized_layout {
                         Field {
                             name: "v",
                             offset: MaybeUninhabited::Inhabited(0),
-                            ty: core::any::type_name::<core::cell::UnsafeCell<$ty>>(),
+                            ty: crate::TypeRef::of::<core::cell::UnsafeCell<$ty>>(),
                         },
                     ],
                 },
@@ -95,16 +95,16 @@ macro_rules! impl_atomic_ptr_layout {
             type Inhabited = crate::inhabited::Inhabited;
 
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-                name: ::core::any::type_name::<Self>(),
+                ty: crate::TypeRef::of::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
                 structure: TypeStructure::Struct {
                     repr: concat!("C,align(", $align, ")"),
                     fields: &[
                         Field {
-                            name: "v",
+                            name: "p",
                             offset: MaybeUninhabited::Inhabited(0),
-                            ty: core::any::type_name::<core::cell::UnsafeCell<*mut T>>(),
+                            ty: crate::TypeRef::of::<core::cell::UnsafeCell<*mut T>>(),
                         },
                     ],
                 },

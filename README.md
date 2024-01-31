@@ -53,7 +53,10 @@ struct Foo {
 assert_eq!(
     format!("{:#?}", Foo::TYPE_LAYOUT),
 r#"TypeLayoutInfo {
-    name: "mycrate::mymodule::Foo",
+    ty: TypeRef {
+        name: "mycrate::mymodule::Foo",
+        ..
+    },
     size: 8,
     alignment: 4,
     structure: Struct {
@@ -64,14 +67,20 @@ r#"TypeLayoutInfo {
                 offset: Inhabited(
                     0,
                 ),
-                ty: "u8",
+                ty: TypeRef {
+                    name: "u8",
+                    ..
+                },
             },
             Field {
                 name: "b",
                 offset: Inhabited(
                     4,
                 ),
-                ty: "u32",
+                ty: TypeRef {
+                    name: "u32",
+                    ..
+                },
             },
         ],
     },
@@ -94,7 +103,10 @@ struct OverAligned {
 assert_eq!(
     format!("{:#?}", OverAligned::TYPE_LAYOUT),
 r#"TypeLayoutInfo {
-    name: "mycrate::mymodule::OverAligned",
+    ty: TypeRef {
+        name: "mycrate::mymodule::OverAligned",
+        ..
+    },
     size: 128,
     alignment: 128,
     structure: Struct {
@@ -105,7 +117,10 @@ r#"TypeLayoutInfo {
                 offset: Inhabited(
                     0,
                 ),
-                ty: "u8",
+                ty: TypeRef {
+                    name: "u8",
+                    ..
+                },
             },
         ],
     },

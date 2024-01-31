@@ -9,7 +9,7 @@ macro_rules! impl_primitive_type_layout {
             type Inhabited = crate::inhabited::Inhabited;
 
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-                name: ::core::any::type_name::<Self>(),
+                ty: crate::TypeRef::of::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
                 structure: TypeStructure::Primitive,
@@ -36,7 +36,7 @@ unsafe impl TypeLayout for ! {
     type Inhabited = crate::inhabited::Uninhabited;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-        name: ::core::any::type_name::<Self>(),
+        ty: crate::TypeRef::of::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Primitive,

@@ -9,7 +9,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::sync::Exclusive<T> {
     type Inhabited = T::Inhabited;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-        name: ::core::any::type_name::<Self>(),
+        ty: crate::TypeRef::of::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Struct {
@@ -17,7 +17,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::sync::Exclusive<T> {
             fields: &[Field {
                 name: "inner",
                 offset: MaybeUninhabited::new::<T>(0),
-                ty: ::core::any::type_name::<T>(),
+                ty: crate::TypeRef::of::<T>(),
             }],
         },
     };

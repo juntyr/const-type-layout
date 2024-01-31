@@ -33,10 +33,10 @@ type Set<H, T> = <T as ComputeSet>::Output<H>;
 /// The struct `Foo` with `u8` and `u16` fields links to `u8` and `u16`:
 ///
 /// ```rust
-/// # #![feature(const_type_name)]
-/// # #![feature(offset_of)]
+/// # #![feature(cfg_version)]
+/// # #![cfg_attr(not(version("1.77.0")), feature(offset_of))]
 /// # use const_type_layout::{
-/// #    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
+/// #    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeRef, TypeStructure,
 /// # };
 /// # use const_type_layout::inhabited;
 /// # use const_type_layout::typeset::{ComputeTypeSet, ExpandTypeSet, tset};
@@ -49,7 +49,7 @@ type Set<H, T> = <T as ComputeSet>::Output<H>;
 /// #     type Inhabited = inhabited::all![u8, u16];
 /// #
 /// #     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-/// #         name: ::core::any::type_name::<Self>(),
+/// #         ty: TypeRef::of::<Self>(),
 /// #         size: ::core::mem::size_of::<Self>(),
 /// #         alignment: ::core::mem::align_of::<Self>(),
 /// #         structure: TypeStructure::Struct {
@@ -58,12 +58,12 @@ type Set<H, T> = <T as ComputeSet>::Output<H>;
 /// #                 Field {
 /// #                     name: "a",
 /// #                     offset: MaybeUninhabited::new::<u8>(::core::mem::offset_of!(Self, a)),
-/// #                     ty: ::core::any::type_name::<u8>(),
+/// #                     ty: TypeRef::of::<u8>(),
 /// #                 },
 /// #                 Field {
 /// #                     name: "b",
 /// #                     offset: MaybeUninhabited::new::<u16>(::core::mem::offset_of!(Self, b)),
-/// #                     ty: ::core::any::type_name::<u16>(),
+/// #                     ty: TypeRef::of::<u16>(),
 /// #                 },
 /// #             ],
 /// #         },

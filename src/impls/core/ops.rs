@@ -7,7 +7,7 @@ unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::Range<Idx> {
     type Inhabited = Idx::Inhabited;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-        name: ::core::any::type_name::<Self>(),
+        ty: crate::TypeRef::of::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Struct {
@@ -16,12 +16,12 @@ unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::Range<Idx> {
                 Field {
                     name: "start",
                     offset: MaybeUninhabited::new::<Idx>(::core::mem::offset_of!(Self, start)),
-                    ty: ::core::any::type_name::<Idx>(),
+                    ty: crate::TypeRef::of::<Idx>(),
                 },
                 Field {
                     name: "end",
                     offset: MaybeUninhabited::new::<Idx>(::core::mem::offset_of!(Self, end)),
-                    ty: ::core::any::type_name::<Idx>(),
+                    ty: crate::TypeRef::of::<Idx>(),
                 },
             ],
         },
@@ -36,7 +36,7 @@ unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::RangeFrom<Idx> {
     type Inhabited = Idx::Inhabited;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-        name: ::core::any::type_name::<Self>(),
+        ty: crate::TypeRef::of::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Struct {
@@ -44,7 +44,7 @@ unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::RangeFrom<Idx> {
             fields: &[Field {
                 name: "start",
                 offset: MaybeUninhabited::new::<Idx>(::core::mem::offset_of!(Self, start)),
-                ty: ::core::any::type_name::<Idx>(),
+                ty: crate::TypeRef::of::<Idx>(),
             }],
         },
     };
@@ -58,7 +58,7 @@ unsafe impl TypeLayout for core::ops::RangeFull {
     type Inhabited = crate::inhabited::Inhabited;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-        name: ::core::any::type_name::<Self>(),
+        ty: crate::TypeRef::of::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Struct {
@@ -76,7 +76,7 @@ unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::RangeTo<Idx> {
     type Inhabited = Idx::Inhabited;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-        name: ::core::any::type_name::<Self>(),
+        ty: crate::TypeRef::of::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Struct {
@@ -84,7 +84,7 @@ unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::RangeTo<Idx> {
             fields: &[Field {
                 name: "end",
                 offset: MaybeUninhabited::new::<Idx>(::core::mem::offset_of!(Self, end)),
-                ty: ::core::any::type_name::<Idx>(),
+                ty: crate::TypeRef::of::<Idx>(),
             }],
         },
     };
@@ -98,7 +98,7 @@ unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::RangeToInclusive<Idx> {
     type Inhabited = Idx::Inhabited;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-        name: ::core::any::type_name::<Self>(),
+        ty: crate::TypeRef::of::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Struct {
@@ -106,7 +106,7 @@ unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::RangeToInclusive<Idx> {
             fields: &[Field {
                 name: "end",
                 offset: MaybeUninhabited::new::<Idx>(::core::mem::offset_of!(Self, end)),
-                ty: ::core::any::type_name::<Idx>(),
+                ty: crate::TypeRef::of::<Idx>(),
             }],
         },
     };
@@ -120,7 +120,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::ops::Bound<T> {
     type Inhabited = crate::inhabited::Inhabited;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-        name: ::core::any::type_name::<Self>(),
+        ty: crate::TypeRef::of::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Enum {
@@ -134,7 +134,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::ops::Bound<T> {
                         offset: MaybeUninhabited::new::<T>(::core::mem::offset_of!(
                             Self, Included.0
                         )),
-                        ty: ::core::any::type_name::<T>(),
+                        ty: crate::TypeRef::of::<T>(),
                     }],
                 },
                 Variant {
@@ -145,7 +145,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::ops::Bound<T> {
                         offset: MaybeUninhabited::new::<T>(::core::mem::offset_of!(
                             Self, Excluded.0
                         )),
-                        ty: ::core::any::type_name::<T>(),
+                        ty: crate::TypeRef::of::<T>(),
                     }],
                 },
                 Variant {
@@ -168,7 +168,7 @@ unsafe impl<B: TypeLayout, C: TypeLayout> TypeLayout for core::ops::ControlFlow<
     type Inhabited = crate::inhabited::any![B, C];
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-        name: ::core::any::type_name::<Self>(),
+        ty: crate::TypeRef::of::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Enum {
@@ -182,7 +182,7 @@ unsafe impl<B: TypeLayout, C: TypeLayout> TypeLayout for core::ops::ControlFlow<
                         offset: MaybeUninhabited::new::<C>(::core::mem::offset_of!(
                             Self, Continue.0
                         )),
-                        ty: ::core::any::type_name::<C>(),
+                        ty: crate::TypeRef::of::<C>(),
                     }],
                 },
                 Variant {
@@ -191,7 +191,7 @@ unsafe impl<B: TypeLayout, C: TypeLayout> TypeLayout for core::ops::ControlFlow<
                     fields: &[Field {
                         name: "0",
                         offset: MaybeUninhabited::new::<B>(::core::mem::offset_of!(Self, Break.0)),
-                        ty: ::core::any::type_name::<B>(),
+                        ty: crate::TypeRef::of::<B>(),
                     }],
                 },
             ],

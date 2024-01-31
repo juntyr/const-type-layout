@@ -7,7 +7,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::option::Option<T> {
     type Inhabited = crate::inhabited::Inhabited;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-        name: ::core::any::type_name::<Self>(),
+        ty: crate::TypeRef::of::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Enum {
@@ -24,7 +24,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::option::Option<T> {
                     fields: &[Field {
                         name: "0",
                         offset: MaybeUninhabited::new::<T>(::core::mem::offset_of!(Self, Some.0)),
-                        ty: ::core::any::type_name::<T>(),
+                        ty: crate::TypeRef::of::<T>(),
                     }],
                 },
             ],

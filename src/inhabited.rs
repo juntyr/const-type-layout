@@ -14,7 +14,7 @@ unsafe impl crate::TypeLayout for Inhabited {
     type Inhabited = Self;
 
     const TYPE_LAYOUT: crate::TypeLayoutInfo<'static> = crate::TypeLayoutInfo {
-        name: ::core::any::type_name::<Self>(),
+        ty: crate::TypeRef::of::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: crate::TypeStructure::Struct {
@@ -38,7 +38,7 @@ unsafe impl crate::TypeLayout for Uninhabited {
     type Inhabited = Self;
 
     const TYPE_LAYOUT: crate::TypeLayoutInfo<'static> = crate::TypeLayoutInfo {
-        name: ::core::any::type_name::<Self>(),
+        ty: crate::TypeRef::of::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: crate::TypeStructure::Enum {

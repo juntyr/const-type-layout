@@ -5,7 +5,6 @@
 #![deny(clippy::perf)]
 #![deny(clippy::style)]
 #![deny(clippy::suspicious)]
-#![feature(const_type_name)]
 #![feature(offset_of_enum)]
 #![feature(never_type)]
 #![feature(cfg_version)]

@@ -7,7 +7,7 @@ unsafe impl<T: TypeLayout + core::ops::Deref> TypeLayout for core::pin::Pin<T> {
     type Inhabited = T::Inhabited;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-        name: ::core::any::type_name::<Self>(),
+        ty: crate::TypeRef::of::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Struct {
@@ -15,7 +15,7 @@ unsafe impl<T: TypeLayout + core::ops::Deref> TypeLayout for core::pin::Pin<T> {
             fields: &[Field {
                 name: "pointer",
                 offset: MaybeUninhabited::new::<T>(0),
-                ty: ::core::any::type_name::<T>(),
+                ty: crate::TypeRef::of::<T>(),
             }],
         },
     };

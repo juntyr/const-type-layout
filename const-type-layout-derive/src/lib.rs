@@ -117,7 +117,7 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
 
             const TYPE_LAYOUT: #crate_path::TypeLayoutInfo<'static> = {
                 #crate_path::TypeLayoutInfo {
-                    name: ::core::any::type_name::<Self>(),
+                    ty: #crate_path::TypeRef::of::<Self>(),
                     size: ::core::mem::size_of::<Self>(),
                     alignment: ::core::mem::align_of::<Self>(),
                     structure: #layout,
@@ -446,7 +446,7 @@ fn quote_structlike_fields(
                     #crate_path::Field {
                         name: #field_name_str,
                         offset: { #field_offset },
-                        ty: ::core::any::type_name::<#field_ty>(),
+                        ty: #crate_path::TypeRef::of::<#field_ty>(),
                     }
                 }
             })
@@ -471,7 +471,7 @@ fn quote_structlike_fields(
                     #crate_path::Field {
                         name: #field_name_str,
                         offset: { #field_offset },
-                        ty: ::core::any::type_name::<#field_ty>(),
+                        ty: #crate_path::TypeRef::of::<#field_ty>(),
                     }
                 }
             })
@@ -602,7 +602,7 @@ fn quote_variant_fields(
                     #crate_path::Field {
                         name: #field_name_str,
                         offset: #offset,
-                        ty: ::core::any::type_name::<#field_ty>(),
+                        ty: #crate_path::TypeRef::of::<#field_ty>(),
                     }
                 }
             })
@@ -630,7 +630,7 @@ fn quote_variant_fields(
                     #crate_path::Field {
                         name: #field_name_str,
                         offset: #offset,
-                        ty: ::core::any::type_name::<#field_ty>(),
+                        ty: #crate_path::TypeRef::of::<#field_ty>(),
                     }
                 }
             })

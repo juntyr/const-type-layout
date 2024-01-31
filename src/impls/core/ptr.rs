@@ -7,7 +7,7 @@ unsafe impl<T: TypeLayout> TypeLayout for *const T {
     type Inhabited = crate::inhabited::Inhabited;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-        name: ::core::any::type_name::<Self>(),
+        ty: crate::TypeRef::of::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Primitive,
@@ -22,7 +22,7 @@ unsafe impl<T: TypeLayout> TypeLayout for *mut T {
     type Inhabited = crate::inhabited::Inhabited;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-        name: ::core::any::type_name::<Self>(),
+        ty: crate::TypeRef::of::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Primitive,
@@ -37,7 +37,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::ptr::NonNull<T> {
     type Inhabited = crate::inhabited::Inhabited;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-        name: ::core::any::type_name::<Self>(),
+        ty: crate::TypeRef::of::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Struct {
@@ -45,7 +45,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::ptr::NonNull<T> {
             fields: &[Field {
                 name: "pointer",
                 offset: MaybeUninhabited::Inhabited(0),
-                ty: ::core::any::type_name::<*const T>(),
+                ty: crate::TypeRef::of::<*const T>(),
             }],
         },
     };

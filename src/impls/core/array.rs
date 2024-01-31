@@ -7,7 +7,7 @@ unsafe impl<T: TypeLayout, const N: usize> TypeLayout for [T; N] {
     type Inhabited = T::Inhabited;
 
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-        name: ::core::any::type_name::<Self>(),
+        ty: crate::TypeRef::of::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Primitive,

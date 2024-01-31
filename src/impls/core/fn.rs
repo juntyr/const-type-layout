@@ -23,7 +23,7 @@ macro_rules! impl_fn_pointer_type_layout {
             type Inhabited = crate::inhabited::Inhabited;
 
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-                name: ::core::any::type_name::<Self>(),
+                ty: crate::TypeRef::of::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
                 structure: TypeStructure::Primitive,
@@ -66,7 +66,7 @@ macro_rules! impl_variadic_extern_fn_pointer_type_layout {
             type Inhabited = crate::inhabited::Inhabited;
 
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-                name: ::core::any::type_name::<Self>(),
+                ty: crate::TypeRef::of::<Self>(),
                 size: ::core::mem::size_of::<Self>(),
                 alignment: ::core::mem::align_of::<Self>(),
                 structure: TypeStructure::Primitive,

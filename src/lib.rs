@@ -48,8 +48,8 @@
 //! works on non-`#[repr(C)]` types, but their layout is unpredictable.
 #![cfg(feature = "derive")]
 //! ```rust
-//! # #![feature(const_type_name)]
-//! # #![feature(offset_of)]
+//! # #![feature(cfg_version)]
+//! # #![cfg_attr(not(version("1.77.0")), feature(offset_of))]
 //! # #![feature(offset_of_enum)]
 //! use const_type_layout::TypeLayout;
 //!
@@ -63,7 +63,10 @@
 //! assert_eq!(
 //!     format!("{:#?}", Foo::TYPE_LAYOUT),
 //! r#"TypeLayoutInfo {
-//!     name: "rust_out::main::_doctest_main_src_lib_rs_49_0::Foo",
+//!     ty: TypeRef {
+//!         name: "rust_out::main::_doctest_main_src_lib_rs_49_0::Foo",
+//!         ..
+//!     },
 //!     size: 8,
 //!     alignment: 4,
 //!     structure: Struct {
@@ -74,14 +77,20 @@
 //!                 offset: Inhabited(
 //!                     0,
 //!                 ),
-//!                 ty: "u8",
+//!                 ty: TypeRef {
+//!                     name: "u8",
+//!                     ..
+//!                 },
 //!             },
 //!             Field {
 //!                 name: "b",
 //!                 offset: Inhabited(
 //!                     4,
 //!                 ),
-//!                 ty: "u32",
+//!                 ty: TypeRef {
+//!                     name: "u32",
+//!                     ..
+//!                 },
 //!             },
 //!         ],
 //!     },
@@ -93,8 +102,8 @@
 //! some FFI scenarios:
 #![cfg(feature = "derive")]
 //! ```rust
-//! # #![feature(const_type_name)]
-//! # #![feature(offset_of)]
+//! # #![feature(cfg_version)]
+//! # #![cfg_attr(not(version("1.77.0")), feature(offset_of))]
 //! # #![feature(offset_of_enum)]
 //! use const_type_layout::TypeLayout;
 //!
@@ -107,7 +116,10 @@
 //! assert_eq!(
 //!     format!("{:#?}", OverAligned::TYPE_LAYOUT),
 //! r#"TypeLayoutInfo {
-//!     name: "rust_out::main::_doctest_main_src_lib_rs_93_0::OverAligned",
+//!     ty: TypeRef {
+//!         name: "rust_out::main::_doctest_main_src_lib_rs_102_0::OverAligned",
+//!         ..
+//!     },
 //!     size: 128,
 //!     alignment: 128,
 //!     structure: Struct {
@@ -118,7 +130,10 @@
 //!                 offset: Inhabited(
 //!                     0,
 //!                 ),
-//!                 ty: "u8",
+//!                 ty: TypeRef {
+//!                     name: "u8",
+//!                     ..
+//!                 },
 //!             },
 //!         ],
 //!     },
@@ -155,6 +170,7 @@
 #![feature(cfg_version)]
 #![cfg_attr(not(version("1.76.0")), feature(ptr_from_ref))]
 #![cfg_attr(not(version("1.77.0")), feature(offset_of))]
+#![cfg_attr(not(version("1.77.0")), feature(slice_first_last_chunk))]
 #![cfg_attr(version("1.77.0"), feature(offset_of_nested))]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
@@ -171,7 +187,10 @@
 extern crate alloc;
 
 use alloc::fmt;
-use core::ops::Deref;
+use core::{
+    hash::{Hash, Hasher},
+    ops::Deref,
+};
 
 #[cfg(feature = "derive")]
 pub use const_type_layout_derive::TypeLayout;
@@ -230,10 +249,9 @@ impl<T: Default> Default for MaybeUninhabited<T> {
 /// follows:
 ///
 /// ```rust
-/// # #![feature(const_type_name)]
 /// # #![feature(offset_of)]
 /// # use const_type_layout::{
-/// #    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
+/// #    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeRef, TypeStructure,
 /// # };
 /// # use const_type_layout::inhabited;
 /// # use const_type_layout::typeset::{ComputeTypeSet, ExpandTypeSet, tset};
@@ -246,7 +264,7 @@ impl<T: Default> Default for MaybeUninhabited<T> {
 ///     type Inhabited = inhabited::all![u8, u16];
 ///
 ///     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-///         name: ::core::any::type_name::<Self>(),
+///         ty: TypeRef::of::<Self>(),
 ///         size: ::core::mem::size_of::<Self>(),
 ///         alignment: ::core::mem::align_of::<Self>(),
 ///         structure: TypeStructure::Struct {
@@ -255,12 +273,12 @@ impl<T: Default> Default for MaybeUninhabited<T> {
 ///                 Field {
 ///                     name: "a",
 ///                     offset: MaybeUninhabited::new::<u8>(::core::mem::offset_of!(Self, a)),
-///                     ty: ::core::any::type_name::<u8>(),
+///                     ty: TypeRef::of::<u8>(),
 ///                 },
 ///                 Field {
 ///                     name: "b",
 ///                     offset: MaybeUninhabited::new::<u16>(::core::mem::offset_of!(Self, b)),
-///                     ty: ::core::any::type_name::<u16>(),
+///                     ty: TypeRef::of::<u16>(),
 ///                 },
 ///             ],
 ///         },
@@ -307,28 +325,165 @@ pub const fn serialise_type_graph<T: TypeGraphLayout>() -> [u8; serialised_type_
 
     let layout = T::TYPE_GRAPH;
 
-    let mut tys = [("", 0_u128, usize::MAX); serialised_type_graph_len::<T>()];
-    // let (tys, _) = tys.split_at_mut(layout.tys.len());
+    let mut tys = [("", 0_u64, usize::MAX); serialised_type_graph_len::<T>()];
 
     layout.serialise(&mut bytes, &mut tys);
 
     bytes
 }
 
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+/// Reference to a Rust type by its name and id.
+pub struct TypeRef<'a> {
+    name: &'a str,
+    // id: TypeId,
+    id: u128,
+}
+
+impl<'a> fmt::Display for TypeRef<'a> {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.write_str(self.name)
+    }
+}
+
+impl<'a> fmt::Debug for TypeRef<'a> {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        fmt.debug_struct("TypeRef")
+            .field("name", &self.name)
+            .finish_non_exhaustive()
+    }
+}
+
+impl<'a> Hash for TypeRef<'a> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write_u64(self.hash());
+    }
+}
+
+impl TypeRef<'static> {
+    /// Construct a new [`TypeRef`] for the type `T` using
+    /// [`core::any::type_name`] and [`core::any::TypeId::of`].
+    #[must_use]
+    pub const fn of<T>() -> Self {
+        // // Courtesy of David Tolnay:
+        // // https://github.com/rust-lang/rust/issues/41875#issuecomment-317292888
+        // const fn non_static_type_id<T: ?Sized>() -> TypeId {
+        //     #[const_trait]
+        //     trait NonStaticAny {
+        //         fn get_type_id(&self) -> TypeId where Self: 'static;
+        //     }
+
+        //     impl<T: ?Sized> const NonStaticAny for core::marker::PhantomData<T> {
+        //         fn get_type_id(&self) -> TypeId where Self: 'static {
+        //             TypeId::of::<T>()
+        //         }
+        //     }
+
+        //     let phantom_data = core::marker::PhantomData::<T>;
+        //     NonStaticAny::get_type_id(unsafe {
+        //         core::mem::transmute::<&dyn NonStaticAny, &(dyn NonStaticAny +
+        // 'static)>(&phantom_data)     })
+        // }
+
+        // adapted from rustc-hash, i.e. fxhash
+        pub const fn hash(a: &str) -> u128 {
+            // (2^128 - 1) / pi, rounded to be odd
+            const K: u128 = 0x517c_c1b7_2722_0a94_fe13_abe8_fa9a_6ee1;
+
+            let mut a = a.as_bytes();
+
+            let mut hash = 1_u128; // different from rustc-hash
+
+            while let Some((a16, ar)) = a.split_first_chunk() {
+                let value = u128::from_le_bytes(*a16);
+                hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
+                a = ar;
+            }
+
+            if let Some((a8, ar)) = a.split_first_chunk() {
+                let value = u64::from_le_bytes(*a8) as u128;
+                hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
+                a = ar;
+            }
+
+            if let Some((a4, ar)) = a.split_first_chunk() {
+                let value = u32::from_le_bytes(*a4) as u128;
+                hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
+                a = ar;
+            }
+
+            if let Some((a2, ar)) = a.split_first_chunk() {
+                let value = u16::from_le_bytes(*a2) as u128;
+                hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
+                a = ar;
+            }
+
+            if let Some(a1) = a.first() {
+                let value = *a1 as u128;
+                hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
+            }
+
+            hash
+        }
+
+        Self {
+            name: core::any::type_name::<T>(),
+            // id: non_static_type_id::<T>(),
+            id: hash(core::any::type_name::<T>()),
+        }
+    }
+}
+
+impl<'a> TypeRef<'a> {
+    /// The name of the type, as returned by [`core::any::type_name`].
+    #[must_use]
+    pub const fn name(&self) -> &'a str {
+        self.name
+    }
+
+    /// A hash of the type, which must only be used inside one compilation
+    /// to speed up equality checks, but not to compare types across different
+    /// compilations.
+    #[must_use]
+    pub const fn hash(&self) -> u64 {
+        #[repr(C)]
+        union TypeIdPartialHash {
+            // id: TypeId,
+            id: u128,
+            hash: u64,
+        }
+
+        // Safety: [`TypeId`] wraps a `u128` hash, so reading a `u64` from
+        //         inside it returns a fully initialised and valid hash value.
+        unsafe { TypeIdPartialHash { id: self.id }.hash }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'a> serde::Serialize for TypeRef<'a> {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_newtype_struct("TypeRef", self.name)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'a, 'de: 'a> serde::Deserialize<'de> for TypeRef<'a> {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        #[derive(serde::Deserialize)]
+        #[serde(rename = "TypeRef")]
+        struct TypeRefProxy<'a>(&'a str);
+
+        Ok(Self {
+            name: TypeRefProxy::deserialize(deserializer)?.0,
+            // id: TypeId::of::<TypeRef<'static>>(),
+            id: 0,
+        })
+    }
+}
+
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", allow(clippy::unsafe_derive_deserialize))]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
-#[cfg_attr(
-    feature = "serde",
-    serde(bound(serialize = "F: ::serde::Serialize, V: ::serde::Serialize, I: \
-                             ::serde::Serialize, G: ::serde::Serialize"))
-)]
-#[cfg_attr(
-    feature = "serde",
-    serde(bound(deserialize = "'a: 'de, F: ::serde::Deserialize<'a>, V: \
-                               ::serde::Deserialize<'a>, I: ::serde::Deserialize<'a>, G: \
-                               ::serde::Deserialize<'a>"))
-)]
 /// Description of the deep layout of a type.
 pub struct TypeLayoutGraph<
     'a,
@@ -337,8 +492,9 @@ pub struct TypeLayoutGraph<
     I: Deref<Target = TypeLayoutInfo<'a, F, V>> = &'a TypeLayoutInfo<'a, F, V>,
     G: Deref<Target = [I]> = &'a [I],
 > {
-    /// The type's fully-qualified name.
-    pub ty: &'a str,
+    #[serde(borrow)]
+    /// The type's fully-qualified reference.
+    pub ty: TypeRef<'a>,
     /// The list of types that make up the complete graph describing the deep
     /// layout of this type.
     pub tys: G,
@@ -352,8 +508,9 @@ pub struct TypeLayoutInfo<
     F: Deref<Target = [Field<'a>]> = &'a [Field<'a>],
     V: Deref<Target = [Variant<'a, F>]> = &'a [Variant<'a, F>],
 > {
-    /// The type's fully-qualified name.
-    pub name: &'a str,
+    #[serde(borrow)]
+    /// The type's fully-qualified reference.
+    pub ty: TypeRef<'a>,
     /// The type's size.
     pub size: usize,
     /// The type's minimum alignment.
@@ -589,10 +746,10 @@ pub struct Field<'a> {
     /// The field's byte offset, iff the field is
     /// [inhabited](https://doc.rust-lang.org/reference/glossary.html#inhabited).
     pub offset: MaybeUninhabited<usize>,
-    /// The fully-qualified name of the field's type. This is used as a key
+    /// The fully-qualified reference to the field's type. This is used as a key
     /// inside [`TypeLayoutGraph::tys`] to find the field's type's layout by
     /// its [`TypeLayoutInfo::name`].
-    pub ty: &'a str,
+    pub ty: TypeRef<'a>,
 }
 
 impl TypeLayoutGraph<'static> {
@@ -600,7 +757,7 @@ impl TypeLayoutGraph<'static> {
     /// Construct the deep type layout descriptor for a type `T`.
     pub const fn new<T: TypeLayout + typeset::ComputeTypeSet>() -> Self {
         Self {
-            ty: <T as TypeLayout>::TYPE_LAYOUT.name,
+            ty: <T as TypeLayout>::TYPE_LAYOUT.ty,
             // SAFETY:
             // - ComputeSet is a sealed trait and its TYS const is always a HList made of only Cons
             //   of &'static TypeLayoutInfo and Empty
@@ -658,6 +815,8 @@ impl<
 
     /// Serialise this [`TypeLayoutGraph`] into the mutable byte slice.
     /// `bytes` must have a length of at least [`Self::serialised_len`].
+    /// `tys` must have at least `self.tys.len()` entries where the `usize`
+    /// field of each tuple is set to [`usize::MAX`].
     ///
     /// Use [`serialise_type_graph`] instead to serialise the
     /// [`TypeLayoutGraph`] of a type `T` into a byte array of the
@@ -667,7 +826,7 @@ impl<
     ///
     /// This method panics iff `bytes` has a length of less than
     /// [`Self::serialised_len`].
-    pub const fn serialise(&self, bytes: &mut [u8], tys: &mut [(&'a str, u128, usize)])
+    pub const fn serialise(&self, bytes: &mut [u8], tys: &mut [(&'a str, u64, usize)])
     // where
     //     F: ~const Deref<Target = [Field<'a>]>,
     //     V: ~const Deref<Target = [Variant<'a, F>]>,
@@ -675,18 +834,23 @@ impl<
     //     I: ~const Deref<Target = TypeLayoutInfo<'a, F, V, P>>,
     //     G: ~const Deref<Target = [I]>,
     {
+        assert!(tys.len() >= self.tys.len());
+
         let from = ser::serialise_usize(bytes, 0, self.serialised_len());
 
         let mut i = 0;
         while i < self.tys.len() {
-            let hash = ser::hash(self.tys[i].name);
-            let mut j = (hash % (tys.len() as u128)) as usize;
+            let hash = self.tys[i].ty.hash();
+            #[allow(clippy::cast_possible_truncation)]
+            let mut j = (hash % (tys.len() as u64)) as usize;
+            let j_start = j;
 
             while tys[j].2 != usize::MAX {
                 j = (j + 1) % tys.len();
+                assert!(j != j_start, "tys does not have sufficient capacity");
             }
 
-            tys[j] = (self.tys[i].name, hash, i);
+            tys[j] = (self.tys[i].ty.name(), hash, i);
 
             i += 1;
         }
@@ -730,7 +894,7 @@ impl<'a, F: Deref<Target = [Field<'a>]> + PartialOrd> PartialOrd for Variant<'a,
 
 impl<'a> PartialEq for Field<'a> {
     fn eq(&self, other: &Self) -> bool {
-        self.name == other.name && self.offset == other.offset && core::ptr::eq(self.ty, other.ty)
+        self.name == other.name && self.offset == other.offset && self.ty == other.ty
     }
 }
 
