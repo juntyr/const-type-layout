@@ -492,7 +492,7 @@ pub struct TypeLayoutGraph<
     I: Deref<Target = TypeLayoutInfo<'a, F, V>> = &'a TypeLayoutInfo<'a, F, V>,
     G: Deref<Target = [I]> = &'a [I],
 > {
-    #[serde(borrow)]
+    #[cfg_attr(feature = "serde", serde(borrow))]
     /// The type's fully-qualified reference.
     pub ty: TypeRef<'a>,
     /// The list of types that make up the complete graph describing the deep
@@ -508,7 +508,7 @@ pub struct TypeLayoutInfo<
     F: Deref<Target = [Field<'a>]> = &'a [Field<'a>],
     V: Deref<Target = [Variant<'a, F>]> = &'a [Variant<'a, F>],
 > {
-    #[serde(borrow)]
+    #[cfg_attr(feature = "serde", serde(borrow))]
     /// The type's fully-qualified reference.
     pub ty: TypeRef<'a>,
     /// The type's size.
