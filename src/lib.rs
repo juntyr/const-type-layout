@@ -165,7 +165,7 @@
 #![feature(sync_unsafe_cell)]
 #![feature(exclusive_wrapper)]
 #![feature(const_slice_split_at_mut)]
-#![feature(const_raw_ptr_comparison)]
+#![feature(const_option)]
 #![feature(doc_auto_cfg)]
 #![feature(cfg_version)]
 #![cfg_attr(not(version("1.76.0")), feature(ptr_from_ref))]
@@ -314,7 +314,19 @@ impl<T: TypeLayout + typeset::ComputeTypeSet> TypeGraphLayout for T {
 /// Compute the number of bytes that this type's [`TypeLayoutGraph`] serialises
 /// into.
 pub const fn serialised_type_graph_len<T: TypeGraphLayout>() -> usize {
-    T::TYPE_GRAPH.serialised_len()
+    let mut str_index = 0;
+
+    let len = ser::serialised_type_layout_graph_len(0, &T::TYPE_GRAPH, &mut str_index);
+
+    let mut last_full_len = len;
+    let mut full_len = ser::serialised_usize_len(len, last_full_len);
+
+    while full_len != last_full_len {
+        last_full_len = full_len;
+        full_len = ser::serialised_usize_len(len, last_full_len);
+    }
+
+    full_len
 }
 
 #[must_use]
@@ -325,9 +337,21 @@ pub const fn serialise_type_graph<T: TypeGraphLayout>() -> [u8; serialised_type_
 
     let layout = T::TYPE_GRAPH;
 
-    let mut tys = [("", 0_u64, usize::MAX); serialised_type_graph_len::<T>()];
+    let mut hashmap = [ser::HashEntry::EMPTY; serialised_type_graph_len::<T>()];
+    let mut cursor = None;
 
-    layout.serialise(&mut bytes, &mut tys);
+    let mut from =
+        ser::serialise_type_layout_graph(&mut bytes, 0, &layout, &mut hashmap, &mut cursor);
+
+    let mut si = match cursor {
+        Some(cursor) => Some(cursor.first()),
+        None => None,
+    };
+
+    while let Some(i) = si {
+        si = hashmap[i].next();
+        from = ser::serialise_str_literal(&mut bytes, from, hashmap[i].value());
+    }
 
     bytes
 }
@@ -386,44 +410,45 @@ impl TypeRef<'static> {
         // }
 
         // adapted from rustc-hash, i.e. fxhash
-        pub const fn hash(a: &str) -> u128 {
+        pub const fn hash(_a: &str) -> u128 {
             // (2^128 - 1) / pi, rounded to be odd
-            const K: u128 = 0x517c_c1b7_2722_0a94_fe13_abe8_fa9a_6ee1;
+            // const K: u128 = 0x517c_c1b7_2722_0a94_fe13_abe8_fa9a_6ee1;
 
-            let mut a = a.as_bytes();
+            // let mut a = a.as_bytes();
 
-            let mut hash = 1_u128; // different from rustc-hash
+            // let mut hash = 1_u128; // different from rustc-hash
 
-            while let Some((a16, ar)) = a.split_first_chunk() {
-                let value = u128::from_le_bytes(*a16);
-                hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
-                a = ar;
-            }
+            // while let Some((a16, ar)) = a.split_first_chunk() {
+            //     let value = u128::from_le_bytes(*a16);
+            //     hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
+            //     a = ar;
+            // }
 
-            if let Some((a8, ar)) = a.split_first_chunk() {
-                let value = u64::from_le_bytes(*a8) as u128;
-                hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
-                a = ar;
-            }
+            // if let Some((a8, ar)) = a.split_first_chunk() {
+            //     let value = u64::from_le_bytes(*a8) as u128;
+            //     hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
+            //     a = ar;
+            // }
 
-            if let Some((a4, ar)) = a.split_first_chunk() {
-                let value = u32::from_le_bytes(*a4) as u128;
-                hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
-                a = ar;
-            }
+            // if let Some((a4, ar)) = a.split_first_chunk() {
+            //     let value = u32::from_le_bytes(*a4) as u128;
+            //     hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
+            //     a = ar;
+            // }
 
-            if let Some((a2, ar)) = a.split_first_chunk() {
-                let value = u16::from_le_bytes(*a2) as u128;
-                hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
-                a = ar;
-            }
+            // if let Some((a2, ar)) = a.split_first_chunk() {
+            //     let value = u16::from_le_bytes(*a2) as u128;
+            //     hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
+            //     a = ar;
+            // }
 
-            if let Some(a1) = a.first() {
-                let value = *a1 as u128;
-                hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
-            }
+            // if let Some(a1) = a.first() {
+            //     let value = *a1 as u128;
+            //     hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
+            // }
 
-            hash
+            // hash
+            0
         }
 
         Self {
@@ -776,88 +801,72 @@ impl TypeLayoutGraph<'static> {
     }
 }
 
-impl<
-        'a,
-        // F: Deref<Target = [Field<'a>]>,
-        // V: Deref<Target = [Variant<'a, F>]>,
-        // P: Deref<Target = [&'a str]>,
-        // I: Deref<Target = TypeLayoutInfo<'a, F, V, P>>,
-        // G: Deref<Target = [I]>,
-    >
-    TypeLayoutGraph<
-        'a,
-        // F, V, P, I, G,
-    >
-{
-    #[must_use]
-    /// Compute the number of bytes that this [`TypeLayoutGraph`] serialises
-    /// into.
-    pub const fn serialised_len(&self) -> usize
-// where
-    //     F: ~const Deref<Target = [Field<'a>]>,
-    //     V: ~const Deref<Target = [Variant<'a, F>]>,
-    //     P: ~const Deref<Target = [&'a str]>,
-    //     I: ~const Deref<Target = TypeLayoutInfo<'a, F, V, P>>,
-    //     G: ~const Deref<Target = [I]>,
-    {
-        let len = ser::serialised_type_layout_graph_len(0, self, self.tys.len());
+// impl<
+//         'a,
+//         // F: Deref<Target = [Field<'a>]>,
+//         // V: Deref<Target = [Variant<'a, F>]>,
+//         // P: Deref<Target = [&'a str]>,
+//         // I: Deref<Target = TypeLayoutInfo<'a, F, V, P>>,
+//         // G: Deref<Target = [I]>,
+//     >
+//     TypeLayoutGraph<
+//         'a,
+//         // F, V, P, I, G,
+//     >
+// {
+//     #[must_use]
+//     /// Compute the number of bytes that this [`TypeLayoutGraph`] serialises
+//     /// into.
+//     pub const fn serialised_len(&self) -> usize
+// // where
+//     //     F: ~const Deref<Target = [Field<'a>]>,
+//     //     V: ~const Deref<Target = [Variant<'a, F>]>,
+//     //     P: ~const Deref<Target = [&'a str]>,
+//     //     I: ~const Deref<Target = TypeLayoutInfo<'a, F, V, P>>,
+//     //     G: ~const Deref<Target = [I]>,
+//     {
+//         let mut str_index = 0;
 
-        let mut last_full_len = len;
-        let mut full_len = ser::serialised_usize_len(len, last_full_len);
+//         let len = ser::serialised_type_layout_graph_len(0, self, &mut
+// str_index);
 
-        while full_len != last_full_len {
-            last_full_len = full_len;
-            full_len = ser::serialised_usize_len(len, last_full_len);
-        }
+//         let mut last_full_len = len;
+//         let mut full_len = ser::serialised_usize_len(len, last_full_len);
 
-        full_len
-    }
+//         while full_len != last_full_len {
+//             last_full_len = full_len;
+//             full_len = ser::serialised_usize_len(len, last_full_len);
+//         }
 
-    /// Serialise this [`TypeLayoutGraph`] into the mutable byte slice.
-    /// `bytes` must have a length of at least [`Self::serialised_len`].
-    /// `tys` must have at least `self.tys.len()` entries where the `usize`
-    /// field of each tuple is set to [`usize::MAX`].
-    ///
-    /// Use [`serialise_type_graph`] instead to serialise the
-    /// [`TypeLayoutGraph`] of a type `T` into a byte array of the
-    /// appropriate length.
-    ///
-    /// # Panics
-    ///
-    /// This method panics iff `bytes` has a length of less than
-    /// [`Self::serialised_len`].
-    pub const fn serialise(&self, bytes: &mut [u8], tys: &mut [(&'a str, u64, usize)])
-    // where
-    //     F: ~const Deref<Target = [Field<'a>]>,
-    //     V: ~const Deref<Target = [Variant<'a, F>]>,
-    //     P: ~const Deref<Target = [&'a str]>,
-    //     I: ~const Deref<Target = TypeLayoutInfo<'a, F, V, P>>,
-    //     G: ~const Deref<Target = [I]>,
-    {
-        assert!(tys.len() >= self.tys.len());
+//         full_len
+//     }
 
-        let from = ser::serialise_usize(bytes, 0, self.serialised_len());
+//     /// Serialise this [`TypeLayoutGraph`] into the mutable byte slice.
+//     /// `bytes` must have a length of at least [`Self::serialised_len`].
+//     /// `tys` must have at least `self.tys.len()` entries where the `usize`
+//     /// field of each tuple is set to [`usize::MAX`].
+//     ///
+//     /// Use [`serialise_type_graph`] instead to serialise the
+//     /// [`TypeLayoutGraph`] of a type `T` into a byte array of the
+//     /// appropriate length.
+//     ///
+//     /// # Panics
+//     ///
+//     /// This method panics iff `bytes` has a length of less than
+//     /// [`Self::serialised_len`].
+//     pub const fn serialise(&self, bytes: &mut [u8], hashmap: &mut
+//     [ser::HashEntry<'a>], cursor: &mut Option<(usize, NonZeroUsize)>) //
+// where     //     F: ~const Deref<Target = [Field<'a>]>,
+//     //     V: ~const Deref<Target = [Variant<'a, F>]>,
+//     //     P: ~const Deref<Target = [&'a str]>,
+//     //     I: ~const Deref<Target = TypeLayoutInfo<'a, F, V, P>>,
+//     //     G: ~const Deref<Target = [I]>,
+//     {
+//         let from = ser::serialise_usize(bytes, 0, self.serialised_len());
 
-        let mut i = 0;
-        while i < self.tys.len() {
-            let hash = self.tys[i].ty.hash();
-            #[allow(clippy::cast_possible_truncation)]
-            let mut j = (hash % (tys.len() as u64)) as usize;
-            let j_start = j;
-
-            while tys[j].2 != usize::MAX {
-                j = (j + 1) % tys.len();
-                assert!(j != j_start, "tys does not have sufficient capacity");
-            }
-
-            tys[j] = (self.tys[i].ty.name(), hash, i);
-
-            i += 1;
-        }
-
-        ser::serialise_type_layout_graph(bytes, from, self, tys, self.tys.len());
-    }
-}
+//         ser::serialise_type_layout_graph(bytes, from, self, hashmap, cursor);
+//     }
+// }
 
 impl<
         'a,

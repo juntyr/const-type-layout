@@ -1,12 +1,14 @@
 // use core::ops::Deref;
 #![allow(clippy::needless_borrow, clippy::borrow_deref_ref)] // FIXME: Deref const trait
 
+use core::num::NonZeroUsize;
+
 use crate::{
     Discriminant, Field, MaybeUninhabited, TypeLayout, TypeLayoutGraph, TypeLayoutInfo,
     TypeStructure, Variant,
 };
 
-pub const fn serialise_str(bytes: &mut [u8], from: usize, value: &str) -> usize {
+pub const fn serialise_str_literal(bytes: &mut [u8], from: usize, value: &str) -> usize {
     let value_bytes = value.as_bytes();
 
     let from = serialise_usize(bytes, from, value_bytes.len());
@@ -27,7 +29,131 @@ pub const fn serialise_str(bytes: &mut [u8], from: usize, value: &str) -> usize 
     from + i
 }
 
-pub const fn serialised_str_len(from: usize, value: &str) -> usize {
+// TODO: crate pub struct but used in public API
+pub struct HashEntry<'a> {
+    hash: u128,
+    value: &'a str,
+    index: usize,
+    next: Option<usize>,
+}
+
+impl<'a> HashEntry<'a> {
+    pub const EMPTY: Self = Self {
+        hash: 0,
+        value: "",
+        index: usize::MAX,
+        next: None,
+    };
+
+    pub const fn value(&self) -> &'a str {
+        self.value
+    }
+
+    pub const fn next(&self) -> Option<usize> {
+        self.next
+    }
+}
+
+pub struct HashCursor {
+    first: usize,
+    last: usize,
+    len: NonZeroUsize,
+}
+
+impl HashCursor {
+    pub const fn first(&self) -> usize {
+        self.first
+    }
+}
+
+// adapted from rustc-hash, i.e. fxhash
+const fn hash(a: &str) -> u128 {
+    // (2^128 - 1) / pi, rounded to be odd
+    const K: u128 = 0x517c_c1b7_2722_0a94_fe13_abe8_fa9a_6ee1;
+
+    let mut a = a.as_bytes();
+
+    let mut hash = 1_u128; // different from rustc-hash
+
+    while let Some((a16, ar)) = a.split_first_chunk() {
+        let value = u128::from_le_bytes(*a16);
+        hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
+        a = ar;
+    }
+
+    if let Some((a8, ar)) = a.split_first_chunk() {
+        let value = u64::from_le_bytes(*a8) as u128;
+        hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
+        a = ar;
+    }
+
+    if let Some((a4, ar)) = a.split_first_chunk() {
+        let value = u32::from_le_bytes(*a4) as u128;
+        hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
+        a = ar;
+    }
+
+    if let Some((a2, ar)) = a.split_first_chunk() {
+        let value = u16::from_le_bytes(*a2) as u128;
+        hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
+        a = ar;
+    }
+
+    if let Some(a1) = a.first() {
+        let value = *a1 as u128;
+        hash = (hash.rotate_left(5) ^ value).wrapping_mul(K);
+    }
+
+    hash
+}
+
+const fn serialise_str<'a>(
+    bytes: &mut [u8],
+    from: usize,
+    value: &'a str,
+    hashmap: &mut [HashEntry<'a>],
+    cursor: &mut Option<HashCursor>,
+) -> usize {
+    let hash = hash(value);
+
+    let mut i = (hash % (hashmap.len() as u128)) as usize;
+    while (hashmap[i].index != usize::MAX)
+        && ((hashmap[i].hash != hash) || !str_equal(hashmap[i].value, value))
+    {
+        i = (i + 1) % hashmap.len();
+    }
+    if hashmap[i].index == usize::MAX {
+        hashmap[i].hash = hash;
+        hashmap[i].value = value;
+        if let Some(HashCursor {
+            last: prev_index,
+            len: prev_len,
+            ..
+        }) = cursor.as_mut()
+        {
+            hashmap[i].index = prev_len.get();
+            hashmap[*prev_index].next = Some(i);
+            *prev_index = i;
+            *prev_len = prev_len.saturating_add(1);
+        } else {
+            hashmap[i].index = 0;
+            *cursor = Some(HashCursor {
+                first: i,
+                last: i,
+                len: NonZeroUsize::MIN,
+            });
+        }
+        hashmap[i].next = None;
+    }
+
+    serialise_usize(bytes, from, hashmap[i].index)
+}
+
+const fn serialised_str_len(from: usize, value: &str, str_index: &mut usize) -> usize {
+    // conservative estimate of the indices
+    let from = serialised_usize_len(from, *str_index);
+    *str_index += 1;
+
     let value_bytes = value.as_bytes();
 
     let from = serialised_usize_len(from, value_bytes.len());
@@ -69,50 +195,7 @@ pub const fn serialised_usize_len(from: usize, value: usize) -> usize {
     from + i + 1
 }
 
-#[allow(clippy::cast_possible_truncation)]
-pub const fn serialise_index(bytes: &mut [u8], from: usize, value: usize, len: usize) -> usize {
-    assert!(value < len, "index must be in range 0..len");
-    assert!(
-        serialised_index_len(from, len) <= bytes.len(),
-        "bytes is not large enough to contain the serialised index."
-    );
-
-    let Some(mut max_rem) = len.checked_sub(1) else {
-        return from;
-    };
-    let mut value_rem = value;
-
-    let mut i = 0;
-
-    while max_rem > 0b1111_1111_usize {
-        bytes[from + i] = (value_rem & 0b1111_1111_usize) as u8;
-
-        i += 1;
-        max_rem >>= 8_u8;
-        value_rem >>= 8_u8;
-    }
-
-    bytes[from + i] = (value_rem & 0b1111_1111_usize) as u8;
-
-    from + i + 1
-}
-
-pub const fn serialised_index_len(from: usize, len: usize) -> usize {
-    let Some(mut rem) = len.checked_sub(1) else {
-        return from;
-    };
-
-    let mut i = 0;
-
-    while rem > 0b1111_1111_usize {
-        i += 1;
-        rem >>= 8_u8;
-    }
-
-    from + i + 1
-}
-
-pub const fn serialise_byte(bytes: &mut [u8], from: usize, value: u8) -> usize {
+const fn serialise_byte(bytes: &mut [u8], from: usize, value: u8) -> usize {
     assert!(
         from < bytes.len(),
         "bytes is not large enough to contain the serialised byte."
@@ -123,11 +206,11 @@ pub const fn serialise_byte(bytes: &mut [u8], from: usize, value: u8) -> usize {
     from + 1
 }
 
-pub const fn serialised_byte_len(from: usize, _value: u8) -> usize {
+const fn serialised_byte_len(from: usize, _value: u8) -> usize {
     from + 1
 }
 
-pub const fn serialise_maybe_uninhabited(
+const fn serialise_maybe_uninhabited(
     bytes: &mut [u8],
     from: usize,
     value: MaybeUninhabited<()>,
@@ -145,7 +228,7 @@ pub const fn serialise_maybe_uninhabited(
     from + 1
 }
 
-pub const fn serialised_maybe_uninhabited_len(from: usize, _value: MaybeUninhabited<()>) -> usize {
+const fn serialised_maybe_uninhabited_len(from: usize, _value: MaybeUninhabited<()>) -> usize {
     from + 1
 }
 
@@ -178,44 +261,98 @@ const fn serialise_discriminant_bytes(bytes: &mut [u8], from: usize, value_bytes
     from + i - leading_zeroes
 }
 
-pub const fn serialise_discriminant(bytes: &mut [u8], from: usize, value: &Discriminant) -> usize {
+const fn serialise_discriminant(
+    bytes: &mut [u8],
+    from: usize,
+    value: &Discriminant,
+    hashmap: &mut [HashEntry],
+    cursor: &mut Option<HashCursor>,
+) -> usize {
     let from = match value {
-        Discriminant::I8(_) => {
-            serialise_str(bytes, from, <i8 as TypeLayout>::TYPE_LAYOUT.ty.name())
-        },
-        Discriminant::I16(_) => {
-            serialise_str(bytes, from, <i16 as TypeLayout>::TYPE_LAYOUT.ty.name())
-        },
-        Discriminant::I32(_) => {
-            serialise_str(bytes, from, <i32 as TypeLayout>::TYPE_LAYOUT.ty.name())
-        },
-        Discriminant::I64(_) => {
-            serialise_str(bytes, from, <i64 as TypeLayout>::TYPE_LAYOUT.ty.name())
-        },
-        Discriminant::I128(_) => {
-            serialise_str(bytes, from, <i128 as TypeLayout>::TYPE_LAYOUT.ty.name())
-        },
-        Discriminant::Isize(_) => {
-            serialise_str(bytes, from, <isize as TypeLayout>::TYPE_LAYOUT.ty.name())
-        },
-        Discriminant::U8(_) => {
-            serialise_str(bytes, from, <u8 as TypeLayout>::TYPE_LAYOUT.ty.name())
-        },
-        Discriminant::U16(_) => {
-            serialise_str(bytes, from, <u16 as TypeLayout>::TYPE_LAYOUT.ty.name())
-        },
-        Discriminant::U32(_) => {
-            serialise_str(bytes, from, <u32 as TypeLayout>::TYPE_LAYOUT.ty.name())
-        },
-        Discriminant::U64(_) => {
-            serialise_str(bytes, from, <u64 as TypeLayout>::TYPE_LAYOUT.ty.name())
-        },
-        Discriminant::U128(_) => {
-            serialise_str(bytes, from, <u128 as TypeLayout>::TYPE_LAYOUT.ty.name())
-        },
-        Discriminant::Usize(_) => {
-            serialise_str(bytes, from, <usize as TypeLayout>::TYPE_LAYOUT.ty.name())
-        },
+        Discriminant::I8(_) => serialise_str(
+            bytes,
+            from,
+            <i8 as TypeLayout>::TYPE_LAYOUT.ty.name(),
+            hashmap,
+            cursor,
+        ),
+        Discriminant::I16(_) => serialise_str(
+            bytes,
+            from,
+            <i16 as TypeLayout>::TYPE_LAYOUT.ty.name(),
+            hashmap,
+            cursor,
+        ),
+        Discriminant::I32(_) => serialise_str(
+            bytes,
+            from,
+            <i32 as TypeLayout>::TYPE_LAYOUT.ty.name(),
+            hashmap,
+            cursor,
+        ),
+        Discriminant::I64(_) => serialise_str(
+            bytes,
+            from,
+            <i64 as TypeLayout>::TYPE_LAYOUT.ty.name(),
+            hashmap,
+            cursor,
+        ),
+        Discriminant::I128(_) => serialise_str(
+            bytes,
+            from,
+            <i128 as TypeLayout>::TYPE_LAYOUT.ty.name(),
+            hashmap,
+            cursor,
+        ),
+        Discriminant::Isize(_) => serialise_str(
+            bytes,
+            from,
+            <isize as TypeLayout>::TYPE_LAYOUT.ty.name(),
+            hashmap,
+            cursor,
+        ),
+        Discriminant::U8(_) => serialise_str(
+            bytes,
+            from,
+            <u8 as TypeLayout>::TYPE_LAYOUT.ty.name(),
+            hashmap,
+            cursor,
+        ),
+        Discriminant::U16(_) => serialise_str(
+            bytes,
+            from,
+            <u16 as TypeLayout>::TYPE_LAYOUT.ty.name(),
+            hashmap,
+            cursor,
+        ),
+        Discriminant::U32(_) => serialise_str(
+            bytes,
+            from,
+            <u32 as TypeLayout>::TYPE_LAYOUT.ty.name(),
+            hashmap,
+            cursor,
+        ),
+        Discriminant::U64(_) => serialise_str(
+            bytes,
+            from,
+            <u64 as TypeLayout>::TYPE_LAYOUT.ty.name(),
+            hashmap,
+            cursor,
+        ),
+        Discriminant::U128(_) => serialise_str(
+            bytes,
+            from,
+            <u128 as TypeLayout>::TYPE_LAYOUT.ty.name(),
+            hashmap,
+            cursor,
+        ),
+        Discriminant::Usize(_) => serialise_str(
+            bytes,
+            from,
+            <usize as TypeLayout>::TYPE_LAYOUT.ty.name(),
+            hashmap,
+            cursor,
+        ),
     };
 
     match value {
@@ -250,40 +387,52 @@ const fn serialised_discriminant_bytes_len(from: usize, value_bytes: &[u8]) -> u
     from + value_bytes.len() - leading_zeroes
 }
 
-pub const fn serialised_discriminant_len(from: usize, value: &Discriminant) -> usize {
+const fn serialised_discriminant_len(
+    from: usize,
+    value: &Discriminant,
+    str_index: &mut usize,
+) -> usize {
     let from = match value {
-        Discriminant::I8(_) => serialised_str_len(from, <i8 as TypeLayout>::TYPE_LAYOUT.ty.name()),
+        Discriminant::I8(_) => {
+            serialised_str_len(from, <i8 as TypeLayout>::TYPE_LAYOUT.ty.name(), str_index)
+        },
         Discriminant::I16(_) => {
-            serialised_str_len(from, <i16 as TypeLayout>::TYPE_LAYOUT.ty.name())
+            serialised_str_len(from, <i16 as TypeLayout>::TYPE_LAYOUT.ty.name(), str_index)
         },
         Discriminant::I32(_) => {
-            serialised_str_len(from, <i32 as TypeLayout>::TYPE_LAYOUT.ty.name())
+            serialised_str_len(from, <i32 as TypeLayout>::TYPE_LAYOUT.ty.name(), str_index)
         },
         Discriminant::I64(_) => {
-            serialised_str_len(from, <i64 as TypeLayout>::TYPE_LAYOUT.ty.name())
+            serialised_str_len(from, <i64 as TypeLayout>::TYPE_LAYOUT.ty.name(), str_index)
         },
         Discriminant::I128(_) => {
-            serialised_str_len(from, <i128 as TypeLayout>::TYPE_LAYOUT.ty.name())
+            serialised_str_len(from, <i128 as TypeLayout>::TYPE_LAYOUT.ty.name(), str_index)
         },
-        Discriminant::Isize(_) => {
-            serialised_str_len(from, <isize as TypeLayout>::TYPE_LAYOUT.ty.name())
+        Discriminant::Isize(_) => serialised_str_len(
+            from,
+            <isize as TypeLayout>::TYPE_LAYOUT.ty.name(),
+            str_index,
+        ),
+        Discriminant::U8(_) => {
+            serialised_str_len(from, <u8 as TypeLayout>::TYPE_LAYOUT.ty.name(), str_index)
         },
-        Discriminant::U8(_) => serialised_str_len(from, <u8 as TypeLayout>::TYPE_LAYOUT.ty.name()),
         Discriminant::U16(_) => {
-            serialised_str_len(from, <u16 as TypeLayout>::TYPE_LAYOUT.ty.name())
+            serialised_str_len(from, <u16 as TypeLayout>::TYPE_LAYOUT.ty.name(), str_index)
         },
         Discriminant::U32(_) => {
-            serialised_str_len(from, <u32 as TypeLayout>::TYPE_LAYOUT.ty.name())
+            serialised_str_len(from, <u32 as TypeLayout>::TYPE_LAYOUT.ty.name(), str_index)
         },
         Discriminant::U64(_) => {
-            serialised_str_len(from, <u64 as TypeLayout>::TYPE_LAYOUT.ty.name())
+            serialised_str_len(from, <u64 as TypeLayout>::TYPE_LAYOUT.ty.name(), str_index)
         },
         Discriminant::U128(_) => {
-            serialised_str_len(from, <u128 as TypeLayout>::TYPE_LAYOUT.ty.name())
+            serialised_str_len(from, <u128 as TypeLayout>::TYPE_LAYOUT.ty.name(), str_index)
         },
-        Discriminant::Usize(_) => {
-            serialised_str_len(from, <usize as TypeLayout>::TYPE_LAYOUT.ty.name())
-        },
+        Discriminant::Usize(_) => serialised_str_len(
+            from,
+            <usize as TypeLayout>::TYPE_LAYOUT.ty.name(),
+            str_index,
+        ),
     };
 
     match value {
@@ -302,14 +451,14 @@ pub const fn serialised_discriminant_len(from: usize, value: &Discriminant) -> u
     }
 }
 
-pub const fn serialise_field(
+const fn serialise_field<'a>(
     bytes: &mut [u8],
     from: usize,
-    value: &Field,
-    tys: &[(&str, u64, usize)],
-    tys_len: usize,
+    value: &Field<'a>,
+    hashmap: &mut [HashEntry<'a>],
+    cursor: &mut Option<HashCursor>,
 ) -> usize {
-    let from = serialise_str(bytes, from, value.name);
+    let from = serialise_str(bytes, from, value.name, hashmap, cursor);
     let from = serialise_maybe_uninhabited(
         bytes,
         from,
@@ -322,17 +471,7 @@ pub const fn serialise_field(
         MaybeUninhabited::Inhabited(offset) => serialise_usize(bytes, from, offset),
         MaybeUninhabited::Uninhabited => from,
     };
-
-    let ty = value.ty.hash();
-
-    #[allow(clippy::cast_possible_truncation)]
-    let mut i = (ty % (tys.len() as u64)) as usize;
-    while (tys[i].1 != ty) || !str_equal(tys[i].0, value.ty.name()) {
-        i = (i + 1) % tys.len();
-    }
-    let ty_index = tys[i].2;
-
-    serialise_index(bytes, from, ty_index, tys_len)
+    serialise_str(bytes, from, value.ty.name(), hashmap, cursor)
 }
 
 const fn str_equal(a: &str, b: &str) -> bool {
@@ -345,8 +484,8 @@ const fn str_equal(a: &str, b: &str) -> bool {
     unsafe { core::intrinsics::compare_bytes(a.as_ptr(), b.as_ptr(), a.len()) == 0 }
 }
 
-pub const fn serialised_field_len(from: usize, value: &Field, tys_len: usize) -> usize {
-    let from = serialised_str_len(from, value.name);
+const fn serialised_field_len(from: usize, value: &Field, str_index: &mut usize) -> usize {
+    let from = serialised_str_len(from, value.name, str_index);
     let from = serialised_maybe_uninhabited_len(
         from,
         match value.offset {
@@ -358,22 +497,22 @@ pub const fn serialised_field_len(from: usize, value: &Field, tys_len: usize) ->
         MaybeUninhabited::Inhabited(offset) => serialised_usize_len(from, offset),
         MaybeUninhabited::Uninhabited => from,
     };
-    serialised_index_len(from, tys_len)
+    serialised_str_len(from, value.ty.name(), str_index)
 }
 
-pub const fn serialise_fields(
+const fn serialise_fields<'a>(
     bytes: &mut [u8],
     from: usize,
-    value: &[Field],
-    tys: &[(&str, u64, usize)],
-    tys_len: usize,
+    value: &[Field<'a>],
+    hashmap: &mut [HashEntry<'a>],
+    cursor: &mut Option<HashCursor>,
 ) -> usize {
     let mut from = serialise_usize(bytes, from, value.len());
 
     let mut i = 0;
 
     while i < value.len() {
-        from = serialise_field(bytes, from, &value[i], tys, tys_len);
+        from = serialise_field(bytes, from, &value[i], hashmap, cursor);
 
         i += 1;
     }
@@ -381,13 +520,13 @@ pub const fn serialise_fields(
     from
 }
 
-pub const fn serialised_fields_len(from: usize, value: &[Field], tys_len: usize) -> usize {
+const fn serialised_fields_len(from: usize, value: &[Field], str_index: &mut usize) -> usize {
     let mut from = serialised_usize_len(from, value.len());
 
     let mut i = 0;
 
     while i < value.len() {
-        from = serialised_field_len(from, &value[i], tys_len);
+        from = serialised_field_len(from, &value[i], str_index);
 
         i += 1;
     }
@@ -395,14 +534,14 @@ pub const fn serialised_fields_len(from: usize, value: &[Field], tys_len: usize)
     from
 }
 
-pub const fn serialise_variant(
+const fn serialise_variant<'a>(
     bytes: &mut [u8],
     from: usize,
-    value: &Variant,
-    tys: &[(&str, u64, usize)],
-    tys_len: usize,
+    value: &Variant<'a>,
+    hashmap: &mut [HashEntry<'a>],
+    cursor: &mut Option<HashCursor>,
 ) -> usize {
-    let from = serialise_str(bytes, from, value.name);
+    let from = serialise_str(bytes, from, value.name, hashmap, cursor);
     let from = serialise_maybe_uninhabited(
         bytes,
         from,
@@ -413,15 +552,15 @@ pub const fn serialise_variant(
     );
     let from = match &value.discriminant {
         MaybeUninhabited::Inhabited(discriminant) => {
-            serialise_discriminant(bytes, from, discriminant)
+            serialise_discriminant(bytes, from, discriminant, hashmap, cursor)
         },
         MaybeUninhabited::Uninhabited => from,
     };
-    serialise_fields(bytes, from, &value.fields, tys, tys_len)
+    serialise_fields(bytes, from, &value.fields, hashmap, cursor)
 }
 
-pub const fn serialised_variant_len(from: usize, value: &Variant, tys_len: usize) -> usize {
-    let from = serialised_str_len(from, value.name);
+const fn serialised_variant_len(from: usize, value: &Variant, str_index: &mut usize) -> usize {
+    let from = serialised_str_len(from, value.name, str_index);
     let from = serialised_maybe_uninhabited_len(
         from,
         match value.discriminant {
@@ -431,26 +570,26 @@ pub const fn serialised_variant_len(from: usize, value: &Variant, tys_len: usize
     );
     let from = match &value.discriminant {
         MaybeUninhabited::Inhabited(discriminant) => {
-            serialised_discriminant_len(from, discriminant)
+            serialised_discriminant_len(from, discriminant, str_index)
         },
         MaybeUninhabited::Uninhabited => from,
     };
-    serialised_fields_len(from, &value.fields, tys_len)
+    serialised_fields_len(from, &value.fields, str_index)
 }
 
-pub const fn serialise_variants(
+const fn serialise_variants<'a>(
     bytes: &mut [u8],
     from: usize,
-    value: &[Variant],
-    tys: &[(&str, u64, usize)],
-    tys_len: usize,
+    value: &[Variant<'a>],
+    hashmap: &mut [HashEntry<'a>],
+    cursor: &mut Option<HashCursor>,
 ) -> usize {
     let mut from = serialise_usize(bytes, from, value.len());
 
     let mut i = 0;
 
     while i < value.len() {
-        from = serialise_variant(bytes, from, &value[i], tys, tys_len);
+        from = serialise_variant(bytes, from, &value[i], hashmap, cursor);
 
         i += 1;
     }
@@ -458,13 +597,13 @@ pub const fn serialise_variants(
     from
 }
 
-pub const fn serialised_variants_len(from: usize, value: &[Variant], tys_len: usize) -> usize {
+const fn serialised_variants_len(from: usize, value: &[Variant], str_index: &mut usize) -> usize {
     let mut from = serialised_usize_len(from, value.len());
 
     let mut i = 0;
 
     while i < value.len() {
-        from = serialised_variant_len(from, &value[i], tys_len);
+        from = serialised_variant_len(from, &value[i], str_index);
 
         i += 1;
     }
@@ -472,130 +611,102 @@ pub const fn serialised_variants_len(from: usize, value: &[Variant], tys_len: us
     from
 }
 
-pub const fn serialise_parameters(bytes: &mut [u8], from: usize, value: &[&str]) -> usize {
-    let mut from = serialise_usize(bytes, from, value.len());
-
-    let mut i = 0;
-
-    while i < value.len() {
-        from = serialise_str(bytes, from, value[i]);
-
-        i += 1;
-    }
-
-    from
-}
-
-pub const fn serialised_parameters_len(from: usize, value: &[&str]) -> usize {
-    let mut from = serialised_usize_len(from, value.len());
-
-    let mut i = 0;
-
-    while i < value.len() {
-        from = serialised_str_len(from, value[i]);
-
-        i += 1;
-    }
-
-    from
-}
-
-pub const fn serialise_type_structure(
+const fn serialise_type_structure<'a>(
     bytes: &mut [u8],
     from: usize,
-    value: &TypeStructure,
-    tys: &[(&str, u64, usize)],
-    tys_len: usize,
+    value: &TypeStructure<'a>,
+    hashmap: &mut [HashEntry<'a>],
+    cursor: &mut Option<HashCursor>,
 ) -> usize {
     match value {
         TypeStructure::Primitive => serialise_byte(bytes, from, b'p'),
         TypeStructure::Struct { repr, fields } => {
             let from = serialise_byte(bytes, from, b's');
-            let from = serialise_str(bytes, from, repr);
-            serialise_fields(bytes, from, fields, tys, tys_len)
+            let from = serialise_str(bytes, from, repr, hashmap, cursor);
+            serialise_fields(bytes, from, fields, hashmap, cursor)
         },
         TypeStructure::Union { repr, fields } => {
             let from = serialise_byte(bytes, from, b'u');
-            let from = serialise_str(bytes, from, repr);
-            serialise_fields(bytes, from, fields, tys, tys_len)
+            let from = serialise_str(bytes, from, repr, hashmap, cursor);
+            serialise_fields(bytes, from, fields, hashmap, cursor)
         },
         TypeStructure::Enum { repr, variants } => {
             let from = serialise_byte(bytes, from, b'e');
-            let from = serialise_str(bytes, from, repr);
-            serialise_variants(bytes, from, variants, tys, tys_len)
+            let from = serialise_str(bytes, from, repr, hashmap, cursor);
+            serialise_variants(bytes, from, variants, hashmap, cursor)
         },
     }
 }
 
-pub const fn serialised_type_structure_len(
+const fn serialised_type_structure_len(
     from: usize,
     value: &TypeStructure,
-    tys_len: usize,
+    str_index: &mut usize,
 ) -> usize {
     match value {
         TypeStructure::Primitive => serialised_byte_len(from, b'p'),
         TypeStructure::Struct { repr, fields } => {
             let from = serialised_byte_len(from, b's');
-            let from = serialised_str_len(from, repr);
-            serialised_fields_len(from, fields, tys_len)
+            let from = serialised_str_len(from, repr, str_index);
+            serialised_fields_len(from, fields, str_index)
         },
         TypeStructure::Union { repr, fields } => {
             let from = serialised_byte_len(from, b'u');
-            let from = serialised_str_len(from, repr);
-            serialised_fields_len(from, fields, tys_len)
+            let from = serialised_str_len(from, repr, str_index);
+            serialised_fields_len(from, fields, str_index)
         },
         TypeStructure::Enum { repr, variants } => {
             let from = serialised_byte_len(from, b'e');
-            let from = serialised_str_len(from, repr);
-            serialised_variants_len(from, variants, tys_len)
+            let from = serialised_str_len(from, repr, str_index);
+            serialised_variants_len(from, variants, str_index)
         },
     }
 }
 
-pub const fn serialise_type_layout_info(
+const fn serialise_type_layout_info<'a>(
     bytes: &mut [u8],
     from: usize,
-    value: &TypeLayoutInfo,
-    tys: &[(&str, u64, usize)],
-    tys_len: usize,
+    value: &TypeLayoutInfo<'a>,
+    hashmap: &mut [HashEntry<'a>],
+    cursor: &mut Option<HashCursor>,
 ) -> usize {
-    let from = serialise_str(bytes, from, value.ty.name());
+    let from = serialise_str(bytes, from, value.ty.name(), hashmap, cursor);
     let from = serialise_usize(bytes, from, value.size);
     let from = serialise_usize(bytes, from, value.alignment);
-    serialise_type_structure(bytes, from, &value.structure, tys, tys_len)
+    serialise_type_structure(bytes, from, &value.structure, hashmap, cursor)
 }
 
-pub const fn serialised_type_layout_info_len(
+const fn serialised_type_layout_info_len(
     from: usize,
     value: &TypeLayoutInfo,
-    tys_len: usize,
+    str_index: &mut usize,
 ) -> usize {
-    let from = serialised_str_len(from, value.ty.name());
+    let from = serialised_str_len(from, value.ty.name(), str_index);
     let from = serialised_usize_len(from, value.size);
     let from = serialised_usize_len(from, value.alignment);
-    serialised_type_structure_len(from, &value.structure, tys_len)
+    serialised_type_structure_len(from, &value.structure, str_index)
 }
 
 const LAYOUT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub const fn serialise_type_layout_graph(
+pub const fn serialise_type_layout_graph<'a>(
     bytes: &mut [u8],
     from: usize,
-    value: &TypeLayoutGraph,
-    tys: &[(&str, u64, usize)],
-    tys_len: usize,
+    value: &TypeLayoutGraph<'a>,
+    hashmap: &mut [HashEntry<'a>],
+    cursor: &mut Option<HashCursor>,
 ) -> usize {
     // Include the crate version of `type_layout` for cross-version comparison
-    let from = serialise_str(bytes, from, LAYOUT_VERSION);
+    let from = serialise_str(bytes, from, LAYOUT_VERSION, hashmap, cursor);
 
-    let from = serialise_str(bytes, from, value.ty.name());
+    let from = serialise_str(bytes, from, value.ty.name(), hashmap, cursor);
 
     let mut from = serialise_usize(bytes, from, value.tys.len());
 
     let mut i = 0;
 
     while i < value.tys.len() {
-        from = serialise_type_layout_info(bytes, from, &*value.tys[i], tys, tys_len);
+        from = serialise_type_layout_info(bytes, from, &*value.tys[i], hashmap, cursor);
 
         i += 1;
     }
@@ -606,19 +717,19 @@ pub const fn serialise_type_layout_graph(
 pub const fn serialised_type_layout_graph_len(
     from: usize,
     value: &TypeLayoutGraph,
-    tys_len: usize,
+    str_index: &mut usize,
 ) -> usize {
     // Include the crate version of `type_layout` for cross-version comparison
-    let from = serialised_str_len(from, LAYOUT_VERSION);
+    let from = serialised_str_len(from, LAYOUT_VERSION, str_index);
 
-    let from = serialised_str_len(from, value.ty.name());
+    let from = serialised_str_len(from, value.ty.name(), str_index);
 
     let mut from = serialised_usize_len(from, value.tys.len());
 
     let mut i = 0;
 
     while i < value.tys.len() {
-        from = serialised_type_layout_info_len(from, &*value.tys[i], tys_len);
+        from = serialised_type_layout_info_len(from, &*value.tys[i], str_index);
 
         i += 1;
     }
