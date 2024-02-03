@@ -122,7 +122,7 @@ const fn serialise_str<'a>(
     let mut i = 0;
 
     while i < value.len() {
-        if matches!(value_bytes[i], b'<' | b'>' | b',' | b' ') {
+        if matches!(value_bytes[i], b'(' | b')' | b'[' | b']' | b'{' | b'}' | b'<' | b'>' | b',' | b' ') {
             #[allow(
                 clippy::multiple_unsafe_ops_per_block,
                 clippy::undocumented_unsafe_blocks
