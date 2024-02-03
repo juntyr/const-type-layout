@@ -56,8 +56,8 @@ impl<'a> HashEntry<'a> {
 
 pub struct HashCursor {
     first: usize,
-    last: usize,
-    len: NonZeroUsize,
+    _last: usize,
+    _len: NonZeroUsize,
 }
 
 impl HashCursor {
@@ -112,7 +112,69 @@ const fn serialise_str<'a>(
     from: usize,
     value: &'a str,
     hashmap: &mut [HashEntry<'a>],
-    cursor: &mut Option<HashCursor>,
+    _cursor: &mut Option<HashCursor>,
+) -> usize {
+    let value_bytes = value.as_bytes();
+
+    let mut from = from;
+
+    let mut i_from = 0;
+    let mut i = 0;
+
+    while i < value.len() {
+        if matches!(value_bytes[i], b':' | b'<' | b'>' | b',' | b' ') {
+            #[allow(
+                clippy::multiple_unsafe_ops_per_block,
+                clippy::undocumented_unsafe_blocks
+            )] // FIXME
+            if i > i_from {
+                from = serialise_str_segment(
+                    bytes,
+                    from,
+                    unsafe {
+                        core::str::from_utf8_unchecked(core::slice::from_raw_parts(
+                            value.as_ptr().add(i_from),
+                            i - i_from,
+                        ))
+                    },
+                    hashmap,
+                );
+            }
+
+            from = serialise_byte(bytes, from, value_bytes[i]);
+
+            i_from = i + 1;
+        }
+
+        i += 1;
+    }
+
+    #[allow(
+        clippy::multiple_unsafe_ops_per_block,
+        clippy::undocumented_unsafe_blocks
+    )] // FIXME
+    if i > i_from {
+        from = serialise_str_segment(
+            bytes,
+            from,
+            unsafe {
+                core::str::from_utf8_unchecked(core::slice::from_raw_parts(
+                    value.as_ptr().add(i_from),
+                    i - i_from,
+                ))
+            },
+            hashmap,
+        );
+    }
+
+    serialise_byte(bytes, from, b'#')
+}
+
+const fn serialise_str_segment<'a>(
+    bytes: &mut [u8],
+    from: usize,
+    value: &'a str,
+    hashmap: &mut [HashEntry<'a>],
 ) -> usize {
     let hash = hash(value);
 
@@ -122,43 +184,82 @@ const fn serialise_str<'a>(
     {
         i = (i + 1) % hashmap.len();
     }
+
     if hashmap[i].index == usize::MAX {
+        let from = serialise_byte(bytes, from, b'"');
+
         hashmap[i].hash = hash;
         hashmap[i].value = value;
-        if let Some(HashCursor {
-            last: prev_index,
-            len: prev_len,
-            ..
-        }) = cursor.as_mut()
-        {
-            hashmap[i].index = prev_len.get();
-            hashmap[*prev_index].next = Some(i);
-            *prev_index = i;
-            *prev_len = prev_len.saturating_add(1);
-        } else {
-            hashmap[i].index = 0;
-            *cursor = Some(HashCursor {
-                first: i,
-                last: i,
-                len: NonZeroUsize::MIN,
-            });
-        }
+        hashmap[i].index = from;
         hashmap[i].next = None;
-    }
 
-    serialise_usize(bytes, from, hashmap[i].index)
+        serialise_str_literal(bytes, from, value)
+    } else {
+        let from = serialise_byte(bytes, from, b'$');
+        serialise_usize(bytes, from, hashmap[i].index)
+    }
 }
 
-const fn serialised_str_len(from: usize, value: &str, str_index: &mut usize) -> usize {
-    // conservative estimate of the indices
-    let from = serialised_usize_len(from, *str_index);
-    *str_index += 1;
-
+const fn serialised_str_len(from: usize, value: &str, _str_index: &mut usize) -> usize {
     let value_bytes = value.as_bytes();
 
-    let from = serialised_usize_len(from, value_bytes.len());
+    let mut from = from;
 
-    from + value_bytes.len()
+    let mut i_from = 0;
+    let mut i = 0;
+
+    while i < value.len() {
+        if matches!(value_bytes[i], b':' | b'<' | b'>' | b',' | b' ') {
+            #[allow(
+                clippy::multiple_unsafe_ops_per_block,
+                clippy::undocumented_unsafe_blocks
+            )] // FIXME
+            if i > i_from {
+                from = serialised_str_segment_len(from, unsafe {
+                    core::str::from_utf8_unchecked(core::slice::from_raw_parts(
+                        value.as_ptr().add(i_from),
+                        i - i_from,
+                    ))
+                });
+            }
+
+            from = serialised_byte_len(from, value_bytes[i]);
+
+            i_from = i + 1;
+        }
+
+        i += 1;
+    }
+
+    #[allow(
+        clippy::multiple_unsafe_ops_per_block,
+        clippy::undocumented_unsafe_blocks
+    )] // FIXME
+    if i > i_from {
+        from = serialised_str_segment_len(from, unsafe {
+            core::str::from_utf8_unchecked(core::slice::from_raw_parts(
+                value.as_ptr().add(i_from),
+                i - i_from,
+            ))
+        });
+    }
+
+    serialised_byte_len(from, b'#')
+}
+
+const fn serialised_str_segment_len(from: usize, value: &str) -> usize {
+    let from = serialised_byte_len(from, b'?'); // b'#' or b'$'
+
+    // very conservative estimate of backreference / inline string literal len
+    let from = serialised_usize_len(
+        from,
+        if from > value.len() {
+            from
+        } else {
+            value.len()
+        },
+    );
+    from + value.len()
 }
 
 #[allow(clippy::cast_possible_truncation)]
