@@ -8,6 +8,21 @@ use crate::{
     TypeStructure, Variant,
 };
 
+pub enum CheckError {
+    ByteMismatch { index: usize },
+    TooShort,
+    TooLong,
+}
+
+macro_rules! tryy {
+    ($e:expr) => {
+        match $e {
+            Ok(ok) => ok,
+            Err(err) => return Err(err),
+        }
+    };
+}
+
 pub const fn serialise_str_literal(bytes: &mut [u8], from: usize, value: &str) -> usize {
     let value_bytes = value.as_bytes();
 
@@ -27,6 +42,32 @@ pub const fn serialise_str_literal(bytes: &mut [u8], from: usize, value: &str) -
     }
 
     from + i
+}
+
+pub const fn check_serialised_str_literal(
+    bytes: &[u8],
+    from: usize,
+    value: &str,
+) -> Result<usize, CheckError> {
+    let value_bytes = value.as_bytes();
+
+    let from = tryy!(check_serialised_usize(bytes, from, value_bytes.len()));
+
+    if (from + value_bytes.len()) > bytes.len() {
+        return Err(CheckError::TooShort);
+    };
+
+    let mut i = 0;
+
+    while i < value_bytes.len() {
+        if bytes[from + i] != value_bytes[i] {
+            return Err(CheckError::ByteMismatch { index: from + i });
+        }
+
+        i += 1;
+    }
+
+    Ok(from + i)
 }
 
 // TODO: crate pub struct but used in public API
@@ -122,7 +163,10 @@ const fn serialise_str<'a>(
     let mut i = 0;
 
     while i < value.len() {
-        if matches!(value_bytes[i], b'(' | b')' | b'[' | b']' | b'{' | b'}' | b'<' | b'>' | b',' | b' ') {
+        if matches!(
+            value_bytes[i],
+            b'(' | b')' | b'[' | b']' | b'{' | b'}' | b'<' | b'>' | b',' | b' '
+        ) {
             #[allow(
                 clippy::multiple_unsafe_ops_per_block,
                 clippy::undocumented_unsafe_blocks
@@ -170,6 +214,56 @@ const fn serialise_str<'a>(
     serialise_byte(bytes, from, b'#')
 }
 
+const fn check_serialised_str(bytes: &[u8], from: usize, value: &str) -> Result<usize, CheckError> {
+    let value_bytes = value.as_bytes();
+
+    let mut from = from;
+
+    let mut i_from = 0;
+    let mut i = 0;
+
+    while i < value.len() {
+        if matches!(
+            value_bytes[i],
+            b'(' | b')' | b'[' | b']' | b'{' | b'}' | b'<' | b'>' | b',' | b' '
+        ) {
+            #[allow(
+                clippy::multiple_unsafe_ops_per_block,
+                clippy::undocumented_unsafe_blocks
+            )] // FIXME
+            if i > i_from {
+                from = tryy!(check_serialised_str_segment(bytes, from, unsafe {
+                    core::str::from_utf8_unchecked(core::slice::from_raw_parts(
+                        value.as_ptr().add(i_from),
+                        i - i_from,
+                    ))
+                },));
+            }
+
+            from = tryy!(check_serialised_byte(bytes, from, value_bytes[i]));
+
+            i_from = i + 1;
+        }
+
+        i += 1;
+    }
+
+    #[allow(
+        clippy::multiple_unsafe_ops_per_block,
+        clippy::undocumented_unsafe_blocks
+    )] // FIXME
+    if i > i_from {
+        from = tryy!(check_serialised_str_segment(bytes, from, unsafe {
+            core::str::from_utf8_unchecked(core::slice::from_raw_parts(
+                value.as_ptr().add(i_from),
+                i - i_from,
+            ))
+        },));
+    }
+
+    check_serialised_byte(bytes, from, b'#')
+}
+
 const fn serialise_str_segment<'a>(
     bytes: &mut [u8],
     from: usize,
@@ -197,6 +291,26 @@ const fn serialise_str_segment<'a>(
     } else {
         let from = serialise_byte(bytes, from, b'$');
         serialise_usize(bytes, from, hashmap[i].index)
+    }
+}
+
+const fn check_serialised_str_segment(
+    bytes: &[u8],
+    from: usize,
+    value: &str,
+) -> Result<usize, CheckError> {
+    if from >= bytes.len() {
+        return Err(CheckError::TooShort);
+    };
+
+    if bytes[from] == b'"' {
+        check_serialised_str_literal(bytes, from + 1, value)
+    } else if bytes[from] == b'$' {
+        let (from, at) = tryy!(parse_serialised_usize(bytes, from + 1));
+        let _ = tryy!(check_serialised_str_literal(bytes, at, value));
+        Ok(from)
+    } else {
+        Err(CheckError::ByteMismatch { index: from })
     }
 }
 
@@ -263,6 +377,29 @@ const fn serialised_str_segment_len(from: usize, value: &str) -> usize {
 }
 
 #[allow(clippy::cast_possible_truncation)]
+pub const fn parse_serialised_usize(
+    bytes: &[u8],
+    from: usize,
+) -> Result<(usize, usize), CheckError> {
+    let mut value = 0_usize;
+    let mut i = 0;
+
+    loop {
+        if (from + i) >= bytes.len() {
+            return Err(CheckError::TooShort);
+        }
+
+        value |= ((bytes[from + i] & 0b0111_1111_u8) as usize) << (7 * i);
+
+        if (bytes[from + i] & 0b1000_0000_u8) == 0 {
+            return Ok((from + i + 1, value));
+        }
+
+        i += 1;
+    }
+}
+
+#[allow(clippy::cast_possible_truncation)]
 pub const fn serialise_usize(bytes: &mut [u8], from: usize, value: usize) -> usize {
     assert!(
         serialised_usize_len(from, value) <= bytes.len(),
@@ -282,6 +419,35 @@ pub const fn serialise_usize(bytes: &mut [u8], from: usize, value: usize) -> usi
     bytes[from + i] = (rem & 0b0111_1111_usize) as u8;
 
     from + i + 1
+}
+
+#[allow(clippy::cast_possible_truncation)]
+pub const fn check_serialised_usize(
+    bytes: &[u8],
+    from: usize,
+    value: usize,
+) -> Result<usize, CheckError> {
+    if serialised_usize_len(from, value) > bytes.len() {
+        return Err(CheckError::TooShort);
+    };
+
+    let mut rem = value;
+    let mut i = 0;
+
+    while rem > 0b0111_1111_usize {
+        if bytes[from + i] != (((rem & 0b0111_1111_usize) as u8) | 0b1000_0000_u8) {
+            return Err(CheckError::ByteMismatch { index: from + i });
+        }
+
+        i += 1;
+        rem >>= 7_u8;
+    }
+
+    if bytes[from + i] != ((rem & 0b0111_1111_usize) as u8) {
+        return Err(CheckError::ByteMismatch { index: from + i });
+    }
+
+    Ok(from + i + 1)
 }
 
 pub const fn serialised_usize_len(from: usize, value: usize) -> usize {
@@ -307,6 +473,18 @@ const fn serialise_byte(bytes: &mut [u8], from: usize, value: u8) -> usize {
     from + 1
 }
 
+const fn check_serialised_byte(bytes: &[u8], from: usize, value: u8) -> Result<usize, CheckError> {
+    if from >= bytes.len() {
+        return Err(CheckError::TooShort);
+    };
+
+    if bytes[from] != value {
+        return Err(CheckError::ByteMismatch { index: from });
+    };
+
+    Ok(from + 1)
+}
+
 const fn serialised_byte_len(from: usize, _value: u8) -> usize {
     from + 1
 }
@@ -327,6 +505,27 @@ const fn serialise_maybe_uninhabited(
     };
 
     from + 1
+}
+
+const fn check_serialised_maybe_uninhabited(
+    bytes: &[u8],
+    from: usize,
+    value: MaybeUninhabited<()>,
+) -> Result<usize, CheckError> {
+    if from >= bytes.len() {
+        return Err(CheckError::TooShort);
+    };
+
+    if bytes[from]
+        != match value {
+            MaybeUninhabited::Inhabited(()) => b'h',
+            MaybeUninhabited::Uninhabited => b'n',
+        }
+    {
+        return Err(CheckError::ByteMismatch { index: from });
+    }
+
+    Ok(from + 1)
 }
 
 const fn serialised_maybe_uninhabited_len(from: usize, _value: MaybeUninhabited<()>) -> usize {
@@ -360,6 +559,46 @@ const fn serialise_discriminant_bytes(bytes: &mut [u8], from: usize, value_bytes
     }
 
     from + i - leading_zeroes
+}
+
+const fn check_serialised_discriminant_bytes(
+    bytes: &[u8],
+    from: usize,
+    value_bytes: &[u8],
+) -> Result<usize, CheckError> {
+    let mut leading_zeroes = 0;
+
+    while leading_zeroes < value_bytes.len() {
+        if value_bytes[leading_zeroes] != 0_u8 {
+            break;
+        }
+
+        leading_zeroes += 1;
+    }
+
+    let from = tryy!(check_serialised_usize(
+        bytes,
+        from,
+        value_bytes.len() - leading_zeroes
+    ));
+
+    if (from + value_bytes.len() - leading_zeroes) > bytes.len() {
+        return Err(CheckError::TooShort);
+    };
+
+    let mut i = leading_zeroes;
+
+    while i < value_bytes.len() {
+        if bytes[from + i - leading_zeroes] != value_bytes[i] {
+            return Err(CheckError::ByteMismatch {
+                index: from + i - leading_zeroes,
+            });
+        }
+
+        i += 1;
+    }
+
+    Ok(from + i - leading_zeroes)
 }
 
 const fn serialise_discriminant(
@@ -469,6 +708,71 @@ const fn serialise_discriminant(
         Discriminant::U64(v) => serialise_discriminant_bytes(bytes, from, &v.to_be_bytes()),
         Discriminant::U128(v) => serialise_discriminant_bytes(bytes, from, &v.to_be_bytes()),
         Discriminant::Usize(v) => serialise_discriminant_bytes(bytes, from, &v.to_be_bytes()),
+    }
+}
+
+const fn check_serialised_discriminant(
+    bytes: &[u8],
+    from: usize,
+    value: &Discriminant,
+) -> Result<usize, CheckError> {
+    let from = match value {
+        Discriminant::I8(_) => {
+            check_serialised_str(bytes, from, <i8 as TypeLayout>::TYPE_LAYOUT.ty.name())
+        },
+        Discriminant::I16(_) => {
+            check_serialised_str(bytes, from, <i16 as TypeLayout>::TYPE_LAYOUT.ty.name())
+        },
+        Discriminant::I32(_) => {
+            check_serialised_str(bytes, from, <i32 as TypeLayout>::TYPE_LAYOUT.ty.name())
+        },
+        Discriminant::I64(_) => {
+            check_serialised_str(bytes, from, <i64 as TypeLayout>::TYPE_LAYOUT.ty.name())
+        },
+        Discriminant::I128(_) => {
+            check_serialised_str(bytes, from, <i128 as TypeLayout>::TYPE_LAYOUT.ty.name())
+        },
+        Discriminant::Isize(_) => {
+            check_serialised_str(bytes, from, <isize as TypeLayout>::TYPE_LAYOUT.ty.name())
+        },
+        Discriminant::U8(_) => {
+            check_serialised_str(bytes, from, <u8 as TypeLayout>::TYPE_LAYOUT.ty.name())
+        },
+        Discriminant::U16(_) => {
+            check_serialised_str(bytes, from, <u16 as TypeLayout>::TYPE_LAYOUT.ty.name())
+        },
+        Discriminant::U32(_) => {
+            check_serialised_str(bytes, from, <u32 as TypeLayout>::TYPE_LAYOUT.ty.name())
+        },
+        Discriminant::U64(_) => {
+            check_serialised_str(bytes, from, <u64 as TypeLayout>::TYPE_LAYOUT.ty.name())
+        },
+        Discriminant::U128(_) => {
+            check_serialised_str(bytes, from, <u128 as TypeLayout>::TYPE_LAYOUT.ty.name())
+        },
+        Discriminant::Usize(_) => {
+            check_serialised_str(bytes, from, <usize as TypeLayout>::TYPE_LAYOUT.ty.name())
+        },
+    };
+    let from = tryy!(from);
+
+    match value {
+        Discriminant::I8(v) => check_serialised_discriminant_bytes(bytes, from, &v.to_be_bytes()),
+        Discriminant::I16(v) => check_serialised_discriminant_bytes(bytes, from, &v.to_be_bytes()),
+        Discriminant::I32(v) => check_serialised_discriminant_bytes(bytes, from, &v.to_be_bytes()),
+        Discriminant::I64(v) => check_serialised_discriminant_bytes(bytes, from, &v.to_be_bytes()),
+        Discriminant::I128(v) => check_serialised_discriminant_bytes(bytes, from, &v.to_be_bytes()),
+        Discriminant::Isize(v) => {
+            check_serialised_discriminant_bytes(bytes, from, &v.to_be_bytes())
+        },
+        Discriminant::U8(v) => check_serialised_discriminant_bytes(bytes, from, &v.to_be_bytes()),
+        Discriminant::U16(v) => check_serialised_discriminant_bytes(bytes, from, &v.to_be_bytes()),
+        Discriminant::U32(v) => check_serialised_discriminant_bytes(bytes, from, &v.to_be_bytes()),
+        Discriminant::U64(v) => check_serialised_discriminant_bytes(bytes, from, &v.to_be_bytes()),
+        Discriminant::U128(v) => check_serialised_discriminant_bytes(bytes, from, &v.to_be_bytes()),
+        Discriminant::Usize(v) => {
+            check_serialised_discriminant_bytes(bytes, from, &v.to_be_bytes())
+        },
     }
 }
 
@@ -585,6 +889,27 @@ const fn str_equal(a: &str, b: &str) -> bool {
     unsafe { core::intrinsics::compare_bytes(a.as_ptr(), b.as_ptr(), a.len()) == 0 }
 }
 
+const fn check_serialised_field(
+    bytes: &[u8],
+    from: usize,
+    value: &Field,
+) -> Result<usize, CheckError> {
+    let from = tryy!(check_serialised_str(bytes, from, value.name));
+    let from = tryy!(check_serialised_maybe_uninhabited(
+        bytes,
+        from,
+        match value.offset {
+            MaybeUninhabited::Inhabited(_) => MaybeUninhabited::Inhabited(()),
+            MaybeUninhabited::Uninhabited => MaybeUninhabited::Uninhabited,
+        },
+    ));
+    let from = match value.offset {
+        MaybeUninhabited::Inhabited(offset) => tryy!(check_serialised_usize(bytes, from, offset)),
+        MaybeUninhabited::Uninhabited => from,
+    };
+    check_serialised_str(bytes, from, value.ty.name())
+}
+
 const fn serialised_field_len(from: usize, value: &Field, str_index: &mut usize) -> usize {
     let from = serialised_str_len(from, value.name, str_index);
     let from = serialised_maybe_uninhabited_len(
@@ -619,6 +944,24 @@ const fn serialise_fields<'a>(
     }
 
     from
+}
+
+const fn check_serialised_fields(
+    bytes: &[u8],
+    from: usize,
+    value: &[Field],
+) -> Result<usize, CheckError> {
+    let mut from = tryy!(check_serialised_usize(bytes, from, value.len()));
+
+    let mut i = 0;
+
+    while i < value.len() {
+        from = tryy!(check_serialised_field(bytes, from, &value[i]));
+
+        i += 1;
+    }
+
+    Ok(from)
 }
 
 const fn serialised_fields_len(from: usize, value: &[Field], str_index: &mut usize) -> usize {
@@ -660,6 +1003,29 @@ const fn serialise_variant<'a>(
     serialise_fields(bytes, from, &value.fields, hashmap, cursor)
 }
 
+const fn check_serialised_variant(
+    bytes: &[u8],
+    from: usize,
+    value: &Variant,
+) -> Result<usize, CheckError> {
+    let from = tryy!(check_serialised_str(bytes, from, value.name));
+    let from = tryy!(check_serialised_maybe_uninhabited(
+        bytes,
+        from,
+        match value.discriminant {
+            MaybeUninhabited::Inhabited(_) => MaybeUninhabited::Inhabited(()),
+            MaybeUninhabited::Uninhabited => MaybeUninhabited::Uninhabited,
+        },
+    ));
+    let from = match &value.discriminant {
+        MaybeUninhabited::Inhabited(discriminant) => {
+            tryy!(check_serialised_discriminant(bytes, from, discriminant))
+        },
+        MaybeUninhabited::Uninhabited => from,
+    };
+    check_serialised_fields(bytes, from, &value.fields)
+}
+
 const fn serialised_variant_len(from: usize, value: &Variant, str_index: &mut usize) -> usize {
     let from = serialised_str_len(from, value.name, str_index);
     let from = serialised_maybe_uninhabited_len(
@@ -696,6 +1062,24 @@ const fn serialise_variants<'a>(
     }
 
     from
+}
+
+const fn check_serialised_variants(
+    bytes: &[u8],
+    from: usize,
+    value: &[Variant],
+) -> Result<usize, CheckError> {
+    let mut from = tryy!(check_serialised_usize(bytes, from, value.len()));
+
+    let mut i = 0;
+
+    while i < value.len() {
+        from = tryy!(check_serialised_variant(bytes, from, &value[i]));
+
+        i += 1;
+    }
+
+    Ok(from)
 }
 
 const fn serialised_variants_len(from: usize, value: &[Variant], str_index: &mut usize) -> usize {
@@ -739,6 +1123,31 @@ const fn serialise_type_structure<'a>(
     }
 }
 
+const fn check_serialised_type_structure(
+    bytes: &[u8],
+    from: usize,
+    value: &TypeStructure,
+) -> Result<usize, CheckError> {
+    match value {
+        TypeStructure::Primitive => check_serialised_byte(bytes, from, b'p'),
+        TypeStructure::Struct { repr, fields } => {
+            let from = tryy!(check_serialised_byte(bytes, from, b's'));
+            let from = tryy!(check_serialised_str(bytes, from, repr));
+            check_serialised_fields(bytes, from, fields)
+        },
+        TypeStructure::Union { repr, fields } => {
+            let from = tryy!(check_serialised_byte(bytes, from, b'u'));
+            let from = tryy!(check_serialised_str(bytes, from, repr));
+            check_serialised_fields(bytes, from, fields)
+        },
+        TypeStructure::Enum { repr, variants } => {
+            let from = tryy!(check_serialised_byte(bytes, from, b'e'));
+            let from = tryy!(check_serialised_str(bytes, from, repr));
+            check_serialised_variants(bytes, from, variants)
+        },
+    }
+}
+
 const fn serialised_type_structure_len(
     from: usize,
     value: &TypeStructure,
@@ -777,6 +1186,17 @@ const fn serialise_type_layout_info<'a>(
     serialise_type_structure(bytes, from, &value.structure, hashmap, cursor)
 }
 
+const fn check_serialised_type_layout_info(
+    bytes: &[u8],
+    from: usize,
+    value: &TypeLayoutInfo,
+) -> Result<usize, CheckError> {
+    let from = tryy!(check_serialised_str(bytes, from, value.ty.name()));
+    let from = tryy!(check_serialised_usize(bytes, from, value.size));
+    let from = tryy!(check_serialised_usize(bytes, from, value.alignment));
+    check_serialised_type_structure(bytes, from, &value.structure)
+}
+
 const fn serialised_type_layout_info_len(
     from: usize,
     value: &TypeLayoutInfo,
@@ -812,7 +1232,34 @@ pub const fn serialise_type_layout_graph<'a>(
         i += 1;
     }
 
-    from
+    serialise_byte(bytes, from, b'#')
+}
+
+pub const fn check_serialised_type_layout_graph(
+    bytes: &[u8],
+    from: usize,
+    value: &TypeLayoutGraph,
+) -> Result<usize, CheckError> {
+    // Include the crate version of `type_layout` for cross-version comparison
+    let from = tryy!(check_serialised_str(bytes, from, LAYOUT_VERSION));
+
+    let from = tryy!(check_serialised_str(bytes, from, value.ty.name()));
+
+    let mut from = tryy!(check_serialised_usize(bytes, from, value.tys.len()));
+
+    let mut i = 0;
+
+    while i < value.tys.len() {
+        from = tryy!(check_serialised_type_layout_info(
+            bytes,
+            from,
+            &*value.tys[i]
+        ));
+
+        i += 1;
+    }
+
+    check_serialised_byte(bytes, from, b'#')
 }
 
 pub const fn serialised_type_layout_graph_len(
@@ -835,5 +1282,5 @@ pub const fn serialised_type_layout_graph_len(
         i += 1;
     }
 
-    from
+    serialised_byte_len(from, b'#')
 }

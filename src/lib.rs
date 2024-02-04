@@ -166,6 +166,7 @@
 #![feature(exclusive_wrapper)]
 #![feature(const_slice_split_at_mut)]
 #![feature(const_option)]
+#![feature(const_try)]
 #![feature(doc_auto_cfg)]
 #![feature(cfg_version)]
 #![cfg_attr(not(version("1.76.0")), feature(ptr_from_ref))]
@@ -316,17 +317,19 @@ impl<T: TypeLayout + typeset::ComputeTypeSet> TypeGraphLayout for T {
 pub const fn serialised_type_graph_len<T: TypeGraphLayout>() -> usize {
     let mut str_index = 0;
 
-    let len = ser::serialised_type_layout_graph_len(0, &T::TYPE_GRAPH, &mut str_index);
+    // let len =
+    ser::serialised_type_layout_graph_len(0, &T::TYPE_GRAPH, &mut str_index)
+    // ;
 
-    let mut last_full_len = len;
-    let mut full_len = ser::serialised_usize_len(len, last_full_len);
+    // let mut last_full_len = len;
+    // let mut full_len = ser::serialised_usize_len(len, last_full_len);
 
-    while full_len != last_full_len {
-        last_full_len = full_len;
-        full_len = ser::serialised_usize_len(len, last_full_len);
-    }
+    // while full_len != last_full_len {
+    //     last_full_len = full_len;
+    //     full_len = ser::serialised_usize_len(len, last_full_len);
+    // }
 
-    full_len
+    // full_len
 }
 
 #[must_use]
@@ -340,20 +343,30 @@ pub const fn serialise_type_graph<T: TypeGraphLayout>() -> [u8; serialised_type_
     let mut hashmap = [ser::HashEntry::EMPTY; serialised_type_graph_len::<T>()];
     let mut cursor = None;
 
-    let mut from =
+    let mut _from: usize =
         ser::serialise_type_layout_graph(&mut bytes, 0, &layout, &mut hashmap, &mut cursor);
 
-    let mut si = match cursor {
-        Some(cursor) => Some(cursor.first()),
-        None => None,
-    };
+    // let mut si = match cursor {
+    //     Some(cursor) => Some(cursor.first()),
+    //     None => None,
+    // };
 
-    while let Some(i) = si {
-        si = hashmap[i].next();
-        from = ser::serialise_str_literal(&mut bytes, from, hashmap[i].value());
-    }
+    // while let Some(i) = si {
+    //     si = hashmap[i].next();
+    //     from = ser::serialise_str_literal(&mut bytes, from, hashmap[i].value());
+    // }
 
     bytes
+}
+
+/// Check if `bytes` is equivalent to the byte-array-serialised representation
+/// of this type's [`TypeLayoutGraph`].
+#[must_use]
+pub const fn check_serialised_type_graph<T: TypeGraphLayout>(bytes: &[u8]) -> bool {
+    match ser::check_serialised_type_layout_graph(bytes, 0, &T::TYPE_GRAPH) {
+        Ok(len) => bytes.len() == len,
+        Err(_) => false,
+    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
