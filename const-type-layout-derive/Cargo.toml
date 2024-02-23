@@ -8,7 +8,7 @@ documentation = "https://docs.rs/const-type-layout-derive/"
 homepage = "https://github.com/juntyr/const-type-layout"
 repository = "https://github.com/juntyr/const-type-layout"
 license = "MIT OR Apache-2.0"
-rust-version = "1.75" # nightly
+rust-version = "1.76" # nightly
 
 [lib]
 proc-macro = true
