@@ -1,4 +1,4 @@
 [toolchain]
-# Pin to final 1.75.0 nightly
-channel = "nightly-2023-11-10"
+# Pin to final 1.77.0 nightly
+channel = "nightly-2024-02-03"
 components = [ "cargo", "rustfmt", "clippy", "miri" ]
