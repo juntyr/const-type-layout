@@ -6,7 +6,7 @@
 //! [CI Status]: https://img.shields.io/github/actions/workflow/status/juntyr/const-type-layout/ci.yml?branch=main
 //! [workflow]: https://github.com/juntyr/const-type-layout/actions/workflows/ci.yml?query=branch%3Amain
 //!
-//! [MSRV]: https://img.shields.io/badge/MSRV-1.76.0--nightly-orange
+//! [MSRV]: https://img.shields.io/badge/MSRV-1.78.0--nightly-orange
 //! [repo]: https://github.com/juntyr/const-type-layout
 //!
 //! [Latest Version]: https://img.shields.io/crates/v/const-type-layout
@@ -150,10 +150,8 @@
 #![feature(sync_unsafe_cell)]
 #![feature(exclusive_wrapper)]
 #![feature(doc_auto_cfg)]
-#![feature(cfg_version)]
-#![cfg_attr(not(version("1.76.0")), feature(ptr_from_ref))]
-#![cfg_attr(not(version("1.77.0")), feature(offset_of))]
-#![cfg_attr(version("1.77.0"), feature(offset_of_nested))]
+#![feature(offset_of_nested)]
+#![feature(freeze)]
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 #![feature(specialization)]

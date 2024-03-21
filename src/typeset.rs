@@ -7,7 +7,7 @@ pub trait ComputeSet: sealed::ComputeSet {
 
     type Output<H: ComputeTypeSet>: ExpandTypeSet;
 
-    type TyHList: 'static + Copy;
+    type TyHList: 'static + Copy + core::marker::Freeze;
     const TYS: &'static Self::TyHList;
 }
 
