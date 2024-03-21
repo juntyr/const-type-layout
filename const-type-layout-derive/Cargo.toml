@@ -1,7 +1,7 @@
 [package]
 name = "const-type-layout-derive"
 description = "Derive macro implementation for const-type-layout crate"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 authors = ["Juniper Tyree <juniper.tyree@helsinki.fi>", "Lucien Greathouse <me@lpghatguy.com>"]
 documentation = "https://docs.rs/const-type-layout-derive/"

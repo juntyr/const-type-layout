@@ -29,7 +29,7 @@
 //!
 //! `const-type-layout-derive` provides the [`#[derive(TypeLayout)`](TypeLayout)
 //! implementation for the
-//! [`const_type_layout::TypeLayout`](https://docs.rs/const-type-layout/0.2/const_type_layout/trait.TypeLayout.html)
+//! [`const_type_layout::TypeLayout`](https://docs.rs/const-type-layout/0.3/const_type_layout/trait.TypeLayout.html)
 //! trait.
 
 #![deny(clippy::complexity)]
@@ -56,12 +56,12 @@ use syn::{parse_macro_input, spanned::Spanned};
 #[proc_macro_error]
 #[proc_macro_derive(TypeLayout, attributes(layout))]
 /// Provides the `#[derive(TypeLayout)]` implementation for the
-/// [`const_type_layout::TypeLayout`](https://docs.rs/const-type-layout/0.2/const_type_layout/trait.TypeLayout.html)
+/// [`const_type_layout::TypeLayout`](https://docs.rs/const-type-layout/0.3/const_type_layout/trait.TypeLayout.html)
 /// trait.
 ///
 /// The derive also accepts a `#[layout(...)]` attribute to configure the
 /// implementation as follows:
-/// - `#[layout(crate = "<crate-path>")]` changes the path to the [`const-type-layout`](https://docs.rs/const-type-layout/0.2/const_type_layout)
+/// - `#[layout(crate = "<crate-path>")]` changes the path to the [`const-type-layout`](https://docs.rs/const-type-layout/0.3/const_type_layout)
 ///   crate that the derive uses, which by default is `const_type_layout`.
 /// - `#[layout(bound = "<where-predicate>")]` adds the provided predicate to
 ///   the where clause of the trait implementation.
