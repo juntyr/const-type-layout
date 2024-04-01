@@ -721,6 +721,10 @@
 <a href="#719" id="719">719</a>
 <a href="#720" id="720">720</a>
 <a href="#721" id="721">721</a>
+<a href="#722" id="722">722</a>
+<a href="#723" id="723">723</a>
+<a href="#724" id="724">724</a>
+<a href="#725" id="725">725</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! [![CI Status]][workflow] [![MSRV]][repo] [![Latest Version]][crates.io]
 //! [![Rust Doc Crate]][docs.rs] [![Rust Doc Main]][docs]
 //! [![License Status]][fossa] [![Code Coverage]][codecov]
@@ -765,89 +769,93 @@
 //!
 //! This crate heavily builds on the original runtime [type-layout](https://github.com/LPGhatguy/type-layout) crate by Lucien Greathouse.
 //!
-//! ## Examples
-//!
-//! The layout of types is only defined if they're `#[repr(C)]`. This crate
-//! works on non-`#[repr(C)]` types, but their layout is unpredictable.
-//! ```rust
-//! # #![feature(const_type_name)]
-//! # #![feature(offset_of)]
-//! # #![feature(offset_of_enum)]
-//! use const_type_layout::TypeLayout;
-//!
-//! #[derive(TypeLayout)]
-//! #[repr(C)]
-//! struct Foo {
-//!     a: u8,
-//!     b: u32,
-//! }
-//!
-//! assert_eq!(
-//!     format!("{:#?}", Foo::TYPE_LAYOUT),
-//! r#"TypeLayoutInfo {
-//!     name: "rust_out::main::_doctest_main_src_lib_rs_49_0::Foo",
-//!     size: 8,
-//!     alignment: 4,
-//!     structure: Struct {
-//!         repr: "C",
-//!         fields: [
-//!             Field {
-//!                 name: "a",
-//!                 offset: Inhabited(
-//!                     0,
-//!                 ),
-//!                 ty: "u8",
-//!             },
-//!             Field {
-//!                 name: "b",
-//!                 offset: Inhabited(
-//!                     4,
-//!                 ),
-//!                 ty: "u32",
-//!             },
-//!         ],
-//!     },
-//! }"#
-//! )
-//! ```
-//!
-//! Over-aligned types have trailing padding, which can be a source of bugs in
-//! some FFI scenarios:
-//! ```rust
-//! # #![feature(const_type_name)]
-//! # #![feature(offset_of)]
-//! # #![feature(offset_of_enum)]
-//! use const_type_layout::TypeLayout;
-//!
-//! #[derive(TypeLayout)]
-//! #[repr(C, align(128))]
-//! struct OverAligned {
-//!     value: u8,
-//! }
-//!
-//! assert_eq!(
-//!     format!("{:#?}", OverAligned::TYPE_LAYOUT),
-//! r#"TypeLayoutInfo {
-//!     name: "rust_out::main::_doctest_main_src_lib_rs_93_0::OverAligned",
-//!     size: 128,
-//!     alignment: 128,
-//!     structure: Struct {
-//!         repr: "C,align(128)",
-//!         fields: [
-//!             Field {
-//!                 name: "value",
-//!                 offset: Inhabited(
-//!                     0,
-//!                 ),
-//!                 ty: "u8",
-//!             },
-//!         ],
-//!     },
-//! }"#
-//! )
-//! ```
+</span><span class="attr">#![cfg_attr(feature = <span class="string">"derive"</span>, doc = <span class="string">r##"
+## Examples
 
-</span><span class="attr">#![deny(clippy::complexity)]
+The layout of types is only defined if they're `#[repr(C)]`. This crate works
+on non-`#[repr(C)]` types, but their layout is unpredictable.
+
+```rust
+# #![feature(const_type_name)]
+# #![feature(offset_of)]
+# #![feature(offset_of_enum)]
+use const_type_layout::TypeLayout;
+
+#[derive(TypeLayout)]
+#[repr(C)]
+struct Foo {
+    a: u8,
+    b: u32,
+}
+
+assert_eq!(
+    format!("{:#?}", Foo::TYPE_LAYOUT),
+r#"TypeLayoutInfo {
+    name: "rust_out::main::_doctest_main_src_lib_rs_50_0::Foo",
+    size: 8,
+    alignment: 4,
+    structure: Struct {
+        repr: "C",
+        fields: [
+            Field {
+                name: "a",
+                offset: Inhabited(
+                    0,
+                ),
+                ty: "u8",
+            },
+            Field {
+                name: "b",
+                offset: Inhabited(
+                    4,
+                ),
+                ty: "u32",
+            },
+        ],
+    },
+}"#
+)
+```
+
+Over-aligned types have trailing padding, which can be a source of bugs in some
+FFI scenarios:
+
+```rust
+# #![feature(const_type_name)]
+# #![feature(offset_of)]
+# #![feature(offset_of_enum)]
+use const_type_layout::TypeLayout;
+
+#[derive(TypeLayout)]
+#[repr(C, align(128))]
+struct OverAligned {
+    value: u8,
+}
+
+assert_eq!(
+    format!("{:#?}", OverAligned::TYPE_LAYOUT),
+r#"TypeLayoutInfo {
+    name: "rust_out::main::_doctest_main_src_lib_rs_95_0::OverAligned",
+    size: 128,
+    alignment: 128,
+    structure: Struct {
+        repr: "C,align(128)",
+        fields: [
+            Field {
+                name: "value",
+                offset: Inhabited(
+                    0,
+                ),
+                ty: "u8",
+            },
+        ],
+    },
+}"#
+)
+```
+"##</span>)]
+
+#![deny(clippy::complexity)]
 #![deny(clippy::correctness)]
 #![warn(clippy::nursery)]
 #![warn(clippy::pedantic)]
