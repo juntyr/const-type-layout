@@ -34,7 +34,7 @@ on non-<code>#[repr(C)]</code> types, but their layout is unpredictable.</p>
 <span class="macro">assert_eq!</span>(
     <span class="macro">format!</span>(<span class="string">"{:#?}"</span>, Foo::TYPE_LAYOUT),
 <span class="string">r#"TypeLayoutInfo {
-    name: "rust_out::main::_doctest_main_src_lib_rs_50_0::Foo",
+    name: "rust_out::main::_doctest_main_src_lib_rs_49_0::Foo",
     size: 8,
     alignment: 4,
     structure: Struct {
@@ -72,7 +72,7 @@ FFI scenarios:</p>
 <span class="macro">assert_eq!</span>(
     <span class="macro">format!</span>(<span class="string">"{:#?}"</span>, OverAligned::TYPE_LAYOUT),
 <span class="string">r#"TypeLayoutInfo {
-    name: "rust_out::main::_doctest_main_src_lib_rs_95_0::OverAligned",
+    name: "rust_out::main::_doctest_main_src_lib_rs_94_0::OverAligned",
     size: 128,
     alignment: 128,
     structure: Struct {
