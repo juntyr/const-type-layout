@@ -42,89 +42,91 @@
 //!
 //! This crate heavily builds on the original runtime [type-layout](https://github.com/LPGhatguy/type-layout) crate by Lucien Greathouse.
 //!
-//! ## Examples
-//!
-//! The layout of types is only defined if they're `#[repr(C)]`. This crate
-//! works on non-`#[repr(C)]` types, but their layout is unpredictable.
-#![cfg(feature = "derive")]
-//! ```rust
-//! # #![feature(const_type_name)]
-//! # #![feature(offset_of)]
-//! # #![feature(offset_of_enum)]
-//! use const_type_layout::TypeLayout;
-//!
-//! #[derive(TypeLayout)]
-//! #[repr(C)]
-//! struct Foo {
-//!     a: u8,
-//!     b: u32,
-//! }
-//!
-//! assert_eq!(
-//!     format!("{:#?}", Foo::TYPE_LAYOUT),
-//! r#"TypeLayoutInfo {
-//!     name: "rust_out::main::_doctest_main_src_lib_rs_49_0::Foo",
-//!     size: 8,
-//!     alignment: 4,
-//!     structure: Struct {
-//!         repr: "C",
-//!         fields: [
-//!             Field {
-//!                 name: "a",
-//!                 offset: Inhabited(
-//!                     0,
-//!                 ),
-//!                 ty: "u8",
-//!             },
-//!             Field {
-//!                 name: "b",
-//!                 offset: Inhabited(
-//!                     4,
-//!                 ),
-//!                 ty: "u32",
-//!             },
-//!         ],
-//!     },
-//! }"#
-//! )
-//! ```
-//!
-//! Over-aligned types have trailing padding, which can be a source of bugs in
-//! some FFI scenarios:
-#![cfg(feature = "derive")]
-//! ```rust
-//! # #![feature(const_type_name)]
-//! # #![feature(offset_of)]
-//! # #![feature(offset_of_enum)]
-//! use const_type_layout::TypeLayout;
-//!
-//! #[derive(TypeLayout)]
-//! #[repr(C, align(128))]
-//! struct OverAligned {
-//!     value: u8,
-//! }
-//!
-//! assert_eq!(
-//!     format!("{:#?}", OverAligned::TYPE_LAYOUT),
-//! r#"TypeLayoutInfo {
-//!     name: "rust_out::main::_doctest_main_src_lib_rs_93_0::OverAligned",
-//!     size: 128,
-//!     alignment: 128,
-//!     structure: Struct {
-//!         repr: "C,align(128)",
-//!         fields: [
-//!             Field {
-//!                 name: "value",
-//!                 offset: Inhabited(
-//!                     0,
-//!                 ),
-//!                 ty: "u8",
-//!             },
-//!         ],
-//!     },
-//! }"#
-//! )
-//! ```
+#![cfg_attr(feature = "derive", doc = r##"
+## Examples
+
+The layout of types is only defined if they're `#[repr(C)]`. This crate works
+on non-`#[repr(C)]` types, but their layout is unpredictable.
+
+```rust
+# #![feature(const_type_name)]
+# #![feature(offset_of)]
+# #![feature(offset_of_enum)]
+use const_type_layout::TypeLayout;
+
+#[derive(TypeLayout)]
+#[repr(C)]
+struct Foo {
+    a: u8,
+    b: u32,
+}
+
+assert_eq!(
+    format!("{:#?}", Foo::TYPE_LAYOUT),
+r#"TypeLayoutInfo {
+    name: "rust_out::main::_doctest_main_src_lib_rs_50_0::Foo",
+    size: 8,
+    alignment: 4,
+    structure: Struct {
+        repr: "C",
+        fields: [
+            Field {
+                name: "a",
+                offset: Inhabited(
+                    0,
+                ),
+                ty: "u8",
+            },
+            Field {
+                name: "b",
+                offset: Inhabited(
+                    4,
+                ),
+                ty: "u32",
+            },
+        ],
+    },
+}"#
+)
+```
+
+Over-aligned types have trailing padding, which can be a source of bugs in some
+FFI scenarios:
+
+```rust
+# #![feature(const_type_name)]
+# #![feature(offset_of)]
+# #![feature(offset_of_enum)]
+use const_type_layout::TypeLayout;
+
+#[derive(TypeLayout)]
+#[repr(C, align(128))]
+struct OverAligned {
+    value: u8,
+}
+
+assert_eq!(
+    format!("{:#?}", OverAligned::TYPE_LAYOUT),
+r#"TypeLayoutInfo {
+    name: "rust_out::main::_doctest_main_src_lib_rs_95_0::OverAligned",
+    size: 128,
+    alignment: 128,
+    structure: Struct {
+        repr: "C,align(128)",
+        fields: [
+            Field {
+                name: "value",
+                offset: Inhabited(
+                    0,
+                ),
+                ty: "u8",
+            },
+        ],
+    },
+}"#
+)
+```
+"##)]
 
 #![deny(clippy::complexity)]
 #![deny(clippy::correctness)]
