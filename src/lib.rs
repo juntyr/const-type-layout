@@ -41,8 +41,9 @@
 //! the layouts of all the types mentioned by this type, e.g. in its fields.
 //!
 //! This crate heavily builds on the original runtime [type-layout](https://github.com/LPGhatguy/type-layout) crate by Lucien Greathouse.
-//!
-#![cfg_attr(feature = "derive", doc = r##"
+#![cfg_attr(
+    feature = "derive",
+    doc = r##"
 ## Examples
 
 The layout of types is only defined if they're `#[repr(C)]`. This crate works
@@ -126,8 +127,8 @@ r#"TypeLayoutInfo {
 }"#
 )
 ```
-"##)]
-
+"##
+)]
 #![deny(clippy::complexity)]
 #![deny(clippy::correctness)]
 #![warn(clippy::nursery)]
