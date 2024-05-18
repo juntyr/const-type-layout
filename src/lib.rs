@@ -306,6 +306,15 @@ pub const fn serialise_type_graph<T: TypeGraphLayout>() -> [u8; serialised_type_
     bytes
 }
 
+#[must_use]
+/// Hash this type's [`TypeLayoutGraph`] using the provided `seed`.
+///
+/// The hash is produced over the serialised form of the [`TypeLayoutGraph`], as
+/// computed by [`serialise_type_graph`].
+pub const fn hash_type_graph<T: TypeGraphLayout>(seed: u64) -> u64 {
+    T::TYPE_GRAPH.hash(seed)
+}
+
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", allow(clippy::unsafe_derive_deserialize))]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
@@ -634,14 +643,22 @@ impl<
     //     I: ~const Deref<Target = TypeLayoutInfo<'a, F, V, P>>,
     //     G: ~const Deref<Target = [I]>,
     {
-        let len = ser::serialised_type_layout_graph_len(0, self);
+        let mut counter = ser::Serialiser::counter(0);
+        counter.serialise_type_layout_graph(self);
+        let len = counter.cursor();
 
         let mut last_full_len = len;
-        let mut full_len = ser::serialised_usize_len(len, last_full_len);
+
+        let mut counter = ser::Serialiser::counter(len);
+        counter.serialise_usize(last_full_len);
+        let mut full_len = counter.cursor();
 
         while full_len != last_full_len {
             last_full_len = full_len;
-            full_len = ser::serialised_usize_len(len, last_full_len);
+
+            let mut counter = ser::Serialiser::counter(len);
+            counter.serialise_usize(last_full_len);
+            full_len = counter.cursor();
         }
 
         full_len
@@ -666,9 +683,30 @@ impl<
     //     I: ~const Deref<Target = TypeLayoutInfo<'a, F, V, P>>,
     //     G: ~const Deref<Target = [I]>,
     {
-        let from = ser::serialise_usize(bytes, 0, self.serialised_len());
+        let mut writer = ser::Serialiser::writer(bytes, 0);
+        writer.serialise_usize(self.serialised_len());
+        writer.serialise_type_layout_graph(self);
+    }
 
-        ser::serialise_type_layout_graph(bytes, from, self);
+    #[must_use]
+    /// Hash this [`TypeLayoutGraph`] using the provided `hasher`.
+    ///
+    /// The hash is produced over the serialised form of this
+    /// [`TypeLayoutGraph`], as computed by [`Self::serialise`].
+    pub const fn hash(&self, seed: u64) -> u64
+// where
+    //     F: ~const Deref<Target = [Field<'a>]>,
+    //     V: ~const Deref<Target = [Variant<'a, F>]>,
+    //     P: ~const Deref<Target = [&'a str]>,
+    //     I: ~const Deref<Target = TypeLayoutInfo<'a, F, V, P>>,
+    //     G: ~const Deref<Target = [I]>,
+    {
+        let mut hasher = ser::Serialiser::hasher(seed);
+
+        hasher.serialise_usize(self.serialised_len());
+        hasher.serialise_type_layout_graph(self);
+
+        hasher.hash()
     }
 }
 
