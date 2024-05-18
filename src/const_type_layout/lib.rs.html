@@ -760,8 +760,6 @@
 <a href="#760" id="760">760</a>
 <a href="#761" id="761">761</a>
 <a href="#762" id="762">762</a>
-<a href="#763" id="763">763</a>
-<a href="#764" id="764">764</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! [![CI Status]][workflow] [![MSRV]][repo] [![Latest Version]][crates.io]
 //! [![Rust Doc Crate]][docs.rs] [![Rust Doc Main]][docs]
 //! [![License Status]][fossa] [![Code Coverage]][codecov]
@@ -1082,17 +1080,6 @@ r#"TypeLayoutInfo {
 <span class="attr">#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = <span class="string">"serde"</span>, allow(clippy::unsafe_derive_deserialize))]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(::serde::Serialize, ::serde::Deserialize))]
-#[cfg_attr(
-    feature = <span class="string">"serde"</span>,
-    serde(bound(serialize = <span class="string">"F: ::serde::Serialize, V: ::serde::Serialize, I: \
-                             ::serde::Serialize, G: ::serde::Serialize"</span>))
-)]
-#[cfg_attr(
-    feature = <span class="string">"serde"</span>,
-    serde(bound(deserialize = <span class="string">"'a: 'de, F: ::serde::Deserialize&lt;'a&gt;, V: \
-                               ::serde::Deserialize&lt;'a&gt;, I: ::serde::Deserialize&lt;'a&gt;, G: \
-                               ::serde::Deserialize&lt;'a&gt;"</span>))
-)]
 </span><span class="doccomment">/// Description of the deep layout of a type.
 </span><span class="kw">pub struct </span>TypeLayoutGraph&lt;
     <span class="lifetime">'a</span>,
@@ -1102,6 +1089,7 @@ r#"TypeLayoutInfo {
     G: Deref&lt;Target = [I]&gt; = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[I],
 &gt; {
     <span class="doccomment">/// The type's fully-qualified name.
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, serde(borrow))]
     </span><span class="kw">pub </span>ty: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
     <span class="doccomment">/// The list of types that make up the complete graph describing the deep
     /// layout of this type.
@@ -1117,12 +1105,14 @@ r#"TypeLayoutInfo {
     V: Deref&lt;Target = [Variant&lt;<span class="lifetime">'a</span>, F&gt;]&gt; = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[Variant&lt;<span class="lifetime">'a</span>, F&gt;],
 &gt; {
     <span class="doccomment">/// The type's fully-qualified name.
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, serde(borrow))]
     </span><span class="kw">pub </span>name: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
     <span class="doccomment">/// The type's size.
     </span><span class="kw">pub </span>size: usize,
     <span class="doccomment">/// The type's minimum alignment.
     </span><span class="kw">pub </span>alignment: usize,
     <span class="doccomment">/// The type's shallow structure.
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, serde(borrow))]
     </span><span class="kw">pub </span>structure: TypeStructure&lt;<span class="lifetime">'a</span>, F, V&gt;,
 }
 
@@ -1141,6 +1131,7 @@ r#"TypeLayoutInfo {
     /// tuples.
     </span>Struct {
         <span class="doccomment">/// The string representation of the type's `#[repr(...)]` attributes.
+        </span><span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, serde(borrow))]
         </span>repr: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
         <span class="doccomment">/// The fields of the struct.
         </span>fields: F,
@@ -1148,6 +1139,7 @@ r#"TypeLayoutInfo {
     <span class="doccomment">/// A union type.
     </span>Union {
         <span class="doccomment">/// The string representation of the type's `#[repr(...)]` attributes.
+        </span><span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, serde(borrow))]
         </span>repr: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
         <span class="doccomment">/// The fields of the union.
         </span>fields: F,
@@ -1155,6 +1147,7 @@ r#"TypeLayoutInfo {
     <span class="doccomment">/// An enum type.
     </span>Enum {
         <span class="doccomment">/// The string representation of the type's `#[repr(...)]` attributes.
+        </span><span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, serde(borrow))]
         </span>repr: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
         <span class="doccomment">/// The variants of the union.
         </span>variants: V,
@@ -1166,6 +1159,7 @@ r#"TypeLayoutInfo {
 </span><span class="doccomment">/// Description of the shallow layout of a variant
 </span><span class="kw">pub struct </span>Variant&lt;<span class="lifetime">'a</span>, F: Deref&lt;Target = [Field&lt;<span class="lifetime">'a</span>&gt;]&gt; = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[Field&lt;<span class="lifetime">'a</span>&gt;]&gt; {
     <span class="doccomment">/// The variant's name.
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, serde(borrow))]
     </span><span class="kw">pub </span>name: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
     <span class="doccomment">/// The variant's descriminant, iff the variant is
     /// [inhabited](https://doc.rust-lang.org/reference/glossary.html#inhabited).
@@ -1349,6 +1343,7 @@ r#"TypeLayoutInfo {
 </span><span class="doccomment">/// Descriptor of the shallow layout of a field.
 </span><span class="kw">pub struct </span>Field&lt;<span class="lifetime">'a</span>&gt; {
     <span class="doccomment">/// The field's name.
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, serde(borrow))]
     </span><span class="kw">pub </span>name: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
     <span class="doccomment">/// The field's byte offset, iff the field is
     /// [inhabited](https://doc.rust-lang.org/reference/glossary.html#inhabited).
@@ -1356,6 +1351,7 @@ r#"TypeLayoutInfo {
     <span class="doccomment">/// The fully-qualified name of the field's type. This is used as a key
     /// inside [`TypeLayoutGraph::tys`] to find the field's type's layout by
     /// its [`TypeLayoutInfo::name`].
+    </span><span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, serde(borrow))]
     </span><span class="kw">pub </span>ty: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
 }
 
