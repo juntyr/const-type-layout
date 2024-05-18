@@ -318,17 +318,6 @@ pub const fn hash_type_graph<T: TypeGraphLayout>(seed: u64) -> u64 {
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", allow(clippy::unsafe_derive_deserialize))]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
-#[cfg_attr(
-    feature = "serde",
-    serde(bound(serialize = "F: ::serde::Serialize, V: ::serde::Serialize, I: \
-                             ::serde::Serialize, G: ::serde::Serialize"))
-)]
-#[cfg_attr(
-    feature = "serde",
-    serde(bound(deserialize = "'a: 'de, F: ::serde::Deserialize<'a>, V: \
-                               ::serde::Deserialize<'a>, I: ::serde::Deserialize<'a>, G: \
-                               ::serde::Deserialize<'a>"))
-)]
 /// Description of the deep layout of a type.
 pub struct TypeLayoutGraph<
     'a,
@@ -338,6 +327,7 @@ pub struct TypeLayoutGraph<
     G: Deref<Target = [I]> = &'a [I],
 > {
     /// The type's fully-qualified name.
+    #[cfg_attr(feature = "serde", serde(borrow))]
     pub ty: &'a str,
     /// The list of types that make up the complete graph describing the deep
     /// layout of this type.
@@ -353,12 +343,14 @@ pub struct TypeLayoutInfo<
     V: Deref<Target = [Variant<'a, F>]> = &'a [Variant<'a, F>],
 > {
     /// The type's fully-qualified name.
+    #[cfg_attr(feature = "serde", serde(borrow))]
     pub name: &'a str,
     /// The type's size.
     pub size: usize,
     /// The type's minimum alignment.
     pub alignment: usize,
     /// The type's shallow structure.
+    #[cfg_attr(feature = "serde", serde(borrow))]
     pub structure: TypeStructure<'a, F, V>,
 }
 
@@ -377,6 +369,7 @@ pub enum TypeStructure<
     /// tuples.
     Struct {
         /// The string representation of the type's `#[repr(...)]` attributes.
+        #[cfg_attr(feature = "serde", serde(borrow))]
         repr: &'a str,
         /// The fields of the struct.
         fields: F,
@@ -384,6 +377,7 @@ pub enum TypeStructure<
     /// A union type.
     Union {
         /// The string representation of the type's `#[repr(...)]` attributes.
+        #[cfg_attr(feature = "serde", serde(borrow))]
         repr: &'a str,
         /// The fields of the union.
         fields: F,
@@ -391,6 +385,7 @@ pub enum TypeStructure<
     /// An enum type.
     Enum {
         /// The string representation of the type's `#[repr(...)]` attributes.
+        #[cfg_attr(feature = "serde", serde(borrow))]
         repr: &'a str,
         /// The variants of the union.
         variants: V,
@@ -402,6 +397,7 @@ pub enum TypeStructure<
 /// Description of the shallow layout of a variant
 pub struct Variant<'a, F: Deref<Target = [Field<'a>]> = &'a [Field<'a>]> {
     /// The variant's name.
+    #[cfg_attr(feature = "serde", serde(borrow))]
     pub name: &'a str,
     /// The variant's descriminant, iff the variant is
     /// [inhabited](https://doc.rust-lang.org/reference/glossary.html#inhabited).
@@ -585,6 +581,7 @@ impl_extract_discriminant! {
 /// Descriptor of the shallow layout of a field.
 pub struct Field<'a> {
     /// The field's name.
+    #[cfg_attr(feature = "serde", serde(borrow))]
     pub name: &'a str,
     /// The field's byte offset, iff the field is
     /// [inhabited](https://doc.rust-lang.org/reference/glossary.html#inhabited).
@@ -592,6 +589,7 @@ pub struct Field<'a> {
     /// The fully-qualified name of the field's type. This is used as a key
     /// inside [`TypeLayoutGraph::tys`] to find the field's type's layout by
     /// its [`TypeLayoutInfo::name`].
+    #[cfg_attr(feature = "serde", serde(borrow))]
     pub ty: &'a str,
 }
 
