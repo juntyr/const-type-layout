@@ -392,7 +392,7 @@ pub enum TypeStructure<
     },
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 /// Description of the shallow layout of a variant
 pub struct Variant<'a, F: Deref<Target = [Field<'a>]> = &'a [Field<'a>]> {
@@ -576,7 +576,7 @@ impl_extract_discriminant! {
     U8(u8), U16(u16), U32(u32), U64(u64), U128(u128), Usize(usize)
 }
 
-#[derive(Clone, Copy, Debug, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 /// Descriptor of the shallow layout of a field.
 pub struct Field<'a> {
@@ -718,45 +718,5 @@ impl<
 {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.write_fmt(format_args!("TypeLayoutGraph<{}>({:?})", self.ty, self.tys))
-    }
-}
-
-impl<'a, F: Deref<Target = [Field<'a>]> + Ord> Ord for Variant<'a, F> {
-    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
-        (&self.discriminant, &self.name, &self.fields).cmp(&(
-            &other.discriminant,
-            &other.name,
-            &other.fields,
-        ))
-    }
-}
-
-impl<'a, F: Deref<Target = [Field<'a>]> + PartialOrd> PartialOrd for Variant<'a, F> {
-    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
-        (&self.discriminant, &self.name, &self.fields).partial_cmp(&(
-            &other.discriminant,
-            &other.name,
-            &other.fields,
-        ))
-    }
-}
-
-impl<'a> PartialEq for Field<'a> {
-    fn eq(&self, other: &Self) -> bool {
-        self.name == other.name && self.offset == other.offset && core::ptr::eq(self.ty, other.ty)
-    }
-}
-
-impl<'a> Eq for Field<'a> {}
-
-impl<'a> Ord for Field<'a> {
-    fn cmp(&self, other: &Self) -> core::cmp::Ordering {
-        (&self.offset, &self.name, &self.ty).cmp(&(&other.offset, &other.name, &other.ty))
-    }
-}
-
-impl<'a> PartialOrd for Field<'a> {
-    fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
-        Some(self.cmp(other))
     }
 }
