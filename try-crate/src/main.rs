@@ -8,7 +8,8 @@
 #![feature(const_type_name)]
 #![feature(offset_of_enum)]
 #![feature(never_type)]
-#![feature(offset_of_nested)]
+#![feature(cfg_version)]
+#![cfg_attr(not(version("1.82")), feature(offset_of_nested))]
 #![allow(dead_code)]
 
 use const_type_layout::{TypeGraphLayout, TypeLayout};
