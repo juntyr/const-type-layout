@@ -516,8 +516,12 @@ impl<T> Same<T> for T {
 }
 
 /// Helper trait to extract the [`core::marker::DiscriminantKind::Discriminant`]
-/// of a type and prove that it implements [`typeset::ComputeTypeSet`] and that
-/// its values can be represented by [`Discriminant`].
+/// of a type.
+///
+/// Implementing this trait also guarantees that the
+/// [`core::marker::DiscriminantKind::Discriminant`] implements
+/// [`typeset::ComputeTypeSet`] and that its values can be represented by
+/// [`ExtractDiscriminant::Discriminant`].
 pub trait ExtractDiscriminant {
     /// The type of the discriminant, which must satisfy the trait bounds
     /// required by [`core::mem::Discriminant`].

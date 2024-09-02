@@ -88,9 +88,10 @@ pub unsafe trait ComputeTypeSet: crate::TypeLayout {
 }
 
 /// Helper macro to expand a list of types, e.g. `H, R1, R2`, and an optional
-/// tail, `.. @ T`, into a set of types. This macro is used when implementing
-/// the [`ComputeTypeSet::Output`] associated type to specify the list of types
-/// a type links to.
+/// tail, `.. @ T`, into a set of types.
+///
+/// This macro is used when implementing the [`ComputeTypeSet::Output`]
+/// associated type to specify the list of types a type links to.
 pub macro tset {
     () => { private::Empty },
     (.. @ $T:tt) => { $T },
