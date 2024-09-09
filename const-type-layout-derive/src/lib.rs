@@ -45,7 +45,7 @@
 extern crate proc_macro;
 
 #[macro_use]
-extern crate proc_macro_error;
+extern crate proc_macro_error2;
 
 use proc_macro::TokenStream;
 
@@ -257,7 +257,7 @@ fn parse_attributes(attrs: &[syn::Attribute], type_params: &mut Vec<&syn::Ident>
         }
     }
 
-    proc_macro_error::abort_if_dirty();
+    proc_macro_error2::abort_if_dirty();
 
     reprs.sort();
     reprs.dedup();
