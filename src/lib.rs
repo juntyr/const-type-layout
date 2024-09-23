@@ -143,7 +143,7 @@ r#"TypeLayoutInfo {
 #![deny(missing_docs)]
 #![no_std]
 #![feature(const_type_name)]
-#![cfg_attr(not(version("1.83")), const_mut_refs)]
+#![cfg_attr(not(version("1.83")), feature(const_mut_refs))]
 #![feature(cfg_target_has_atomic)]
 #![feature(decl_macro)]
 #![feature(never_type)]
