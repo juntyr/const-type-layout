@@ -870,7 +870,7 @@ r#"TypeLayoutInfo {
 #![deny(missing_docs)]
 #![no_std]
 #![feature(const_type_name)]
-#![cfg_attr(not(version(<span class="string">"1.83"</span>)), const_mut_refs)]
+#![cfg_attr(not(version(<span class="string">"1.83"</span>)), feature(const_mut_refs))]
 #![feature(cfg_target_has_atomic)]
 #![feature(decl_macro)]
 #![feature(never_type)]
