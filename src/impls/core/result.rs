@@ -4,8 +4,7 @@ use crate::{
 };
 
 unsafe impl<T: TypeLayout, E: TypeLayout> TypeLayout for core::result::Result<T, E> {
-    type Inhabited = crate::inhabited::any![T, E];
-
+    const INHABITED: crate::MaybeUninhabited = crate::inhabited::any![T, E];
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),

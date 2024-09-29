@@ -6,7 +6,7 @@ use crate::{
 macro_rules! impl_nonzero_type_layout {
     (impl $nz:ident => $ty:ty) => {
         unsafe impl TypeLayout for core::num::$nz {
-            type Inhabited = crate::inhabited::Inhabited;
+            const INHABITED: crate::MaybeUninhabited = crate::MaybeUninhabited::Inhabited(());
 
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
                 name: ::core::any::type_name::<Self>(),
@@ -42,8 +42,7 @@ impl_nonzero_type_layout! {
 }
 
 unsafe impl<T: TypeLayout> TypeLayout for core::num::Wrapping<T> {
-    type Inhabited = T::Inhabited;
-
+    const INHABITED: crate::MaybeUninhabited = T::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -64,8 +63,7 @@ unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::num::Wrapping<T> {
 }
 
 unsafe impl<T: TypeLayout> TypeLayout for core::num::Saturating<T> {
-    type Inhabited = T::Inhabited;
-
+    const INHABITED: crate::MaybeUninhabited = T::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),

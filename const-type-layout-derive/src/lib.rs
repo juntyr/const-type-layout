@@ -113,7 +113,7 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
         unsafe impl #type_layout_impl_generics #crate_path::TypeLayout for
             #ty_name #type_layout_ty_generics #type_layout_where_clause
         {
-            type Inhabited = #inhabited;
+            const INHABITED: #crate_path::inhabited::Inhabited = #inhabited;
 
             const TYPE_LAYOUT: #crate_path::TypeLayoutInfo<'static> = {
                 #crate_path::TypeLayoutInfo {

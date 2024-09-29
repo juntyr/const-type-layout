@@ -4,8 +4,7 @@ use crate::{
 };
 
 unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::Range<Idx> {
-    type Inhabited = Idx::Inhabited;
-
+    const INHABITED: crate::MaybeUninhabited = Idx::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -33,8 +32,7 @@ unsafe impl<Idx: ComputeTypeSet> ComputeTypeSet for core::ops::Range<Idx> {
 }
 
 unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::RangeFrom<Idx> {
-    type Inhabited = Idx::Inhabited;
-
+    const INHABITED: crate::MaybeUninhabited = Idx::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -55,8 +53,7 @@ unsafe impl<Idx: ComputeTypeSet> ComputeTypeSet for core::ops::RangeFrom<Idx> {
 }
 
 unsafe impl TypeLayout for core::ops::RangeFull {
-    type Inhabited = crate::inhabited::Inhabited;
-
+    const INHABITED: crate::MaybeUninhabited = crate::MaybeUninhabited::Inhabited(());
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -73,8 +70,7 @@ unsafe impl ComputeTypeSet for core::ops::RangeFull {
 }
 
 unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::RangeTo<Idx> {
-    type Inhabited = Idx::Inhabited;
-
+    const INHABITED: crate::MaybeUninhabited = Idx::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -95,8 +91,7 @@ unsafe impl<Idx: ComputeTypeSet> ComputeTypeSet for core::ops::RangeTo<Idx> {
 }
 
 unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::RangeToInclusive<Idx> {
-    type Inhabited = Idx::Inhabited;
-
+    const INHABITED: crate::MaybeUninhabited = Idx::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -117,8 +112,7 @@ unsafe impl<Idx: ComputeTypeSet> ComputeTypeSet for core::ops::RangeToInclusive<
 }
 
 unsafe impl<T: TypeLayout> TypeLayout for core::ops::Bound<T> {
-    type Inhabited = crate::inhabited::Inhabited;
-
+    const INHABITED: crate::MaybeUninhabited = crate::MaybeUninhabited::Inhabited(());
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -165,8 +159,7 @@ unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::ops::Bound<T> {
 }
 
 unsafe impl<B: TypeLayout, C: TypeLayout> TypeLayout for core::ops::ControlFlow<B, C> {
-    type Inhabited = crate::inhabited::any![B, C];
-
+    const INHABITED: crate::MaybeUninhabited = crate::inhabited::any![B, C];
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),

@@ -182,7 +182,7 @@ pub mod typeset;
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 /// Optional value that exists if some other type is
 /// [inhabited](https://doc.rust-lang.org/reference/glossary.html#inhabited).
-pub enum MaybeUninhabited<T> {
+pub enum MaybeUninhabited<T = ()> {
     /// The type is [uninhabited](https://doc.rust-lang.org/reference/glossary.html#uninhabited),
     /// no value.
     Uninhabited,
@@ -198,10 +198,28 @@ impl<T: Copy> MaybeUninhabited<T> {
     /// [`inhabited::Inhabited`], [`MaybeUninhabited::Uninhabited`]
     /// otherwise.
     pub const fn new<U: TypeLayout>(v: T) -> Self {
-        if <U::Inhabited as Same<inhabited::Inhabited>>::EQ {
-            Self::Inhabited(v)
-        } else {
-            Self::Uninhabited
+        match U::INHABITED {
+            MaybeUninhabited::Inhabited(()) => Self::Inhabited(v),
+            MaybeUninhabited::Uninhabited => Self::Uninhabited,
+        }
+    }
+}
+
+#[allow(missing_docs)] // FIXME
+impl MaybeUninhabited {
+    #[must_use]
+    pub const fn and(self, b: Self) -> Self {
+        match (self, b) {
+            (Self::Inhabited(()), Self::Inhabited(())) => Self::Inhabited(()),
+            _ => Self::Uninhabited,
+        }
+    }
+
+    #[must_use]
+    pub const fn or(self, b: Self) -> Self {
+        match (self, b) {
+            (Self::Uninhabited, Self::Uninhabited) => Self::Uninhabited,
+            _ => Self::Inhabited(()),
         }
     }
 }
@@ -239,7 +257,7 @@ impl<T: Default> Default for MaybeUninhabited<T> {
 /// }
 ///
 /// unsafe impl TypeLayout for Foo {
-///     type Inhabited = inhabited::all![u8, u16];
+///     const INHABITED: crate::MaybeUninhabited = inhabited::all![u8, u16];
 ///
 ///     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
 ///         name: ::core::any::type_name::<Self>(),
@@ -272,7 +290,7 @@ pub unsafe trait TypeLayout: Sized {
     /// [uninhabited](https://doc.rust-lang.org/reference/glossary.html#uninhabited).
     /// The associated type must be either [`inhabited::Inhabited`]
     /// or [`inhabited::Uninhabited`].
-    type Inhabited: inhabited::OutputMaybeInhabited;
+    const INHABITED: MaybeUninhabited;
 
     /// Shallow layout of the type.
     const TYPE_LAYOUT: TypeLayoutInfo<'static>;
