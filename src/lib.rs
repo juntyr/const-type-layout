@@ -147,7 +147,6 @@ r#"TypeLayoutInfo {
 #![feature(cfg_target_has_atomic)]
 #![feature(decl_macro)]
 #![feature(never_type)]
-#![feature(c_variadic)]
 #![feature(discriminant_kind)]
 #![feature(offset_of_enum)]
 #![feature(sync_unsafe_cell)]
