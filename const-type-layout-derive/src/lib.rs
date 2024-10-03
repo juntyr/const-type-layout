@@ -1,7 +1,6 @@
 //! [![CI Status]][workflow] [![MSRV]][repo] [![Latest Version]][crates.io]
 //! [![Rust Doc Crate]][docs.rs] [![Rust Doc Main]][docs]
 //! [![License Status]][fossa] [![Code Coverage]][codecov]
-//! [![Gitpod Ready-to-Code]][gitpod]
 //!
 //! [CI Status]: https://img.shields.io/github/actions/workflow/status/juntyr/const-type-layout/ci.yml?branch=main
 //! [workflow]: https://github.com/juntyr/const-type-layout/actions/workflows/ci.yml?query=branch%3Amain
@@ -23,9 +22,6 @@
 //!
 //! [Code Coverage]: https://img.shields.io/codecov/c/github/juntyr/const-type-layout?token=J39WVBIMZX
 //! [codecov]: https://codecov.io/gh/juntyr/const-type-layout
-//!
-//! [Gitpod Ready-to-Code]: https://img.shields.io/badge/Gitpod-ready-blue?logo=gitpod
-//! [gitpod]: https://gitpod.io/#https://github.com/juntyr/const-type-layout
 //!
 //! `const-type-layout-derive` provides the [`#[derive(TypeLayout)`](TypeLayout)
 //! implementation for the
@@ -113,7 +109,7 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
         unsafe impl #type_layout_impl_generics #crate_path::TypeLayout for
             #ty_name #type_layout_ty_generics #type_layout_where_clause
         {
-            type Inhabited = #inhabited;
+            const INHABITED: #crate_path::MaybeUninhabited = #inhabited;
 
             const TYPE_LAYOUT: #crate_path::TypeLayoutInfo<'static> = {
                 #crate_path::TypeLayoutInfo {
@@ -554,11 +550,11 @@ fn quote_enum_variants(
 
                     quote! { #crate_path::inhabited::all![#(#field_tys),*] }
                 },
-                syn::Fields::Unit => quote! { #crate_path::inhabited::Inhabited },
+                syn::Fields::Unit => quote! { #crate_path::inhabited::all![] },
             };
 
             let discriminant = quote! {
-                #crate_path::MaybeUninhabited::new::<#variant_inhabited>(
+                #variant_inhabited.map(
                     #crate_path::Discriminant::new::<Self>(#discriminant)
                 )
             };
@@ -663,7 +659,7 @@ fn inhabited_for_type(crate_path: &syn::Path, data: &syn::Data) -> proc_macro2::
                 | syn::Fields::Unnamed(syn::FieldsUnnamed {
                     unnamed: fields, ..
                 }) => fields,
-                syn::Fields::Unit => return quote! { #crate_path::inhabited::Inhabited },
+                syn::Fields::Unit => return quote! { #crate_path::inhabited::all![] },
             };
 
             let field_tys = fields.iter().map(|syn::Field { ty, .. }| ty);
@@ -678,7 +674,7 @@ fn inhabited_for_type(crate_path: &syn::Path, data: &syn::Data) -> proc_macro2::
                     | syn::Fields::Unnamed(syn::FieldsUnnamed {
                         unnamed: fields, ..
                     }) => fields,
-                    syn::Fields::Unit => return quote! { #crate_path::inhabited::Inhabited },
+                    syn::Fields::Unit => return quote! { #crate_path::inhabited::all![] },
                 };
 
                 let field_tys = fields.iter().map(|syn::Field { ty, .. }| ty);
@@ -687,9 +683,7 @@ fn inhabited_for_type(crate_path: &syn::Path, data: &syn::Data) -> proc_macro2::
             });
 
             // Enums are inhabited if they have at least one inhabited variant
-            quote! {
-                #crate_path::inhabited::any![#(#variants_inhabited),*]
-            }
+            quote! { #crate_path::inhabited::any![#({ #variants_inhabited }),*] }
         },
         syn::Data::Union(syn::DataUnion {
             fields: syn::FieldsNamed { named: fields, .. },

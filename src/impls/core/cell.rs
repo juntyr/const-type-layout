@@ -4,8 +4,7 @@ use crate::{
 };
 
 unsafe impl<T: TypeLayout> TypeLayout for core::cell::UnsafeCell<T> {
-    type Inhabited = T::Inhabited;
-
+    const INHABITED: crate::MaybeUninhabited = T::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -26,8 +25,7 @@ unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::cell::UnsafeCell<T> {
 }
 
 unsafe impl<T: TypeLayout> TypeLayout for core::cell::Cell<T> {
-    type Inhabited = T::Inhabited;
-
+    const INHABITED: crate::MaybeUninhabited = T::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -48,8 +46,7 @@ unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::cell::Cell<T> {
 }
 
 unsafe impl<T: TypeLayout> TypeLayout for core::cell::SyncUnsafeCell<T> {
-    type Inhabited = T::Inhabited;
-
+    const INHABITED: crate::MaybeUninhabited = T::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -70,8 +67,7 @@ unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::cell::SyncUnsafeCell<T> 
 }
 
 unsafe impl<T: TypeLayout> TypeLayout for core::cell::OnceCell<T> {
-    type Inhabited = T::Inhabited;
-
+    const INHABITED: crate::MaybeUninhabited = T::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),

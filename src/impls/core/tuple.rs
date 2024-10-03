@@ -6,7 +6,7 @@ use crate::{
 macro_rules! impl_tuple_type_layout {
     (impl ($($a:tt => $T:ident),+)) => {
         unsafe impl<$($T: TypeLayout),*> TypeLayout for ($($T,)*) {
-            type Inhabited = crate::inhabited::all![$($T),*];
+            const INHABITED: crate::MaybeUninhabited = crate::inhabited::all![$($T),*];
 
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
                 name: ::core::any::type_name::<Self>(),

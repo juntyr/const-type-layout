@@ -1,7 +1,6 @@
 //! [![CI Status]][workflow] [![MSRV]][repo] [![Latest Version]][crates.io]
 //! [![Rust Doc Crate]][docs.rs] [![Rust Doc Main]][docs]
 //! [![License Status]][fossa] [![Code Coverage]][codecov]
-//! [![Gitpod Ready-to-Code]][gitpod]
 //!
 //! [CI Status]: https://img.shields.io/github/actions/workflow/status/juntyr/const-type-layout/ci.yml?branch=main
 //! [workflow]: https://github.com/juntyr/const-type-layout/actions/workflows/ci.yml?query=branch%3Amain
@@ -23,9 +22,6 @@
 //!
 //! [Code Coverage]: https://img.shields.io/codecov/c/github/juntyr/const-type-layout?token=J39WVBIMZX
 //! [codecov]: https://codecov.io/gh/juntyr/const-type-layout
-//!
-//! [Gitpod Ready-to-Code]: https://img.shields.io/badge/Gitpod-ready-blue?logo=gitpod
-//! [gitpod]: https://gitpod.io/#https://github.com/juntyr/const-type-layout
 //!
 //! `const-type-layout` is a type layout comparison aid, providing a
 //! [`#[derive]`](const_type_layout_derive::TypeLayout)able [`TypeLayout`] trait
@@ -51,8 +47,6 @@ on non-`#[repr(C)]` types, but their layout is unpredictable.
 
 ```rust
 # #![feature(const_type_name)]
-# #![feature(offset_of)]
-# #![feature(offset_of_enum)]
 use const_type_layout::TypeLayout;
 
 #[derive(TypeLayout)]
@@ -65,7 +59,7 @@ struct Foo {
 assert_eq!(
     format!("{:#?}", Foo::TYPE_LAYOUT),
 r#"TypeLayoutInfo {
-    name: "rust_out::main::_doctest_main_src_lib_rs_49_0::Foo",
+    name: "rust_out::main::_doctest_main_src_lib_rs_45_0::Foo",
     size: 8,
     alignment: 4,
     structure: Struct {
@@ -96,8 +90,6 @@ FFI scenarios:
 
 ```rust
 # #![feature(const_type_name)]
-# #![feature(offset_of)]
-# #![feature(offset_of_enum)]
 use const_type_layout::TypeLayout;
 
 #[derive(TypeLayout)]
@@ -109,7 +101,7 @@ struct OverAligned {
 assert_eq!(
     format!("{:#?}", OverAligned::TYPE_LAYOUT),
 r#"TypeLayoutInfo {
-    name: "rust_out::main::_doctest_main_src_lib_rs_94_0::OverAligned",
+    name: "rust_out::main::_doctest_main_src_lib_rs_88_0::OverAligned",
     size: 128,
     alignment: 128,
     structure: Struct {
@@ -144,7 +136,7 @@ r#"TypeLayoutInfo {
 #![no_std]
 #![feature(const_type_name)]
 #![cfg_attr(not(version("1.83")), feature(const_mut_refs))]
-#![feature(cfg_target_has_atomic)]
+#![feature(cfg_target_has_atomic)] // https://github.com/rust-lang/rust/issues/94039
 #![feature(decl_macro)]
 #![feature(never_type)]
 #![feature(discriminant_kind)]
@@ -182,7 +174,7 @@ pub mod typeset;
 #[cfg_attr(feature = "serde", derive(::serde::Deserialize))]
 /// Optional value that exists if some other type is
 /// [inhabited](https://doc.rust-lang.org/reference/glossary.html#inhabited).
-pub enum MaybeUninhabited<T> {
+pub enum MaybeUninhabited<T = ()> {
     /// The type is [uninhabited](https://doc.rust-lang.org/reference/glossary.html#uninhabited),
     /// no value.
     Uninhabited,
@@ -194,14 +186,49 @@ pub enum MaybeUninhabited<T> {
 impl<T: Copy> MaybeUninhabited<T> {
     #[must_use]
     /// Construct [`MaybeUninhabited::Inhabited`] iff [`<U as
-    /// TypeLayout>::Inhabited`](TypeLayout::Inhabited) is
-    /// [`inhabited::Inhabited`], [`MaybeUninhabited::Uninhabited`]
+    /// TypeLayout>::INHABITED`][`TypeLayout::INHABITED`] is
+    /// [`MaybeUninhabited::Inhabited`], [`MaybeUninhabited::Uninhabited`]
     /// otherwise.
     pub const fn new<U: TypeLayout>(v: T) -> Self {
-        if <U::Inhabited as Same<inhabited::Inhabited>>::EQ {
-            Self::Inhabited(v)
-        } else {
-            Self::Uninhabited
+        U::INHABITED.map(v)
+    }
+}
+
+impl MaybeUninhabited {
+    #[must_use]
+    /// Maps a [`MaybeUninhabited::Inhabited`] to a
+    /// [`MaybeUninhabited<T>::Inhabited`] with the value `v` or returns
+    /// [`MaybeUninhabited<T>::Uninhabited`].
+    pub const fn map<T: Copy>(self, v: T) -> MaybeUninhabited<T> {
+        match self {
+            Self::Inhabited(()) => MaybeUninhabited::Inhabited(v),
+            Self::Uninhabited => MaybeUninhabited::Uninhabited,
+        }
+    }
+
+    #[must_use]
+    /// Returns the logical and between `self` and `other`.
+    ///
+    /// The result is [`MaybeUninhabited::Inhabited`] iff both `self` and
+    /// `other` are [`MaybeUninhabited::Inhabited`],
+    /// [`MaybeUninhabited::Uninhabited`] otherwise.
+    pub const fn and(self, other: Self) -> Self {
+        match (self, other) {
+            (Self::Inhabited(()), Self::Inhabited(())) => Self::Inhabited(()),
+            _ => Self::Uninhabited,
+        }
+    }
+
+    #[must_use]
+    /// Returns the or and between `self` and `other`.
+    ///
+    /// The result is [`MaybeUninhabited::Uninhabited`] iff both `self` and
+    /// `other` are [`MaybeUninhabited::Uninhabited`],
+    /// [`MaybeUninhabited::Inhabited`] otherwise.
+    pub const fn or(self, b: Self) -> Self {
+        match (self, b) {
+            (Self::Uninhabited, Self::Uninhabited) => Self::Uninhabited,
+            _ => Self::Inhabited(()),
         }
     }
 }
@@ -227,7 +254,6 @@ impl<T: Default> Default for MaybeUninhabited<T> {
 ///
 /// ```rust
 /// # #![feature(const_type_name)]
-/// # #![feature(offset_of)]
 /// # use const_type_layout::{
 /// #    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
 /// # };
@@ -239,7 +265,7 @@ impl<T: Default> Default for MaybeUninhabited<T> {
 /// }
 ///
 /// unsafe impl TypeLayout for Foo {
-///     type Inhabited = inhabited::all![u8, u16];
+///     const INHABITED: MaybeUninhabited = inhabited::all![u8, u16];
 ///
 ///     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
 ///         name: ::core::any::type_name::<Self>(),
@@ -267,12 +293,10 @@ impl<T: Default> Default for MaybeUninhabited<T> {
 /// Note that if you implement [`TypeLayout`], you should also implement
 /// [`typeset::ComputeTypeSet`] for it.
 pub unsafe trait TypeLayout: Sized {
-    /// Marker type for whether the type is
+    /// Marker for whether the type is
     /// [inhabited](https://doc.rust-lang.org/reference/glossary.html#inhabited) or
     /// [uninhabited](https://doc.rust-lang.org/reference/glossary.html#uninhabited).
-    /// The associated type must be either [`inhabited::Inhabited`]
-    /// or [`inhabited::Uninhabited`].
-    type Inhabited: inhabited::OutputMaybeInhabited;
+    const INHABITED: MaybeUninhabited;
 
     /// Shallow layout of the type.
     const TYPE_LAYOUT: TypeLayoutInfo<'static>;

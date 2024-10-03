@@ -46,7 +46,7 @@ type Set<H, T> = <T as ComputeSet>::Output<H>;
 /// }
 ///
 /// # unsafe impl TypeLayout for Foo {
-/// #     type Inhabited = inhabited::all![u8, u16];
+/// #     const INHABITED: MaybeUninhabited = inhabited::all![u8, u16];
 /// #
 /// #     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
 /// #         name: ::core::any::type_name::<Self>(),

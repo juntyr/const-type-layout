@@ -6,8 +6,7 @@ use crate::{
 mod atomic;
 
 unsafe impl<T: TypeLayout> TypeLayout for core::sync::Exclusive<T> {
-    type Inhabited = T::Inhabited;
-
+    const INHABITED: crate::MaybeUninhabited = T::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),

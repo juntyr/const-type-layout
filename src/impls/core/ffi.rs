@@ -4,8 +4,7 @@ use crate::{
 };
 
 unsafe impl TypeLayout for core::ffi::c_void {
-    type Inhabited = crate::inhabited::Inhabited;
-
+    const INHABITED: crate::MaybeUninhabited = crate::inhabited::all![];
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
