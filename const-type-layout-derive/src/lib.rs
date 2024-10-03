@@ -683,10 +683,7 @@ fn inhabited_for_type(crate_path: &syn::Path, data: &syn::Data) -> proc_macro2::
             });
 
             // Enums are inhabited if they have at least one inhabited variant
-            quote! {
-                #crate_path::inhabited::any![]
-                #(.or(#variants_inhabited))*
-            }
+            quote! { #crate_path::inhabited::any![#({ #variants_inhabited }),*] }
         },
         syn::Data::Union(syn::DataUnion {
             fields: syn::FieldsNamed { named: fields, .. },

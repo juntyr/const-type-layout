@@ -190,17 +190,19 @@ pub enum MaybeUninhabited<T = ()> {
 impl<T: Copy> MaybeUninhabited<T> {
     #[must_use]
     /// Construct [`MaybeUninhabited::Inhabited`] iff [`<U as
-    /// TypeLayout>::Inhabited`](TypeLayout::Inhabited) is
-    /// [`inhabited::Inhabited`], [`MaybeUninhabited::Uninhabited`]
+    /// TypeLayout>::INHABITED`][`TypeLayout::INHABITED`] is
+    /// [`MaybeUninhabited::Inhabited`], [`MaybeUninhabited::Uninhabited`]
     /// otherwise.
     pub const fn new<U: TypeLayout>(v: T) -> Self {
         U::INHABITED.map(v)
     }
 }
 
-#[allow(missing_docs)] // FIXME
 impl MaybeUninhabited {
     #[must_use]
+    /// Maps a [`MaybeUninhabited::Inhabited`] to a
+    /// [`MaybeUninhabited<T>::Inhabited`] with the value `v` or returns
+    /// [`MaybeUninhabited<T>::Uninhabited`].
     pub const fn map<T: Copy>(self, v: T) -> MaybeUninhabited<T> {
         match self {
             Self::Inhabited(()) => MaybeUninhabited::Inhabited(v),
@@ -209,14 +211,24 @@ impl MaybeUninhabited {
     }
 
     #[must_use]
-    pub const fn and(self, b: Self) -> Self {
-        match (self, b) {
+    /// Returns the logical and between `self` and `other`.
+    ///
+    /// The result is [`MaybeUninhabited::Inhabited`] iff both `self` and
+    /// `other` are [`MaybeUninhabited::Inhabited`],
+    /// [`MaybeUninhabited::Uninhabited`] otherwise.
+    pub const fn and(self, other: Self) -> Self {
+        match (self, other) {
             (Self::Inhabited(()), Self::Inhabited(())) => Self::Inhabited(()),
             _ => Self::Uninhabited,
         }
     }
 
     #[must_use]
+    /// Returns the or and between `self` and `other`.
+    ///
+    /// The result is [`MaybeUninhabited::Uninhabited`] iff both `self` and
+    /// `other` are [`MaybeUninhabited::Uninhabited`],
+    /// [`MaybeUninhabited::Inhabited`] otherwise.
     pub const fn or(self, b: Self) -> Self {
         match (self, b) {
             (Self::Uninhabited, Self::Uninhabited) => Self::Uninhabited,
@@ -289,8 +301,6 @@ pub unsafe trait TypeLayout: Sized {
     /// Marker for whether the type is
     /// [inhabited](https://doc.rust-lang.org/reference/glossary.html#inhabited) or
     /// [uninhabited](https://doc.rust-lang.org/reference/glossary.html#uninhabited).
-    /// The associated type must be either [`inhabited::Inhabited`]
-    /// or [`inhabited::Uninhabited`].
     const INHABITED: MaybeUninhabited;
 
     /// Shallow layout of the type.

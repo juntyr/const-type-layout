@@ -4,51 +4,68 @@
 //! [inhabited]: https://doc.rust-lang.org/reference/glossary.html#inhabited
 //! [uninhabited]: https://doc.rust-lang.org/reference/glossary.html#uninhabited
 
-#[allow(non_upper_case_globals)]
-/// Marker used to specify that a type implementing [`crate::TypeLayout`] is
-/// [inhabited](https://doc.rust-lang.org/reference/glossary.html#inhabited).
-pub const Inhabited: crate::MaybeUninhabited = crate::MaybeUninhabited::Inhabited(());
-
-/// Marker used to specify that a type implementing [`crate::TypeLayout`] is
-/// [uninhabited](https://doc.rust-lang.org/reference/glossary.html#uninhabited).
-pub use crate::MaybeUninhabited::Uninhabited;
-
-/// Helper macro to compute whether all of a list of types, all implementing
-/// [`crate::TypeLayout`], e.g. `[T, U, V]`, are [inhabited].
+/// Helper macro to compute whether
+///
+/// - all of a list of types, all implementing [`crate::TypeLayout`], e.g. `[T,
+///   U, V]`,
+/// - all of a list of braced expressions of type [`crate::MaybeUninhabited`],
+///   e.g. `[{ all![] }, { any![] }, { all![] }]`,
+///
+/// are [inhabited].
 ///
 /// For instance, a struct is inhabited iff all of its fields are inhabited.
 /// The empty list of types is inhabited. This macro resolves into either
-/// [`Inhabited`] or [`Uninhabited`].
+/// [`crate::MaybeUninhabited::Inhabited`] or
+/// [`crate::MaybeUninhabited::Uninhabited`].
 ///
 /// [inhabited]: https://doc.rust-lang.org/reference/glossary.html#inhabited
 #[macro_export]
+#[doc(hidden)]
 macro_rules! all {
-    () => { $crate::inhabited::Inhabited };
+    () => { $crate::MaybeUninhabited::Inhabited(()) };
     ($L:ty $(, $R:ty)*) => {
         <$L as $crate::TypeLayout>::INHABITED.and(
             $crate::inhabited::all![$($R),*]
         )
     };
+    ({ $L:expr } $(, { $R:expr })*) => {
+        $crate::MaybeUninhabited::and(
+            $L, $crate::inhabited::all![$({ $R }),*]
+        )
+    };
 }
 
-/// Helper macro to compute whether any of a list of types, all implementing
-/// [`crate::TypeLayout`], e.g. `[T, U, V]`, is [inhabited].
+/// Helper macro to compute whether
+///
+/// - any of a list of types, all implementing [`crate::TypeLayout`], e.g. `[T,
+///   U, V]`,
+/// - any of a list of braced expressions of type [`crate::MaybeUninhabited`],
+///   e.g. `[{ all![] }, { any![] }, { all![] }]`,
+///
+/// is [inhabited].
 ///
 /// For instance, an enum is inhabited iff any of its variants is inhabited.
 /// The empty list of types is [uninhabited]. This macro resolves into either
-/// [`Inhabited`] or [`Uninhabited`].
+/// [`crate::MaybeUninhabited::Inhabited`] or
+/// [`crate::MaybeUninhabited::Uninhabited`].
 ///
 /// [inhabited]: https://doc.rust-lang.org/reference/glossary.html#inhabited
 /// [uninhabited]: https://doc.rust-lang.org/reference/glossary.html#uninhabited
 #[macro_export]
+#[doc(hidden)]
 macro_rules! any {
-    () => { $crate::inhabited::Uninhabited };
+    () => { $crate::MaybeUninhabited::Uninhabited };
     ($L:ty $(, $R:ty)*) => {
         <$L as $crate::TypeLayout>::INHABITED.or(
             $crate::inhabited::any![$($R),*]
         )
     };
+    ({ $L:expr } $(, { $R:expr })*) => {
+        $crate::MaybeUninhabited::or(
+            $L, $crate::inhabited::any![$({ $R }),*]
+        )
+    };
 }
 
-pub use all;
-pub use any;
+#[doc(inline)]
+pub use {all, any};
