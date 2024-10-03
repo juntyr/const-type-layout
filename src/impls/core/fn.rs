@@ -20,7 +20,7 @@ macro_rules! impl_fn_pointer_type_layout {
     };
     (impl extern $abi:literal fn($($T:ident),*) -> $R:ident, $ty:ty, $demo:item) => {
         unsafe impl<$R: TypeLayout, $($T: TypeLayout),*> TypeLayout for $ty {
-            const INHABITED: crate::MaybeUninhabited = crate::MaybeUninhabited::Inhabited(());
+            const INHABITED: crate::MaybeUninhabited = crate::inhabited::all![];
 
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
                 name: ::core::any::type_name::<Self>(),
@@ -63,7 +63,7 @@ macro_rules! impl_variadic_extern_fn_pointer_type_layout {
         unsafe impl<$R: TypeLayout, $($T: TypeLayout),*> TypeLayout
             for unsafe extern $abi fn($($T),*, ...) -> $R
         {
-            const INHABITED: crate::MaybeUninhabited = crate::MaybeUninhabited::Inhabited(());
+            const INHABITED: crate::MaybeUninhabited = crate::inhabited::all![];
 
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
                 name: ::core::any::type_name::<Self>(),

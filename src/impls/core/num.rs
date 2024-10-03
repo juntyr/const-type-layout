@@ -6,7 +6,7 @@ use crate::{
 macro_rules! impl_nonzero_type_layout {
     (impl $nz:ident => $ty:ty) => {
         unsafe impl TypeLayout for core::num::$nz {
-            const INHABITED: crate::MaybeUninhabited = crate::MaybeUninhabited::Inhabited(());
+            const INHABITED: crate::MaybeUninhabited = crate::inhabited::all![];
 
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
                 name: ::core::any::type_name::<Self>(),

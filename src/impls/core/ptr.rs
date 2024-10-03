@@ -4,7 +4,7 @@ use crate::{
 };
 
 unsafe impl<T: TypeLayout> TypeLayout for *const T {
-    const INHABITED: crate::MaybeUninhabited = crate::MaybeUninhabited::Inhabited(());
+    const INHABITED: crate::MaybeUninhabited = crate::inhabited::all![];
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -18,7 +18,7 @@ unsafe impl<T: ComputeTypeSet> ComputeTypeSet for *const T {
 }
 
 unsafe impl<T: TypeLayout> TypeLayout for *mut T {
-    const INHABITED: crate::MaybeUninhabited = crate::MaybeUninhabited::Inhabited(());
+    const INHABITED: crate::MaybeUninhabited = crate::inhabited::all![];
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
@@ -32,7 +32,7 @@ unsafe impl<T: ComputeTypeSet> ComputeTypeSet for *mut T {
 }
 
 unsafe impl<T: TypeLayout> TypeLayout for core::ptr::NonNull<T> {
-    const INHABITED: crate::MaybeUninhabited = crate::MaybeUninhabited::Inhabited(());
+    const INHABITED: crate::MaybeUninhabited = crate::inhabited::all![];
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),

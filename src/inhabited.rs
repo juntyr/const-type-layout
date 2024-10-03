@@ -13,6 +13,8 @@
 ///
 /// are [inhabited].
 ///
+/// `all![]` resolves to [`crate::MaybeUninhabited::Inhabited`].
+///
 /// For instance, a struct is inhabited iff all of its fields are inhabited.
 /// The empty list of types is inhabited. This macro resolves into either
 /// [`crate::MaybeUninhabited::Inhabited`] or
@@ -43,6 +45,8 @@ macro_rules! all {
 ///   e.g. `[{ all![] }, { any![] }, { all![] }]`,
 ///
 /// is [inhabited].
+///
+/// `any![]` resolves to [`crate::MaybeUninhabited::Uninhabited`].
 ///
 /// For instance, an enum is inhabited iff any of its variants is inhabited.
 /// The empty list of types is [uninhabited]. This macro resolves into either

@@ -6,7 +6,7 @@ use crate::{
 macro_rules! impl_primitive_type_layout {
     (impl $ty:ty => $val:expr) => {
         unsafe impl TypeLayout for $ty {
-            const INHABITED: crate::MaybeUninhabited = crate::MaybeUninhabited::Inhabited(());
+            const INHABITED: crate::MaybeUninhabited = crate::inhabited::all![];
 
             const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
                 name: ::core::any::type_name::<Self>(),
@@ -33,7 +33,7 @@ impl_primitive_type_layout! {
 }
 
 unsafe impl TypeLayout for ! {
-    const INHABITED: crate::MaybeUninhabited = crate::MaybeUninhabited::Inhabited(());
+    const INHABITED: crate::MaybeUninhabited = crate::inhabited::all![];
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
