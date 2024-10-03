@@ -4,7 +4,7 @@ use crate::{
 };
 
 unsafe impl TypeLayout for core::convert::Infallible {
-    const INHABITED: crate::MaybeUninhabited = crate::inhabited::all![];
+    const INHABITED: crate::MaybeUninhabited = crate::inhabited::any![];
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
