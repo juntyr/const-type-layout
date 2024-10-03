@@ -47,8 +47,6 @@ on non-`#[repr(C)]` types, but their layout is unpredictable.
 
 ```rust
 # #![feature(const_type_name)]
-# #![feature(offset_of)]
-# #![feature(offset_of_enum)]
 use const_type_layout::TypeLayout;
 
 #[derive(TypeLayout)]
@@ -61,7 +59,7 @@ struct Foo {
 assert_eq!(
     format!("{:#?}", Foo::TYPE_LAYOUT),
 r#"TypeLayoutInfo {
-    name: "rust_out::main::_doctest_main_src_lib_rs_49_0::Foo",
+    name: "rust_out::main::_doctest_main_src_lib_rs_45_0::Foo",
     size: 8,
     alignment: 4,
     structure: Struct {
@@ -92,8 +90,6 @@ FFI scenarios:
 
 ```rust
 # #![feature(const_type_name)]
-# #![feature(offset_of)]
-# #![feature(offset_of_enum)]
 use const_type_layout::TypeLayout;
 
 #[derive(TypeLayout)]
@@ -105,7 +101,7 @@ struct OverAligned {
 assert_eq!(
     format!("{:#?}", OverAligned::TYPE_LAYOUT),
 r#"TypeLayoutInfo {
-    name: "rust_out::main::_doctest_main_src_lib_rs_94_0::OverAligned",
+    name: "rust_out::main::_doctest_main_src_lib_rs_88_0::OverAligned",
     size: 128,
     alignment: 128,
     structure: Struct {
@@ -258,7 +254,6 @@ impl<T: Default> Default for MaybeUninhabited<T> {
 ///
 /// ```rust
 /// # #![feature(const_type_name)]
-/// # #![feature(offset_of)]
 /// # use const_type_layout::{
 /// #    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
 /// # };
@@ -270,7 +265,7 @@ impl<T: Default> Default for MaybeUninhabited<T> {
 /// }
 ///
 /// unsafe impl TypeLayout for Foo {
-///     const INHABITED: crate::MaybeUninhabited = inhabited::all![u8, u16];
+///     const INHABITED: MaybeUninhabited = inhabited::all![u8, u16];
 ///
 ///     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
 ///         name: ::core::any::type_name::<Self>(),
