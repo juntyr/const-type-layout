@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["Uninhabited"],"macro":["all","any"],"struct":["Inhabited"]};
+window.SIDEBAR_ITEMS = {"macro":["all","any"]};
