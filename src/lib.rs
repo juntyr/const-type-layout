@@ -1,7 +1,6 @@
 //! [![CI Status]][workflow] [![MSRV]][repo] [![Latest Version]][crates.io]
 //! [![Rust Doc Crate]][docs.rs] [![Rust Doc Main]][docs]
 //! [![License Status]][fossa] [![Code Coverage]][codecov]
-//! [![Gitpod Ready-to-Code]][gitpod]
 //!
 //! [CI Status]: https://img.shields.io/github/actions/workflow/status/juntyr/const-type-layout/ci.yml?branch=main
 //! [workflow]: https://github.com/juntyr/const-type-layout/actions/workflows/ci.yml?query=branch%3Amain
@@ -23,9 +22,6 @@
 //!
 //! [Code Coverage]: https://img.shields.io/codecov/c/github/juntyr/const-type-layout?token=J39WVBIMZX
 //! [codecov]: https://codecov.io/gh/juntyr/const-type-layout
-//!
-//! [Gitpod Ready-to-Code]: https://img.shields.io/badge/Gitpod-ready-blue?logo=gitpod
-//! [gitpod]: https://gitpod.io/#https://github.com/juntyr/const-type-layout
 //!
 //! `const-type-layout` is a type layout comparison aid, providing a
 //! [`#[derive]`](const_type_layout_derive::TypeLayout)able [`TypeLayout`] trait
@@ -144,7 +140,7 @@ r#"TypeLayoutInfo {
 #![no_std]
 #![feature(const_type_name)]
 #![cfg_attr(not(version("1.83")), feature(const_mut_refs))]
-#![feature(cfg_target_has_atomic)]
+#![feature(cfg_target_has_atomic)] // https://github.com/rust-lang/rust/issues/94039
 #![feature(decl_macro)]
 #![feature(never_type)]
 #![feature(discriminant_kind)]
@@ -198,15 +194,20 @@ impl<T: Copy> MaybeUninhabited<T> {
     /// [`inhabited::Inhabited`], [`MaybeUninhabited::Uninhabited`]
     /// otherwise.
     pub const fn new<U: TypeLayout>(v: T) -> Self {
-        match U::INHABITED {
-            MaybeUninhabited::Inhabited(()) => Self::Inhabited(v),
-            MaybeUninhabited::Uninhabited => Self::Uninhabited,
-        }
+        U::INHABITED.map(v)
     }
 }
 
 #[allow(missing_docs)] // FIXME
 impl MaybeUninhabited {
+    #[must_use]
+    pub const fn map<T: Copy>(self, v: T) -> MaybeUninhabited<T> {
+        match self {
+            Self::Inhabited(()) => MaybeUninhabited::Inhabited(v),
+            Self::Uninhabited => MaybeUninhabited::Uninhabited,
+        }
+    }
+
     #[must_use]
     pub const fn and(self, b: Self) -> Self {
         match (self, b) {
@@ -285,7 +286,7 @@ impl<T: Default> Default for MaybeUninhabited<T> {
 /// Note that if you implement [`TypeLayout`], you should also implement
 /// [`typeset::ComputeTypeSet`] for it.
 pub unsafe trait TypeLayout: Sized {
-    /// Marker type for whether the type is
+    /// Marker for whether the type is
     /// [inhabited](https://doc.rust-lang.org/reference/glossary.html#inhabited) or
     /// [uninhabited](https://doc.rust-lang.org/reference/glossary.html#uninhabited).
     /// The associated type must be either [`inhabited::Inhabited`]

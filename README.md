@@ -1,4 +1,4 @@
-[![CI Status]][workflow] [![MSRV]][repo] [![Latest Version]][crates.io] [![Rust Doc Crate]][docs.rs] [![Rust Doc Main]][docs] [![License Status]][fossa] [![Code Coverage]][codecov] [![Gitpod Ready-to-Code]][gitpod]
+[![CI Status]][workflow] [![MSRV]][repo] [![Latest Version]][crates.io] [![Rust Doc Crate]][docs.rs] [![Rust Doc Main]][docs] [![License Status]][fossa] [![Code Coverage]][codecov]
 
 [CI Status]: https://img.shields.io/github/actions/workflow/status/juntyr/const-type-layout/ci.yml?branch=main
 [workflow]: https://github.com/juntyr/const-type-layout/actions/workflows/ci.yml?query=branch%3Amain
@@ -20,9 +20,6 @@
 
 [Code Coverage]: https://img.shields.io/codecov/c/github/juntyr/const-type-layout?token=J39WVBIMZX
 [codecov]: https://codecov.io/gh/juntyr/const-type-layout
-
-[Gitpod Ready-to-Code]: https://img.shields.io/badge/Gitpod-ready-blue?logo=gitpod
-[gitpod]: https://gitpod.io/#https://github.com/juntyr/const-type-layout
 
 `const-type-layout` is a type layout comparison aid, providing a `#[derive]`able `TypeLayout` trait
 that reports:

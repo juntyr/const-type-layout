@@ -4,8 +4,14 @@
 //! [inhabited]: https://doc.rust-lang.org/reference/glossary.html#inhabited
 //! [uninhabited]: https://doc.rust-lang.org/reference/glossary.html#uninhabited
 
-#![allow(clippy::undocumented_unsafe_blocks)]
-#![allow(missing_docs)] // FIXME
+#[allow(non_upper_case_globals)]
+/// Marker used to specify that a type implementing [`crate::TypeLayout`] is
+/// [inhabited](https://doc.rust-lang.org/reference/glossary.html#inhabited).
+pub const Inhabited: crate::MaybeUninhabited = crate::MaybeUninhabited::Inhabited(());
+
+/// Marker used to specify that a type implementing [`crate::TypeLayout`] is
+/// [uninhabited](https://doc.rust-lang.org/reference/glossary.html#uninhabited).
+pub use crate::MaybeUninhabited::Uninhabited;
 
 /// Helper macro to compute whether all of a list of types, all implementing
 /// [`crate::TypeLayout`], e.g. `[T, U, V]`, are [inhabited].
@@ -15,11 +21,14 @@
 /// [`Inhabited`] or [`Uninhabited`].
 ///
 /// [inhabited]: https://doc.rust-lang.org/reference/glossary.html#inhabited
-pub macro all {
-    () => { $crate::MaybeUninhabited::Inhabited(()) },
+#[macro_export]
+macro_rules! all {
+    () => { $crate::inhabited::Inhabited };
     ($L:ty $(, $R:ty)*) => {
-        <$L as $crate::TypeLayout>::INHABITED.and(all![$($R),*])
-    },
+        <$L as $crate::TypeLayout>::INHABITED.and(
+            $crate::inhabited::all![$($R),*]
+        )
+    };
 }
 
 /// Helper macro to compute whether any of a list of types, all implementing
@@ -31,9 +40,15 @@ pub macro all {
 ///
 /// [inhabited]: https://doc.rust-lang.org/reference/glossary.html#inhabited
 /// [uninhabited]: https://doc.rust-lang.org/reference/glossary.html#uninhabited
-pub macro any {
-    () => { $crate::MaybeUninhabited::Uninhabited },
+#[macro_export]
+macro_rules! any {
+    () => { $crate::inhabited::Uninhabited };
     ($L:ty $(, $R:ty)*) => {
-        <$L as $crate::TypeLayout>::INHABITED.or(any![$($R),*])
-    },
+        <$L as $crate::TypeLayout>::INHABITED.or(
+            $crate::inhabited::any![$($R),*]
+        )
+    };
 }
+
+pub use all;
+pub use any;
