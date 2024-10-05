@@ -32,6 +32,7 @@ impl_primitive_type_layout! {
     char => '\0', bool => false, () => ()
 }
 
+#[cfg(feature = "impl-never")]
 unsafe impl TypeLayout for ! {
     const INHABITED: crate::MaybeUninhabited = crate::inhabited::any![];
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
@@ -42,6 +43,7 @@ unsafe impl TypeLayout for ! {
     };
 }
 
+#[cfg(feature = "impl-never")]
 unsafe impl ComputeTypeSet for ! {
     type Output<T: ExpandTypeSet> = tset![.. @ T];
 }

@@ -2,13 +2,21 @@
 name = "try-crate"
 publish = false
 version = "0.1.0"
-authors = ["Juniper Tyree <juniper.tyree@helsinki.fi>", "Lucien Greathouse <me@lpghatguy.com>"]
-edition = "2021"
+authors = { workspace = true }
+edition = { workspace = true }
+rust-version = { workspace = true }
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-const-type-layout = { path = "..", features = ["derive", "serde"] }
+const-type-layout = { path = "..", features = [
+    # stable features
+    "derive", "serde",
+    # unstable impls for stable-ish types
+    "impl-atomics", "impl-never",
+    # unstable impls for unstable types
+    "impl-sync-unsafe-cell", "impl-sync-exclusive",
+] }
 
-serde = "1.0"
-ron = "0.8"
+serde = { version = "1.0", default-features = false }
+ron = { version = "0.8", default-features = false }

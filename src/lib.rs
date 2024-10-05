@@ -121,35 +121,30 @@ r#"TypeLayoutInfo {
 ```
 "##
 )]
-#![deny(clippy::complexity)]
-#![deny(clippy::correctness)]
-#![warn(clippy::nursery)]
-#![warn(clippy::pedantic)]
-#![deny(clippy::perf)]
-#![deny(clippy::style)]
-#![deny(clippy::suspicious)]
-#![deny(clippy::default_union_representation)]
-#![deny(clippy::multiple_unsafe_ops_per_block)]
-#![deny(clippy::undocumented_unsafe_blocks)]
-#![deny(unused_unsafe)]
-#![deny(missing_docs)]
 #![no_std]
-#![feature(const_type_name)]
-#![cfg_attr(not(version("1.83")), feature(const_mut_refs))]
-#![feature(cfg_target_has_atomic)] // https://github.com/rust-lang/rust/issues/94039
-#![feature(decl_macro)]
-#![feature(never_type)]
-#![feature(discriminant_kind)]
-#![feature(offset_of_enum)]
-#![feature(sync_unsafe_cell)]
-#![feature(exclusive_wrapper)]
-#![feature(doc_auto_cfg)]
+// required core features
 #![feature(cfg_version)]
-#![cfg_attr(not(version("1.82")), feature(offset_of_nested))]
+#![feature(const_type_name)]
+#![feature(decl_macro)]
+#![feature(discriminant_kind)]
 #![feature(freeze)]
+#![feature(offset_of_enum)]
+// required, soon-stabilized features
+#![cfg_attr(not(version("1.83")), feature(const_mut_refs))]
+#![cfg_attr(not(version("1.82")), feature(offset_of_nested))]
+// docs-specific features
+#![cfg_attr(doc, feature(doc_auto_cfg))]
+// optional feature-gated features
+// https://github.com/rust-lang/rust/issues/94039
+#![cfg_attr(feature = "impl-atomics", feature(cfg_target_has_atomic))]
+#![cfg_attr(feature = "impl-never", feature(never_type))]
+#![cfg_attr(feature = "impl-sync-exclusive", feature(exclusive_wrapper))]
+#![cfg_attr(feature = "impl-sync-unsafe-cell", feature(sync_unsafe_cell))]
+// required INCOMPLETE features
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
 #![feature(specialization)]
+// further crate attributes
 #![cfg_attr(
     all(doc, not(docsrs)),
     doc(html_root_url = "https://juntyr.github.io/const-type-layout")
@@ -585,7 +580,7 @@ pub trait ExtractDiscriminantSpec<T> {
 }
 
 impl<T> ExtractDiscriminantSpec<<T as core::marker::DiscriminantKind>::Discriminant> for T {
-    default type Ty = !;
+    default type Ty = ();
 }
 
 macro_rules! impl_extract_discriminant {

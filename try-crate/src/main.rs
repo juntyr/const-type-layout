@@ -8,6 +8,8 @@
 #![feature(const_type_name)]
 #![feature(offset_of_enum)]
 #![feature(never_type)]
+#![feature(sync_unsafe_cell)]
+#![feature(exclusive_wrapper)]
 #![feature(cfg_version)]
 #![cfg_attr(not(version("1.82")), feature(offset_of_nested))]
 #![allow(dead_code)]
@@ -209,6 +211,9 @@ fn main() {
 
     println!("{:#?}", <Option<std::num::NonZeroU64>>::TYPE_GRAPH);
     println!("{:#?}", <Result<bool, u8>>::TYPE_GRAPH);
+
+    println!("{:#?}", <std::cell::SyncUnsafeCell<u8>>::TYPE_GRAPH);
+    println!("{:#?}", <std::sync::Exclusive<u8>>::TYPE_GRAPH);
 
     println!("{:#?}", <std::cmp::Ordering>::TYPE_GRAPH);
     println!(

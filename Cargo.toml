@@ -1,30 +1,64 @@
+[workspace]
+resolver = "2"
+members = [".", "const-type-layout-derive", "try-crate"]
+
+[workspace.package]
+edition = "2021"
+authors = ["Juniper Tyree <juniper.tyree@helsinki.fi>", "Lucien Greathouse <me@lpghatguy.com>"]
+homepage = "https://github.com/juntyr/const-type-layout"
+repository = "https://github.com/juntyr/const-type-layout"
+license = "MIT OR Apache-2.0"
+rust-version = "1.78" # nightly
+
+[workspace.lints.rust]
+unused_unsafe = "warn"
+missing_docs = "warn"
+
+[workspace.lints.clippy]
+complexity = { priority = -1, level = "warn" }
+correctness = { priority = -1, level = "warn" }
+nursery = { priority = -1, level = "warn" }
+pedantic = { priority = -1, level = "warn" }
+perf = { priority = -1, level = "warn" }
+style = { priority = -1, level = "warn" }
+suspicious = { priority = -1, level = "warn" }
+
+default_union_representation = "warn"
+multiple_unsafe_ops_per_block = "warn"
+undocumented_unsafe_blocks = "warn"
+
 [package]
 name = "const-type-layout"
 description = "Derivable const trait to view and compare the layout of a struct, union, or enum."
 version = "0.3.2"
-edition = "2021"
-authors = ["Juniper Tyree <juniper.tyree@helsinki.fi>", "Lucien Greathouse <me@lpghatguy.com>"]
+edition = { workspace = true }
+authors = { workspace = true }
 documentation = "https://docs.rs/const-type-layout/"
-homepage = "https://github.com/juntyr/const-type-layout"
-repository = "https://github.com/juntyr/const-type-layout"
+homepage = { workspace = true }
+repository = { workspace = true }
 readme = "README.md"
 keywords = ["layout", "type", "const"]
-license = "MIT OR Apache-2.0"
-rust-version = "1.78" # nightly
+license = { workspace = true }
+rust-version = { workspace = true }
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[workspace]
-members = ["const-type-layout-derive", "try-crate"]
 
 [features]
 derive = ["dep:const-type-layout-derive"]
 serde = ["dep:serde"]
 
+impl-atomics = []
+impl-never = []
+impl-sync-exclusive = []
+impl-sync-unsafe-cell = []
+
 [dependencies]
 const-type-layout-derive = { version = "0.3.1", path = "const-type-layout-derive", optional = true }
 
-serde = { version = "1.0", features = ["derive"], optional = true }
+serde = { version = "1.0", default-features = false, features = ["derive"], optional = true }
+
+[lints]
+workspace = true
 
 [package.metadata.docs.rs]
 rustc-args = ["--cfg", "docsrs"]

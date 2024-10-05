@@ -28,16 +28,6 @@
 //! [`const_type_layout::TypeLayout`](https://docs.rs/const-type-layout/0.3/const_type_layout/trait.TypeLayout.html)
 //! trait.
 
-#![deny(clippy::complexity)]
-#![deny(clippy::correctness)]
-#![warn(clippy::nursery)]
-#![warn(clippy::pedantic)]
-#![deny(clippy::perf)]
-#![deny(clippy::style)]
-#![deny(clippy::suspicious)]
-#![deny(missing_docs)]
-#![feature(iter_intersperse)]
-
 extern crate proc_macro;
 
 #[macro_use]
@@ -258,10 +248,7 @@ fn parse_attributes(attrs: &[syn::Attribute], type_params: &mut Vec<&syn::Ident>
     reprs.sort();
     reprs.dedup();
 
-    let reprs = reprs
-        .into_iter()
-        .intersperse(String::from(","))
-        .collect::<String>();
+    let reprs = intersperse_commas(reprs);
 
     Attributes {
         reprs,
@@ -283,13 +270,7 @@ fn meta_to_string(meta: &syn::Meta) -> String {
             list.sort();
             list.dedup();
 
-            format!(
-                "{}({})",
-                quote!(#path),
-                list.into_iter()
-                    .intersperse(String::from(","))
-                    .collect::<String>()
-            )
+            format!("{}({})", quote!(#path), intersperse_commas(list),)
         },
         syn::Meta::NameValue(syn::MetaNameValue { path, lit, .. }) => {
             format!("{}={}", quote!(#path), lit_to_string(lit))
@@ -300,6 +281,22 @@ fn meta_to_string(meta: &syn::Meta) -> String {
 
 fn lit_to_string(lit: &syn::Lit) -> String {
     quote!(#lit).to_string().escape_default().to_string()
+}
+
+fn intersperse_commas(items: Vec<String>) -> String {
+    let mut acc = String::with_capacity(
+        items.iter().map(String::len).sum::<usize>() + items.len().saturating_sub(1),
+    );
+
+    for item in items {
+        if !acc.is_empty() {
+            acc.push(',');
+        }
+
+        acc.push_str(item.as_str());
+    }
+
+    acc
 }
 
 fn extract_inner_types(data: &syn::Data) -> Vec<&syn::Type> {

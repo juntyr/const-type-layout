@@ -45,6 +45,7 @@ unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::cell::Cell<T> {
     type Output<R: ExpandTypeSet> = tset![core::cell::UnsafeCell<T>, .. @ R];
 }
 
+#[cfg(feature = "impl-sync-unsafe-cell")]
 unsafe impl<T: TypeLayout> TypeLayout for core::cell::SyncUnsafeCell<T> {
     const INHABITED: crate::MaybeUninhabited = T::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
@@ -62,6 +63,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::cell::SyncUnsafeCell<T> {
     };
 }
 
+#[cfg(feature = "impl-sync-unsafe-cell")]
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::cell::SyncUnsafeCell<T> {
     type Output<R: ExpandTypeSet> = tset![core::cell::UnsafeCell<T>, .. @ R];
 }

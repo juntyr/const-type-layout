@@ -3,8 +3,10 @@ use crate::{
     Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
+#[cfg(feature = "impl-atomics")]
 mod atomic;
 
+#[cfg(feature = "impl-sync-exclusive")]
 unsafe impl<T: TypeLayout> TypeLayout for core::sync::Exclusive<T> {
     const INHABITED: crate::MaybeUninhabited = T::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
@@ -22,6 +24,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::sync::Exclusive<T> {
     };
 }
 
+#[cfg(feature = "impl-sync-exclusive")]
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::sync::Exclusive<T> {
     type Output<R: ExpandTypeSet> = tset![T, .. @ R];
 }
