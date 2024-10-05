@@ -270,7 +270,7 @@ fn meta_to_string(meta: &syn::Meta) -> String {
             list.sort();
             list.dedup();
 
-            format!("{}({})", quote!(#path), intersperse_commas(list),)
+            format!("{}({})", quote!(#path), intersperse_commas(list))
         },
         syn::Meta::NameValue(syn::MetaNameValue { path, lit, .. }) => {
             format!("{}={}", quote!(#path), lit_to_string(lit))

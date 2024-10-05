@@ -1,3 +1,4 @@
+#[cfg(feature = "impl-sync-exclusive")]
 use crate::{
     typeset::{tset, ComputeTypeSet, ExpandTypeSet},
     Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,

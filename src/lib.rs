@@ -640,30 +640,11 @@ impl TypeLayoutGraph<'static> {
     }
 }
 
-impl<
-        'a,
-        // F: Deref<Target = [Field<'a>]>,
-        // V: Deref<Target = [Variant<'a, F>]>,
-        // P: Deref<Target = [&'a str]>,
-        // I: Deref<Target = TypeLayoutInfo<'a, F, V, P>>,
-        // G: Deref<Target = [I]>,
-    >
-    TypeLayoutGraph<
-        'a,
-        // F, V, P, I, G,
-    >
-{
+impl TypeLayoutGraph<'_> {
     #[must_use]
     /// Compute the number of bytes that this [`TypeLayoutGraph`] serialises
     /// into.
-    pub const fn serialised_len(&self) -> usize
-// where
-    //     F: ~const Deref<Target = [Field<'a>]>,
-    //     V: ~const Deref<Target = [Variant<'a, F>]>,
-    //     P: ~const Deref<Target = [&'a str]>,
-    //     I: ~const Deref<Target = TypeLayoutInfo<'a, F, V, P>>,
-    //     G: ~const Deref<Target = [I]>,
-    {
+    pub const fn serialised_len(&self) -> usize {
         let mut counter = ser::Serialiser::counter(0);
         counter.serialise_type_layout_graph(self);
         let len = counter.cursor();
@@ -696,14 +677,7 @@ impl<
     ///
     /// This method panics iff `bytes` has a length of less than
     /// [`Self::serialised_len`].
-    pub const fn serialise(&self, bytes: &mut [u8])
-    // where
-    //     F: ~const Deref<Target = [Field<'a>]>,
-    //     V: ~const Deref<Target = [Variant<'a, F>]>,
-    //     P: ~const Deref<Target = [&'a str]>,
-    //     I: ~const Deref<Target = TypeLayoutInfo<'a, F, V, P>>,
-    //     G: ~const Deref<Target = [I]>,
-    {
+    pub const fn serialise(&self, bytes: &mut [u8]) {
         let mut writer = ser::Serialiser::writer(bytes, 0);
         writer.serialise_usize(self.serialised_len());
         writer.serialise_type_layout_graph(self);
@@ -714,14 +688,7 @@ impl<
     ///
     /// The hash is produced over the serialised form of this
     /// [`TypeLayoutGraph`], as computed by [`Self::serialise`].
-    pub const fn hash(&self, seed: u64) -> u64
-// where
-    //     F: ~const Deref<Target = [Field<'a>]>,
-    //     V: ~const Deref<Target = [Variant<'a, F>]>,
-    //     P: ~const Deref<Target = [&'a str]>,
-    //     I: ~const Deref<Target = TypeLayoutInfo<'a, F, V, P>>,
-    //     G: ~const Deref<Target = [I]>,
-    {
+    pub const fn hash(&self, seed: u64) -> u64 {
         let mut hasher = ser::Serialiser::hasher(seed);
 
         hasher.serialise_usize(self.serialised_len());

@@ -1,6 +1,3 @@
-// use core::ops::Deref;
-#![allow(clippy::needless_borrow, clippy::borrow_deref_ref)] // FIXME: Deref const trait
-
 use crate::{
     Discriminant, Field, MaybeUninhabited, TypeLayout, TypeLayoutGraph, TypeLayoutInfo,
     TypeStructure, Variant,
@@ -54,7 +51,7 @@ impl<'a> Serialiser<'a> {
     }
 }
 
-impl<'a> Serialiser<'a> {
+impl Serialiser<'_> {
     #[inline]
     pub const fn write_bytes(&mut self, bytes: &[u8]) {
         match self {
@@ -104,7 +101,7 @@ impl<'a> Serialiser<'a> {
     }
 }
 
-impl<'a> Serialiser<'a> {
+impl Serialiser<'_> {
     pub const fn serialise_str(&mut self, value: &str) {
         self.serialise_usize(value.len());
         self.write_bytes(value.as_bytes());
@@ -223,7 +220,7 @@ impl<'a> Serialiser<'a> {
             },
             MaybeUninhabited::Uninhabited => (),
         };
-        self.serialise_fields(&value.fields);
+        self.serialise_fields(value.fields);
     }
 
     pub const fn serialise_variants(&mut self, value: &[Variant]) {
@@ -289,7 +286,7 @@ impl<'a> Serialiser<'a> {
         let mut i = 0;
 
         while i < value.tys.len() {
-            self.serialise_type_layout_info(&*value.tys[i]);
+            self.serialise_type_layout_info(value.tys[i]);
 
             i += 1;
         }
