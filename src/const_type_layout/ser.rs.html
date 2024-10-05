@@ -292,13 +292,7 @@
 <a href="#291" id="291">291</a>
 <a href="#292" id="292">292</a>
 <a href="#293" id="293">293</a>
-<a href="#294" id="294">294</a>
-<a href="#295" id="295">295</a>
-<a href="#296" id="296">296</a>
-<a href="#297" id="297">297</a></pre></div><pre class="rust"><code><span class="comment">// use core::ops::Deref;
-</span><span class="attr">#![allow(clippy::needless_borrow, clippy::borrow_deref_ref)] </span><span class="comment">// FIXME: Deref const trait
-
-</span><span class="kw">use crate</span>::{
+<a href="#294" id="294">294</a></pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
     Discriminant, Field, MaybeUninhabited, TypeLayout, TypeLayoutGraph, TypeLayoutInfo,
     TypeStructure, Variant,
 };
@@ -351,7 +345,7 @@
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; Serialiser&lt;<span class="lifetime">'a</span>&gt; {
+<span class="kw">impl </span>Serialiser&lt;<span class="lifetime">'_</span>&gt; {
     <span class="attr">#[inline]
     </span><span class="kw">pub const fn </span>write_bytes(<span class="kw-2">&amp;mut </span><span class="self">self</span>, bytes: <span class="kw-2">&amp;</span>[u8]) {
         <span class="kw">match </span><span class="self">self </span>{
@@ -401,7 +395,7 @@
     }
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; Serialiser&lt;<span class="lifetime">'a</span>&gt; {
+<span class="kw">impl </span>Serialiser&lt;<span class="lifetime">'_</span>&gt; {
     <span class="kw">pub const fn </span>serialise_str(<span class="kw-2">&amp;mut </span><span class="self">self</span>, value: <span class="kw-2">&amp;</span>str) {
         <span class="self">self</span>.serialise_usize(value.len());
         <span class="self">self</span>.write_bytes(value.as_bytes());
@@ -520,7 +514,7 @@
             },
             MaybeUninhabited::Uninhabited =&gt; (),
         };
-        <span class="self">self</span>.serialise_fields(<span class="kw-2">&amp;</span>value.fields);
+        <span class="self">self</span>.serialise_fields(value.fields);
     }
 
     <span class="kw">pub const fn </span>serialise_variants(<span class="kw-2">&amp;mut </span><span class="self">self</span>, value: <span class="kw-2">&amp;</span>[Variant]) {
@@ -586,7 +580,7 @@
         <span class="kw">let </span><span class="kw-2">mut </span>i = <span class="number">0</span>;
 
         <span class="kw">while </span>i &lt; value.tys.len() {
-            <span class="self">self</span>.serialise_type_layout_info(<span class="kw-2">&amp;*</span>value.tys[i]);
+            <span class="self">self</span>.serialise_type_layout_info(value.tys[i]);
 
             i += <span class="number">1</span>;
         }
