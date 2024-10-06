@@ -155,21 +155,33 @@ fn parse_attributes(attrs: &[syn::Attribute], type_params: &mut Vec<&syn::Ident>
             }
         } else if attr.path().is_ident("layout") {
             #[allow(clippy::blocks_in_conditions)]
-            if attr.parse_nested_meta(|meta| {
-                if meta.path.is_ident("free") {
-                    match meta
-                            .value()
-                            .and_then(<syn::LitStr as syn::parse::Parse>::parse)
-                            .and_then(|s| syn::parse_str::<syn::Ident>(&s.value()))
-                        {
+            if attr
+                .parse_nested_meta(|meta| {
+                    let Ok(value) = meta.value() else {
+                        emit_error!(
+                            meta.path.span(),
+                            "[const-type-layout]: Expected #[layout(attr = \"value\")] syntax."
+                        );
+                        return Ok(());
+                    };
+                    let Ok(s) = <syn::LitStr as syn::parse::Parse>::parse(value) else {
+                        emit_error!(
+                            value.span(),
+                            "[const-type-layout]: Expected #[layout(attr = \"value\")] syntax."
+                        );
+                        return Ok(());
+                    };
+
+                    if meta.path.is_ident("free") {
+                        match syn::parse_str::<syn::Ident>(&s.value()) {
                             Ok(param) => {
                                 type_params.iter().position(|ty| **ty == param).map_or_else(
                                     || {
                                         emit_error!(
-                                            meta.path.span(),
+                                            s.span(),
                                             "[const-type-layout]: Invalid #[layout(free)] \
-                                             attribute: \"{}\" is either not a type parameter \
-                                             or has already been freed (duplicate attribute).",
+                                             attribute: \"{}\" is either not a type parameter or \
+                                             has already been freed (duplicate attribute).",
                                             param,
                                         );
                                     },
@@ -179,62 +191,56 @@ fn parse_attributes(attrs: &[syn::Attribute], type_params: &mut Vec<&syn::Ident>
                                 );
                             },
                             Err(err) => emit_error!(
-                                meta.path.span(),
+                                s.span(),
                                 "[const-type-layout]: Invalid #[layout(free = \"<type>\")] \
                                  attribute: {}.",
                                 err
                             ),
                         }
-                } else if meta.path.is_ident("bound") {
-                    match meta
-                            .value()
-                            .and_then(<syn::LitStr as syn::parse::Parse>::parse)
-                            .and_then(|s| syn::parse_str::<syn::WherePredicate>(&s.value()))
-                        {
+                    } else if meta.path.is_ident("bound") {
+                        match syn::parse_str::<syn::WherePredicate>(&s.value()) {
                             Ok(bound) => extra_bounds.push(bound),
                             Err(err) => emit_error!(
-                                meta.path.span(),
+                                s.span(),
                                 "[const-type-layout]: Invalid #[layout(bound = \
                                  \"<where-predicate>\")] attribute: {}.",
                                 err
                             ),
                         }
-                } else if meta.path.is_ident("crate") {
-                    match meta
-                            .value()
-                            .and_then(<syn::LitStr as syn::parse::Parse>::parse)
-                            .and_then(|s| syn::parse_str::<syn::Path>(&s.value()))
-                        {
+                    } else if meta.path.is_ident("crate") {
+                        match syn::parse_str::<syn::Path>(&s.value()) {
                             Ok(new_crate_path) => {
                                 if crate_path.is_none() {
                                     crate_path = Some(
-                                        syn::parse_quote_spanned! { meta.path.span() => #new_crate_path },
+                                        syn::parse_quote_spanned! { s.span() => #new_crate_path },
                                     );
                                 } else {
                                     emit_error!(
                                         meta.path.span(),
                                         "[const-type-layout]: Duplicate #[layout(crate)] \
-                                         attribute: the crate path for `const-type-layout` \
-                                         can only be set once per `derive`.",
+                                         attribute: the crate path for `const-type-layout` can \
+                                         only be set once per `derive`.",
                                     );
                                 }
                             },
                             Err(err) => emit_error!(
-                                meta.path.span(),
-                                "[const-type-layout]: Invalid #[layout(crate = \
-                                 \"<crate-path>\")] attribute: {}.",
+                                s.span(),
+                                "[const-type-layout]: Invalid #[layout(crate = \"<crate-path>\")] \
+                                 attribute: {}.",
                                 err
                             ),
                         }
-                } else {
-                    emit_error!(
-                        meta.path.span(),
-                        "[const-type-layout]: Unknown attribute, use `bound`, `crate`, or \
-                         `free`."
-                    );
-                }
-                Ok(())
-            }).is_err() {
+                    } else {
+                        emit_error!(
+                            meta.path.span(),
+                            "[const-type-layout]: Unknown attribute, use `bound`, `crate`, or \
+                             `free`."
+                        );
+                    }
+                    Ok(())
+                })
+                .is_err()
+            {
                 emit_error!(
                     attr.span(),
                     "[const-type-layout]: Expected #[layout(attr = \"value\")] syntax."
