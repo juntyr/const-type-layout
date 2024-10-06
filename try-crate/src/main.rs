@@ -159,12 +159,8 @@ pub struct MyPhantomData<T> {
 #[repr(transparent)]
 pub struct Wrapper(f64);
 
-// FIXME: move bound from where clause to impl bound
-//        https://github.com/dtolnay/syn/issues/1238
 #[derive(TypeLayout)]
-pub struct Bounded<T>(T)
-where
-    T: std::fmt::Debug + TypeGraphLayout;
+pub struct Bounded<T: std::fmt::Debug + TypeGraphLayout>(T);
 
 fn main() {
     println!("{:#?}", Foo1::TYPE_GRAPH);
