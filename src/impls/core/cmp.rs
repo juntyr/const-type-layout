@@ -35,17 +35,17 @@ unsafe impl TypeLayout for core::cmp::Ordering {
             variants: &[
                 Variant {
                     name: "Less",
-                    discriminant: MaybeUninhabited::Inhabited(crate::Discriminant::new::<Self>(-1)),
+                    discriminant: MaybeUninhabited::Inhabited(crate::Discriminant::I8(-1)),
                     fields: &[],
                 },
                 Variant {
                     name: "Equal",
-                    discriminant: MaybeUninhabited::Inhabited(crate::Discriminant::new::<Self>(0)),
+                    discriminant: MaybeUninhabited::Inhabited(crate::Discriminant::I8(0)),
                     fields: &[],
                 },
                 Variant {
                     name: "Greater",
-                    discriminant: MaybeUninhabited::Inhabited(crate::Discriminant::new::<Self>(1)),
+                    discriminant: MaybeUninhabited::Inhabited(crate::Discriminant::I8(1)),
                     fields: &[],
                 },
             ],
@@ -55,6 +55,6 @@ unsafe impl TypeLayout for core::cmp::Ordering {
 
 unsafe impl ComputeTypeSet for core::cmp::Ordering {
     type Output<R: ExpandTypeSet> = tset![
-        <Self as crate::ExtractDiscriminant>::Discriminant, .. @ R
+        ::core::mem::Discriminant<Self>, .. @ R
     ];
 }

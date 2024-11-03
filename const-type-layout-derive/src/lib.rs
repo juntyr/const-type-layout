@@ -81,7 +81,7 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     let inner_types = extract_inner_types(&input.data);
 
     let discriminant_ty = if let syn::Data::Enum(_) = input.data {
-        Some(quote! { <Self as #crate_path::ExtractDiscriminant>::Discriminant, })
+        Some(quote! { ::core::mem::Discriminant<Self>, })
     } else {
         None
     };
@@ -532,7 +532,7 @@ fn quote_enum_variants(
 
             let discriminant = quote! {
                 #variant_inhabited.map(
-                    #crate_path::Discriminant::new::<Self>(#discriminant)
+                    #crate_path::Discriminant::new(#discriminant)
                 )
             };
 

@@ -14,12 +14,12 @@ unsafe impl<T: TypeLayout> TypeLayout for core::option::Option<T> {
             variants: &[
                 Variant {
                     name: "None",
-                    discriminant: MaybeUninhabited::Inhabited(crate::Discriminant::new::<Self>(0)),
+                    discriminant: MaybeUninhabited::Inhabited(crate::Discriminant::Isize(0)),
                     fields: &[],
                 },
                 Variant {
                     name: "Some",
-                    discriminant: MaybeUninhabited::new::<T>(crate::Discriminant::new::<Self>(1)),
+                    discriminant: MaybeUninhabited::new::<T>(crate::Discriminant::Isize(1)),
                     fields: &[Field {
                         name: "0",
                         offset: MaybeUninhabited::new::<T>(::core::mem::offset_of!(Self, Some.0)),
@@ -33,6 +33,6 @@ unsafe impl<T: TypeLayout> TypeLayout for core::option::Option<T> {
 
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::option::Option<T> {
     type Output<R: ExpandTypeSet> = tset![
-        T, <Self as crate::ExtractDiscriminant>::Discriminant, .. @ R
+        T, ::core::mem::Discriminant<Self>, .. @ R
     ];
 }

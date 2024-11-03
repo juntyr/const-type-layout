@@ -126,7 +126,6 @@ r#"TypeLayoutInfo {
 #![feature(cfg_version)]
 #![feature(const_type_name)]
 #![feature(decl_macro)]
-#![feature(discriminant_kind)]
 #![feature(freeze)]
 #![feature(offset_of_enum)]
 // required, soon-stabilized features
@@ -459,9 +458,12 @@ pub enum Discriminant {
 impl Discriminant {
     #[allow(clippy::missing_panics_doc)]
     #[must_use]
-    /// Constructs a [`Discriminant`] value with the given value `v` of the type
-    /// `T`'s [`core::marker::DiscriminantKind::Discriminant`].
-    pub const fn new<T: ExtractDiscriminant>(v: T::Discriminant) -> Self {
+    /// Constructs a [`Discriminant`] value with the given value `v`.
+    ///
+    /// `T` must be a valid discriminant kind type, i.e. one of the variants
+    /// that [`Discriminant`] can represent.
+    pub const fn new<T: Copy>(v: T) -> Self {
+        // TODO: can this constructor be written without panic or specialisation
         #[repr(C)]
         union Transmute<T: Copy> {
             v: T,
@@ -479,40 +481,40 @@ impl Discriminant {
             usize: usize,
         }
 
-        if <T::Discriminant as Same<i8>>::EQ {
+        if <T as Same<i8>>::EQ {
             // SAFETY: v is of type T::TY which is equivalent to i8
             return Self::I8(unsafe { Transmute { v }.i8 });
-        } else if <T::Discriminant as Same<i16>>::EQ {
+        } else if <T as Same<i16>>::EQ {
             // SAFETY: v is of type T::TY which is equivalent to i16
             return Self::I16(unsafe { Transmute { v }.i16 });
-        } else if <T::Discriminant as Same<i32>>::EQ {
+        } else if <T as Same<i32>>::EQ {
             // SAFETY: v is of type T::TY which is equivalent to i32
             return Self::I32(unsafe { Transmute { v }.i32 });
-        } else if <T::Discriminant as Same<i64>>::EQ {
+        } else if <T as Same<i64>>::EQ {
             // SAFETY: v is of type T::TY which is equivalent to i64
             return Self::I64(unsafe { Transmute { v }.i64 });
-        } else if <T::Discriminant as Same<i128>>::EQ {
+        } else if <T as Same<i128>>::EQ {
             // SAFETY: v is of type T::TY which is equivalent to i128
             return Self::I128(unsafe { Transmute { v }.i128 });
-        } else if <T::Discriminant as Same<isize>>::EQ {
+        } else if <T as Same<isize>>::EQ {
             // SAFETY: v is of type T::TY which is equivalent to isize
             return Self::Isize(unsafe { Transmute { v }.isize });
-        } else if <T::Discriminant as Same<u8>>::EQ {
+        } else if <T as Same<u8>>::EQ {
             // SAFETY: v is of type T::TY which is equivalent to u8
             return Self::U8(unsafe { Transmute { v }.u8 });
-        } else if <T::Discriminant as Same<u16>>::EQ {
+        } else if <T as Same<u16>>::EQ {
             // SAFETY: v is of type T::TY which is equivalent to u16
             return Self::U16(unsafe { Transmute { v }.u16 });
-        } else if <T::Discriminant as Same<u32>>::EQ {
+        } else if <T as Same<u32>>::EQ {
             // SAFETY: v is of type T::TY which is equivalent to u32
             return Self::U32(unsafe { Transmute { v }.u32 });
-        } else if <T::Discriminant as Same<u64>>::EQ {
+        } else if <T as Same<u64>>::EQ {
             // SAFETY: v is of type T::TY which is equivalent to u64
             return Self::U64(unsafe { Transmute { v }.u64 });
-        } else if <T::Discriminant as Same<u128>>::EQ {
+        } else if <T as Same<u128>>::EQ {
             // SAFETY: v is of type T::TY which is equivalent to u128
             return Self::U128(unsafe { Transmute { v }.u128 });
-        } else if <T::Discriminant as Same<usize>>::EQ {
+        } else if <T as Same<usize>>::EQ {
             // SAFETY: v is of type T::TY which is equivalent to usize
             return Self::Usize(unsafe { Transmute { v }.usize });
         }
@@ -531,72 +533,6 @@ impl<T, U> Same<U> for T {
 
 impl<T> Same<T> for T {
     const EQ: bool = true;
-}
-
-/// Helper trait to extract the [`core::marker::DiscriminantKind::Discriminant`]
-/// of a type.
-///
-/// Implementing this trait also guarantees that the
-/// [`core::marker::DiscriminantKind::Discriminant`] implements
-/// [`typeset::ComputeTypeSet`] and that its values can be represented by
-/// [`ExtractDiscriminant::Discriminant`].
-pub trait ExtractDiscriminant {
-    /// The type of the discriminant, which must satisfy the trait bounds
-    /// required by [`core::mem::Discriminant`].
-    ///
-    /// Enums implementing [`TypeLayout`] and [`typeset::ComputeTypeSet`]
-    /// manually should include [`ExtractDiscriminant::Discriminant`] in
-    /// their [`typeset::ComputeTypeSet::Output`] using the [`typeset::tset`]
-    /// helper macro.
-    type Discriminant: Clone
-        + Copy
-        + fmt::Debug
-        + Eq
-        + PartialEq
-        + core::hash::Hash
-        + Send
-        + Sync
-        + Unpin
-        + TypeGraphLayout;
-}
-
-impl<T> ExtractDiscriminant for T {
-    type Discriminant =
-        <T as ExtractDiscriminantSpec<<T as core::marker::DiscriminantKind>::Discriminant>>::Ty;
-}
-
-#[doc(hidden)]
-pub trait ExtractDiscriminantSpec<T> {
-    type Ty: Clone
-        + Copy
-        + fmt::Debug
-        + Eq
-        + PartialEq
-        + core::hash::Hash
-        + Send
-        + Sync
-        + Unpin
-        + TypeGraphLayout;
-}
-
-impl<T> ExtractDiscriminantSpec<<T as core::marker::DiscriminantKind>::Discriminant> for T {
-    default type Ty = ();
-}
-
-macro_rules! impl_extract_discriminant {
-    ($variant:ident($ty:ty)) => {
-        impl<T: core::marker::DiscriminantKind<Discriminant = $ty>> ExtractDiscriminantSpec<$ty> for T {
-            type Ty = $ty;
-        }
-    };
-    ($($variant:ident($ty:ty)),*) => {
-        $(impl_extract_discriminant! { $variant($ty) })*
-    };
-}
-
-impl_extract_discriminant! {
-    I8(i8), I16(i16), I32(i32), I64(i64), I128(i128), Isize(isize),
-    U8(u8), U16(u16), U32(u32), U64(u64), U128(u128), Usize(usize)
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]

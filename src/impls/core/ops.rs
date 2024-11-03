@@ -122,7 +122,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::ops::Bound<T> {
             variants: &[
                 Variant {
                     name: "Included",
-                    discriminant: MaybeUninhabited::new::<T>(crate::Discriminant::new::<Self>(0)),
+                    discriminant: MaybeUninhabited::new::<T>(crate::Discriminant::Isize(0)),
                     fields: &[Field {
                         name: "0",
                         offset: MaybeUninhabited::new::<T>(::core::mem::offset_of!(
@@ -133,7 +133,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::ops::Bound<T> {
                 },
                 Variant {
                     name: "Excluded",
-                    discriminant: MaybeUninhabited::new::<T>(crate::Discriminant::new::<Self>(1)),
+                    discriminant: MaybeUninhabited::new::<T>(crate::Discriminant::Isize(1)),
                     fields: &[Field {
                         name: "0",
                         offset: MaybeUninhabited::new::<T>(::core::mem::offset_of!(
@@ -144,7 +144,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::ops::Bound<T> {
                 },
                 Variant {
                     name: "Unbounded",
-                    discriminant: MaybeUninhabited::Inhabited(crate::Discriminant::new::<Self>(2)),
+                    discriminant: MaybeUninhabited::Inhabited(crate::Discriminant::Isize(2)),
                     fields: &[],
                 },
             ],
@@ -154,7 +154,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::ops::Bound<T> {
 
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::ops::Bound<T> {
     type Output<R: ExpandTypeSet> = tset![
-        T, <Self as crate::ExtractDiscriminant>::Discriminant, .. @ R
+        T, ::core::mem::Discriminant<Self>, .. @ R
     ];
 }
 
@@ -169,7 +169,7 @@ unsafe impl<B: TypeLayout, C: TypeLayout> TypeLayout for core::ops::ControlFlow<
             variants: &[
                 Variant {
                     name: "Continue",
-                    discriminant: MaybeUninhabited::new::<C>(crate::Discriminant::new::<Self>(0)),
+                    discriminant: MaybeUninhabited::new::<C>(crate::Discriminant::Isize(0)),
                     fields: &[Field {
                         name: "0",
                         offset: MaybeUninhabited::new::<C>(::core::mem::offset_of!(
@@ -180,7 +180,7 @@ unsafe impl<B: TypeLayout, C: TypeLayout> TypeLayout for core::ops::ControlFlow<
                 },
                 Variant {
                     name: "Break",
-                    discriminant: MaybeUninhabited::new::<B>(crate::Discriminant::new::<Self>(1)),
+                    discriminant: MaybeUninhabited::new::<B>(crate::Discriminant::Isize(1)),
                     fields: &[Field {
                         name: "0",
                         offset: MaybeUninhabited::new::<B>(::core::mem::offset_of!(Self, Break.0)),
@@ -194,6 +194,6 @@ unsafe impl<B: TypeLayout, C: TypeLayout> TypeLayout for core::ops::ControlFlow<
 
 unsafe impl<B: ComputeTypeSet, C: ComputeTypeSet> ComputeTypeSet for core::ops::ControlFlow<B, C> {
     type Output<R: ExpandTypeSet> = tset![
-        B, C, <Self as crate::ExtractDiscriminant>::Discriminant, .. @ R
+        B, C, ::core::mem::Discriminant<Self>, .. @ R
     ];
 }

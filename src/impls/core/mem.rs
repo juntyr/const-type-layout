@@ -58,18 +58,10 @@ unsafe impl<T> TypeLayout for core::mem::Discriminant<T> {
         name: ::core::any::type_name::<Self>(),
         size: ::core::mem::size_of::<Self>(),
         alignment: ::core::mem::align_of::<Self>(),
-        structure: TypeStructure::Struct {
-            repr: "",
-            fields: &[Field {
-                name: "0",
-                offset: MaybeUninhabited::new::<Self>(0),
-                ty: ::core::any::type_name::<<Self as crate::ExtractDiscriminant>::Discriminant>(),
-            }],
-        },
+        structure: TypeStructure::Primitive,
     };
 }
 
 unsafe impl<T> ComputeTypeSet for core::mem::Discriminant<T> {
-    type Output<R: ExpandTypeSet> =
-        tset![<Self as crate::ExtractDiscriminant>::Discriminant, .. @ R];
+    type Output<R: ExpandTypeSet> = tset![.. @ R];
 }
