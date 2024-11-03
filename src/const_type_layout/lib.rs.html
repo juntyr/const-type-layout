@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-46f98efaafac5295.ttf.woff2,FiraSans-Regular-018c141bf0843ffd.woff2,FiraSans-Medium-8f9a781e4970d388.woff2,SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2,SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-6d8951b3ccd3cbca.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="const_type_layout" data-themes="" data-resource-suffix="" data-rustdoc-version="1.83.0-nightly (9096f4faf 2024-10-05)" data-channel="nightly" data-search-js="search-e056c65ede92db13.js" data-settings-js="settings-805db61a62df4bd2.js" ><script src="../../static.files/storage-1d39b6787ed640ff.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-f070b9041d14864c.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-0111fcff984fae8f.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">const_type_layout/</div>lib.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/lib.rs`."><title>lib.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-590a400c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="const_type_layout" data-themes="" data-resource-suffix="" data-rustdoc-version="1.84.0-nightly (b3f75cc87 2024-11-02)" data-channel="nightly" data-search-js="search-c5a66128.js" data-settings-js="settings-0f613d39.js" ><script src="../../static.files/storage-59e33391.js"></script><script defer src="../../static.files/src-script-56102188.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">const_type_layout/</div>lib.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -646,71 +646,7 @@
 <a href="#645" id="645">645</a>
 <a href="#646" id="646">646</a>
 <a href="#647" id="647">647</a>
-<a href="#648" id="648">648</a>
-<a href="#649" id="649">649</a>
-<a href="#650" id="650">650</a>
-<a href="#651" id="651">651</a>
-<a href="#652" id="652">652</a>
-<a href="#653" id="653">653</a>
-<a href="#654" id="654">654</a>
-<a href="#655" id="655">655</a>
-<a href="#656" id="656">656</a>
-<a href="#657" id="657">657</a>
-<a href="#658" id="658">658</a>
-<a href="#659" id="659">659</a>
-<a href="#660" id="660">660</a>
-<a href="#661" id="661">661</a>
-<a href="#662" id="662">662</a>
-<a href="#663" id="663">663</a>
-<a href="#664" id="664">664</a>
-<a href="#665" id="665">665</a>
-<a href="#666" id="666">666</a>
-<a href="#667" id="667">667</a>
-<a href="#668" id="668">668</a>
-<a href="#669" id="669">669</a>
-<a href="#670" id="670">670</a>
-<a href="#671" id="671">671</a>
-<a href="#672" id="672">672</a>
-<a href="#673" id="673">673</a>
-<a href="#674" id="674">674</a>
-<a href="#675" id="675">675</a>
-<a href="#676" id="676">676</a>
-<a href="#677" id="677">677</a>
-<a href="#678" id="678">678</a>
-<a href="#679" id="679">679</a>
-<a href="#680" id="680">680</a>
-<a href="#681" id="681">681</a>
-<a href="#682" id="682">682</a>
-<a href="#683" id="683">683</a>
-<a href="#684" id="684">684</a>
-<a href="#685" id="685">685</a>
-<a href="#686" id="686">686</a>
-<a href="#687" id="687">687</a>
-<a href="#688" id="688">688</a>
-<a href="#689" id="689">689</a>
-<a href="#690" id="690">690</a>
-<a href="#691" id="691">691</a>
-<a href="#692" id="692">692</a>
-<a href="#693" id="693">693</a>
-<a href="#694" id="694">694</a>
-<a href="#695" id="695">695</a>
-<a href="#696" id="696">696</a>
-<a href="#697" id="697">697</a>
-<a href="#698" id="698">698</a>
-<a href="#699" id="699">699</a>
-<a href="#700" id="700">700</a>
-<a href="#701" id="701">701</a>
-<a href="#702" id="702">702</a>
-<a href="#703" id="703">703</a>
-<a href="#704" id="704">704</a>
-<a href="#705" id="705">705</a>
-<a href="#706" id="706">706</a>
-<a href="#707" id="707">707</a>
-<a href="#708" id="708">708</a>
-<a href="#709" id="709">709</a>
-<a href="#710" id="710">710</a>
-<a href="#711" id="711">711</a>
-<a href="#712" id="712">712</a></pre></div><pre class="rust"><code><span class="doccomment">//! [![CI Status]][workflow] [![MSRV]][repo] [![Latest Version]][crates.io]
+<a href="#648" id="648">648</a></pre></div><pre class="rust"><code><span class="doccomment">//! [![CI Status]][workflow] [![MSRV]][repo] [![Latest Version]][crates.io]
 //! [![Rust Doc Crate]][docs.rs] [![Rust Doc Main]][docs]
 //! [![License Status]][fossa] [![Code Coverage]][codecov]
 //!
@@ -838,7 +774,6 @@ r#"TypeLayoutInfo {
 </span><span class="attr">#![feature(cfg_version)]
 #![feature(const_type_name)]
 #![feature(decl_macro)]
-#![feature(discriminant_kind)]
 #![feature(freeze)]
 #![feature(offset_of_enum)]
 </span><span class="comment">// required, soon-stabilized features
@@ -1171,10 +1106,13 @@ r#"TypeLayoutInfo {
 <span class="kw">impl </span>Discriminant {
     <span class="attr">#[allow(clippy::missing_panics_doc)]
     #[must_use]
-    </span><span class="doccomment">/// Constructs a [`Discriminant`] value with the given value `v` of the type
-    /// `T`'s [`core::marker::DiscriminantKind::Discriminant`].
-    </span><span class="kw">pub const fn </span>new&lt;T: ExtractDiscriminant&gt;(v: T::Discriminant) -&gt; <span class="self">Self </span>{
-        <span class="attr">#[repr(C)]
+    </span><span class="doccomment">/// Constructs a [`Discriminant`] value with the given value `v`.
+    ///
+    /// `T` must be a valid discriminant kind type, i.e. one of the variants
+    /// that [`Discriminant`] can represent.
+    </span><span class="kw">pub const fn </span>new&lt;T: Copy&gt;(v: T) -&gt; <span class="self">Self </span>{
+        <span class="comment">// TODO: can this constructor be written without panic or specialisation
+        </span><span class="attr">#[repr(C)]
         </span><span class="kw">union </span>Transmute&lt;T: Copy&gt; {
             v: T,
             i8: i8,
@@ -1191,40 +1129,40 @@ r#"TypeLayoutInfo {
             usize: usize,
         }
 
-        <span class="kw">if </span>&lt;T::Discriminant <span class="kw">as </span>Same&lt;i8&gt;&gt;::EQ {
+        <span class="kw">if </span>&lt;T <span class="kw">as </span>Same&lt;i8&gt;&gt;::EQ {
             <span class="comment">// SAFETY: v is of type T::TY which is equivalent to i8
             </span><span class="kw">return </span><span class="self">Self</span>::I8(<span class="kw">unsafe </span>{ Transmute { v }.i8 });
-        } <span class="kw">else if </span>&lt;T::Discriminant <span class="kw">as </span>Same&lt;i16&gt;&gt;::EQ {
+        } <span class="kw">else if </span>&lt;T <span class="kw">as </span>Same&lt;i16&gt;&gt;::EQ {
             <span class="comment">// SAFETY: v is of type T::TY which is equivalent to i16
             </span><span class="kw">return </span><span class="self">Self</span>::I16(<span class="kw">unsafe </span>{ Transmute { v }.i16 });
-        } <span class="kw">else if </span>&lt;T::Discriminant <span class="kw">as </span>Same&lt;i32&gt;&gt;::EQ {
+        } <span class="kw">else if </span>&lt;T <span class="kw">as </span>Same&lt;i32&gt;&gt;::EQ {
             <span class="comment">// SAFETY: v is of type T::TY which is equivalent to i32
             </span><span class="kw">return </span><span class="self">Self</span>::I32(<span class="kw">unsafe </span>{ Transmute { v }.i32 });
-        } <span class="kw">else if </span>&lt;T::Discriminant <span class="kw">as </span>Same&lt;i64&gt;&gt;::EQ {
+        } <span class="kw">else if </span>&lt;T <span class="kw">as </span>Same&lt;i64&gt;&gt;::EQ {
             <span class="comment">// SAFETY: v is of type T::TY which is equivalent to i64
             </span><span class="kw">return </span><span class="self">Self</span>::I64(<span class="kw">unsafe </span>{ Transmute { v }.i64 });
-        } <span class="kw">else if </span>&lt;T::Discriminant <span class="kw">as </span>Same&lt;i128&gt;&gt;::EQ {
+        } <span class="kw">else if </span>&lt;T <span class="kw">as </span>Same&lt;i128&gt;&gt;::EQ {
             <span class="comment">// SAFETY: v is of type T::TY which is equivalent to i128
             </span><span class="kw">return </span><span class="self">Self</span>::I128(<span class="kw">unsafe </span>{ Transmute { v }.i128 });
-        } <span class="kw">else if </span>&lt;T::Discriminant <span class="kw">as </span>Same&lt;isize&gt;&gt;::EQ {
+        } <span class="kw">else if </span>&lt;T <span class="kw">as </span>Same&lt;isize&gt;&gt;::EQ {
             <span class="comment">// SAFETY: v is of type T::TY which is equivalent to isize
             </span><span class="kw">return </span><span class="self">Self</span>::Isize(<span class="kw">unsafe </span>{ Transmute { v }.isize });
-        } <span class="kw">else if </span>&lt;T::Discriminant <span class="kw">as </span>Same&lt;u8&gt;&gt;::EQ {
+        } <span class="kw">else if </span>&lt;T <span class="kw">as </span>Same&lt;u8&gt;&gt;::EQ {
             <span class="comment">// SAFETY: v is of type T::TY which is equivalent to u8
             </span><span class="kw">return </span><span class="self">Self</span>::U8(<span class="kw">unsafe </span>{ Transmute { v }.u8 });
-        } <span class="kw">else if </span>&lt;T::Discriminant <span class="kw">as </span>Same&lt;u16&gt;&gt;::EQ {
+        } <span class="kw">else if </span>&lt;T <span class="kw">as </span>Same&lt;u16&gt;&gt;::EQ {
             <span class="comment">// SAFETY: v is of type T::TY which is equivalent to u16
             </span><span class="kw">return </span><span class="self">Self</span>::U16(<span class="kw">unsafe </span>{ Transmute { v }.u16 });
-        } <span class="kw">else if </span>&lt;T::Discriminant <span class="kw">as </span>Same&lt;u32&gt;&gt;::EQ {
+        } <span class="kw">else if </span>&lt;T <span class="kw">as </span>Same&lt;u32&gt;&gt;::EQ {
             <span class="comment">// SAFETY: v is of type T::TY which is equivalent to u32
             </span><span class="kw">return </span><span class="self">Self</span>::U32(<span class="kw">unsafe </span>{ Transmute { v }.u32 });
-        } <span class="kw">else if </span>&lt;T::Discriminant <span class="kw">as </span>Same&lt;u64&gt;&gt;::EQ {
+        } <span class="kw">else if </span>&lt;T <span class="kw">as </span>Same&lt;u64&gt;&gt;::EQ {
             <span class="comment">// SAFETY: v is of type T::TY which is equivalent to u64
             </span><span class="kw">return </span><span class="self">Self</span>::U64(<span class="kw">unsafe </span>{ Transmute { v }.u64 });
-        } <span class="kw">else if </span>&lt;T::Discriminant <span class="kw">as </span>Same&lt;u128&gt;&gt;::EQ {
+        } <span class="kw">else if </span>&lt;T <span class="kw">as </span>Same&lt;u128&gt;&gt;::EQ {
             <span class="comment">// SAFETY: v is of type T::TY which is equivalent to u128
             </span><span class="kw">return </span><span class="self">Self</span>::U128(<span class="kw">unsafe </span>{ Transmute { v }.u128 });
-        } <span class="kw">else if </span>&lt;T::Discriminant <span class="kw">as </span>Same&lt;usize&gt;&gt;::EQ {
+        } <span class="kw">else if </span>&lt;T <span class="kw">as </span>Same&lt;usize&gt;&gt;::EQ {
             <span class="comment">// SAFETY: v is of type T::TY which is equivalent to usize
             </span><span class="kw">return </span><span class="self">Self</span>::Usize(<span class="kw">unsafe </span>{ Transmute { v }.usize });
         }
@@ -1243,72 +1181,6 @@ r#"TypeLayoutInfo {
 
 <span class="kw">impl</span>&lt;T&gt; Same&lt;T&gt; <span class="kw">for </span>T {
     <span class="kw">const </span>EQ: bool = <span class="bool-val">true</span>;
-}
-
-<span class="doccomment">/// Helper trait to extract the [`core::marker::DiscriminantKind::Discriminant`]
-/// of a type.
-///
-/// Implementing this trait also guarantees that the
-/// [`core::marker::DiscriminantKind::Discriminant`] implements
-/// [`typeset::ComputeTypeSet`] and that its values can be represented by
-/// [`ExtractDiscriminant::Discriminant`].
-</span><span class="kw">pub trait </span>ExtractDiscriminant {
-    <span class="doccomment">/// The type of the discriminant, which must satisfy the trait bounds
-    /// required by [`core::mem::Discriminant`].
-    ///
-    /// Enums implementing [`TypeLayout`] and [`typeset::ComputeTypeSet`]
-    /// manually should include [`ExtractDiscriminant::Discriminant`] in
-    /// their [`typeset::ComputeTypeSet::Output`] using the [`typeset::tset`]
-    /// helper macro.
-    </span><span class="kw">type </span>Discriminant: Clone
-        + Copy
-        + fmt::Debug
-        + Eq
-        + PartialEq
-        + core::hash::Hash
-        + Send
-        + Sync
-        + Unpin
-        + TypeGraphLayout;
-}
-
-<span class="kw">impl</span>&lt;T&gt; ExtractDiscriminant <span class="kw">for </span>T {
-    <span class="kw">type </span>Discriminant =
-        &lt;T <span class="kw">as </span>ExtractDiscriminantSpec&lt;&lt;T <span class="kw">as </span>core::marker::DiscriminantKind&gt;::Discriminant&gt;&gt;::Ty;
-}
-
-<span class="attr">#[doc(hidden)]
-</span><span class="kw">pub trait </span>ExtractDiscriminantSpec&lt;T&gt; {
-    <span class="kw">type </span>Ty: Clone
-        + Copy
-        + fmt::Debug
-        + Eq
-        + PartialEq
-        + core::hash::Hash
-        + Send
-        + Sync
-        + Unpin
-        + TypeGraphLayout;
-}
-
-<span class="kw">impl</span>&lt;T&gt; ExtractDiscriminantSpec&lt;&lt;T <span class="kw">as </span>core::marker::DiscriminantKind&gt;::Discriminant&gt; <span class="kw">for </span>T {
-    default <span class="kw">type </span>Ty = ();
-}
-
-<span class="macro">macro_rules!</span> impl_extract_discriminant {
-    (<span class="macro-nonterminal">$variant</span>:ident(<span class="macro-nonterminal">$ty</span>:ty)) =&gt; {
-        <span class="kw">impl</span>&lt;T: core::marker::DiscriminantKind&lt;Discriminant = <span class="macro-nonterminal">$ty</span>&gt;&gt; ExtractDiscriminantSpec&lt;<span class="macro-nonterminal">$ty</span>&gt; <span class="kw">for </span>T {
-            <span class="kw">type </span>Ty = <span class="macro-nonterminal">$ty</span>;
-        }
-    };
-    ($(<span class="macro-nonterminal">$variant</span>:ident(<span class="macro-nonterminal">$ty</span>:ty)),<span class="kw-2">*</span>) =&gt; {
-        $(<span class="macro">impl_extract_discriminant!</span> { <span class="macro-nonterminal">$variant</span>(<span class="macro-nonterminal">$ty</span>) })*
-    };
-}
-
-<span class="macro">impl_extract_discriminant!</span> {
-    I8(i8), I16(i16), I32(i32), I64(i64), I128(i128), Isize(isize),
-    U8(u8), U16(u16), U32(u32), U64(u64), U128(u128), Usize(usize)
 }
 
 <span class="attr">#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
