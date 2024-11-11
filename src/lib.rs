@@ -135,7 +135,7 @@ r#"TypeLayoutInfo {
 #![cfg_attr(doc, feature(doc_auto_cfg))]
 // optional feature-gated features
 // https://github.com/rust-lang/rust/issues/94039
-#![feature(cfg_target_has_atomic)]
+#![cfg_attr(feature = "impl-atomics", feature(cfg_target_has_atomic))]
 #![cfg_attr(
     all(feature = "impl-atomics", target_has_atomic_load_store = "128"),
     feature(integer_atomics)
