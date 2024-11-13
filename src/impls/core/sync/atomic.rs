@@ -41,7 +41,11 @@ impl_atomic_int_layout! {
     AtomicI8 (1:"8") => i8 => 0, AtomicI16 (2:"16") => i16 => 0,
     AtomicI32 (4:"32") => i32 => 0, AtomicI64 (8:"64") => i64 => 0,
     AtomicU8 (1:"8") => u8 => 0, AtomicU16 (2:"16") => u16 => 0,
-    AtomicU32 (4:"32") => u32 => 0, AtomicU64 (8:"64") => u64 => 0,
+    AtomicU32 (4:"32") => u32 => 0, AtomicU64 (8:"64") => u64 => 0
+}
+
+#[cfg(feature = "impl-atomics-128")]
+impl_atomic_int_layout! {
     AtomicI128 (16:"128") => i128 => 0, AtomicU128 (16:"128") => u128 => 0
 }
 
