@@ -48,6 +48,7 @@ derive = ["dep:const-type-layout-derive"]
 serde = ["dep:serde"]
 
 impl-atomics = []
+impl-atomics-128 = ["impl-atomics"]
 impl-never = []
 impl-sync-exclusive = []
 impl-sync-unsafe-cell = []
