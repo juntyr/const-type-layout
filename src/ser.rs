@@ -130,8 +130,29 @@ impl Serialiser<'_> {
         });
     }
 
+    const fn serialise_discriminant_bytes(&mut self, value_bytes: &[u8]) {
+        let mut trailing_zeroes = 0;
+
+        while trailing_zeroes < value_bytes.len() {
+            if value_bytes[value_bytes.len() - 1 - trailing_zeroes] != 0_u8 {
+                break;
+            }
+
+            trailing_zeroes += 1;
+        }
+
+        self.serialise_usize(value_bytes.len() - trailing_zeroes);
+
+        let mut i = 0;
+
+        while i < (value_bytes.len() - trailing_zeroes) {
+            self.write_byte(value_bytes[i]);
+            i += 1;
+        }
+    }
+
     pub const fn serialise_discriminant(&mut self, value: &Discriminant) {
-        self.write_bytes(value.value);
+        self.serialise_discriminant_bytes(value.value);
     }
 
     pub const fn serialise_field(&mut self, value: &Field) {

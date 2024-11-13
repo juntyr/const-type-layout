@@ -40,7 +40,7 @@ macro_rules! discriminant {
                 flipped_sign = !flipped_sign;
             }
 
-            ((nbits + 7) / 8) + 1
+            (nbits + 7) / 8
         };
 
         const NEGABINARY: [u8; NBYTES] = {
