@@ -1,5 +1,5 @@
 use crate::{
-    Discriminant, Field, MaybeUninhabited, TypeLayout, TypeLayoutGraph, TypeLayoutInfo,
+    discriminant::Discriminant, Field, MaybeUninhabited, TypeLayoutGraph, TypeLayoutInfo,
     TypeStructure, Variant,
 };
 
@@ -130,57 +130,8 @@ impl Serialiser<'_> {
         });
     }
 
-    const fn serialise_discriminant_bytes(&mut self, value_bytes: &[u8]) {
-        let mut leading_zeroes = 0;
-
-        while leading_zeroes < value_bytes.len() {
-            if value_bytes[leading_zeroes] != 0_u8 {
-                break;
-            }
-
-            leading_zeroes += 1;
-        }
-
-        self.serialise_usize(value_bytes.len() - leading_zeroes);
-
-        let mut i = leading_zeroes;
-
-        while i < value_bytes.len() {
-            self.write_byte(value_bytes[i]);
-            i += 1;
-        }
-    }
-
     pub const fn serialise_discriminant(&mut self, value: &Discriminant) {
-        match value {
-            Discriminant::I8(_) => self.serialise_str(<i8 as TypeLayout>::TYPE_LAYOUT.name),
-            Discriminant::I16(_) => self.serialise_str(<i16 as TypeLayout>::TYPE_LAYOUT.name),
-            Discriminant::I32(_) => self.serialise_str(<i32 as TypeLayout>::TYPE_LAYOUT.name),
-            Discriminant::I64(_) => self.serialise_str(<i64 as TypeLayout>::TYPE_LAYOUT.name),
-            Discriminant::I128(_) => self.serialise_str(<i128 as TypeLayout>::TYPE_LAYOUT.name),
-            Discriminant::Isize(_) => self.serialise_str(<isize as TypeLayout>::TYPE_LAYOUT.name),
-            Discriminant::U8(_) => self.serialise_str(<u8 as TypeLayout>::TYPE_LAYOUT.name),
-            Discriminant::U16(_) => self.serialise_str(<u16 as TypeLayout>::TYPE_LAYOUT.name),
-            Discriminant::U32(_) => self.serialise_str(<u32 as TypeLayout>::TYPE_LAYOUT.name),
-            Discriminant::U64(_) => self.serialise_str(<u64 as TypeLayout>::TYPE_LAYOUT.name),
-            Discriminant::U128(_) => self.serialise_str(<u128 as TypeLayout>::TYPE_LAYOUT.name),
-            Discriminant::Usize(_) => self.serialise_str(<usize as TypeLayout>::TYPE_LAYOUT.name),
-        };
-
-        match value {
-            Discriminant::I8(v) => self.serialise_discriminant_bytes(&v.to_be_bytes()),
-            Discriminant::I16(v) => self.serialise_discriminant_bytes(&v.to_be_bytes()),
-            Discriminant::I32(v) => self.serialise_discriminant_bytes(&v.to_be_bytes()),
-            Discriminant::I64(v) => self.serialise_discriminant_bytes(&v.to_be_bytes()),
-            Discriminant::I128(v) => self.serialise_discriminant_bytes(&v.to_be_bytes()),
-            Discriminant::Isize(v) => self.serialise_discriminant_bytes(&v.to_be_bytes()),
-            Discriminant::U8(v) => self.serialise_discriminant_bytes(&v.to_be_bytes()),
-            Discriminant::U16(v) => self.serialise_discriminant_bytes(&v.to_be_bytes()),
-            Discriminant::U32(v) => self.serialise_discriminant_bytes(&v.to_be_bytes()),
-            Discriminant::U64(v) => self.serialise_discriminant_bytes(&v.to_be_bytes()),
-            Discriminant::U128(v) => self.serialise_discriminant_bytes(&v.to_be_bytes()),
-            Discriminant::Usize(v) => self.serialise_discriminant_bytes(&v.to_be_bytes()),
-        };
+        self.write_bytes(value.value);
     }
 
     pub const fn serialise_field(&mut self, value: &Field) {

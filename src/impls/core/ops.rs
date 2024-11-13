@@ -122,7 +122,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::ops::Bound<T> {
             variants: &[
                 Variant {
                     name: "Included",
-                    discriminant: MaybeUninhabited::new::<T>(crate::Discriminant::Isize(0)),
+                    discriminant: MaybeUninhabited::new::<T>(crate::discriminant::discriminant!(0)),
                     fields: &[Field {
                         name: "0",
                         offset: MaybeUninhabited::new::<T>(::core::mem::offset_of!(
@@ -133,7 +133,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::ops::Bound<T> {
                 },
                 Variant {
                     name: "Excluded",
-                    discriminant: MaybeUninhabited::new::<T>(crate::Discriminant::Isize(1)),
+                    discriminant: MaybeUninhabited::new::<T>(crate::discriminant::discriminant!(1)),
                     fields: &[Field {
                         name: "0",
                         offset: MaybeUninhabited::new::<T>(::core::mem::offset_of!(
@@ -144,7 +144,9 @@ unsafe impl<T: TypeLayout> TypeLayout for core::ops::Bound<T> {
                 },
                 Variant {
                     name: "Unbounded",
-                    discriminant: MaybeUninhabited::Inhabited(crate::Discriminant::Isize(2)),
+                    discriminant: MaybeUninhabited::Inhabited(crate::discriminant::discriminant!(
+                        2
+                    )),
                     fields: &[],
                 },
             ],
@@ -169,7 +171,7 @@ unsafe impl<B: TypeLayout, C: TypeLayout> TypeLayout for core::ops::ControlFlow<
             variants: &[
                 Variant {
                     name: "Continue",
-                    discriminant: MaybeUninhabited::new::<C>(crate::Discriminant::Isize(0)),
+                    discriminant: MaybeUninhabited::new::<C>(crate::discriminant::discriminant!(0)),
                     fields: &[Field {
                         name: "0",
                         offset: MaybeUninhabited::new::<C>(::core::mem::offset_of!(
@@ -180,7 +182,7 @@ unsafe impl<B: TypeLayout, C: TypeLayout> TypeLayout for core::ops::ControlFlow<
                 },
                 Variant {
                     name: "Break",
-                    discriminant: MaybeUninhabited::new::<B>(crate::Discriminant::Isize(1)),
+                    discriminant: MaybeUninhabited::new::<B>(crate::discriminant::discriminant!(1)),
                     fields: &[Field {
                         name: "0",
                         offset: MaybeUninhabited::new::<B>(::core::mem::offset_of!(Self, Break.0)),

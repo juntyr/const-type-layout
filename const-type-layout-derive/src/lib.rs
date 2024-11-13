@@ -532,7 +532,7 @@ fn quote_enum_variants(
 
             let discriminant = quote! {
                 #variant_inhabited.map(
-                    #crate_path::Discriminant::new(#discriminant)
+                    #crate_path::discriminant::discriminant!(#discriminant)
                 )
             };
 
