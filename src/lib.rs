@@ -136,10 +136,7 @@ r#"TypeLayoutInfo {
 // optional feature-gated features
 // https://github.com/rust-lang/rust/issues/94039
 #![cfg_attr(feature = "impl-atomics", feature(cfg_target_has_atomic))]
-#![cfg_attr(
-    all(feature = "impl-atomics", target_has_atomic_load_store = "128"),
-    feature(integer_atomics)
-)]
+#![cfg_attr(feature = "impl-atomics-128", feature(integer_atomics))]
 #![cfg_attr(feature = "impl-never", feature(never_type))]
 #![cfg_attr(feature = "impl-sync-exclusive", feature(exclusive_wrapper))]
 #![cfg_attr(feature = "impl-sync-unsafe-cell", feature(sync_unsafe_cell))]
