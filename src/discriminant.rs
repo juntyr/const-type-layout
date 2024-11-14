@@ -37,7 +37,7 @@ pub struct Discriminant<'a> {
 /// [`discriminant!`]: crate::discriminant!
 ///
 /// ```
-/// # use const_type_layout::discriminant::{discriminant, Discriminant};
+/// # use const_type_layout::{discriminant, Discriminant};
 /// // unsigned literal with inferred type
 /// const D1: Discriminant = discriminant!(4);
 ///
@@ -64,16 +64,25 @@ macro_rules! discriminant {
     ($x:expr) => {{
         const NBYTES: usize = {
             let mut x = $x;
+
+            // number of bits required to represent x in negabinary
             let mut nbits = 0;
 
+            // has the sign of the input been flipped?
+            // since we cannot multiply by -1 if the input is unsigned, we keep
+            //  track of sign flips instead
             let mut flipped_sign = false;
 
             while x != 0 {
                 nbits += 1;
 
-                let floor_x_2 = if (x % 2) < 0 { (x / 2) - 1 } else { x / 2 };
+                // x.div_floor(2) without requring type annotations
+                let (x_div_2, x_mod_2) = (x / 2, x % 2);
+                let floor_x_2 = if x_mod_2 < 0 { x_div_2 - 1 } else { x_div_2 };
 
-                if (x % 2) == 0 {
+                // x := (x / -2) + ((x % -2) < 1)
+                // where x's sign is flipped before or after
+                if x_mod_2 == 0 {
                     x = floor_x_2;
                 } else if flipped_sign {
                     x = floor_x_2 + 1;
@@ -81,33 +90,46 @@ macro_rules! discriminant {
                     x = floor_x_2;
                 }
 
+                // dividing by -2 will flip the sign
                 flipped_sign = !flipped_sign;
             }
 
+            // round up to the number of bytes required for x in negabinary
             (nbits + 7) / 8
         };
 
         const NEGABINARY: [u8; NBYTES] = {
             let mut x = $x;
-            let mut bits = [0; NBYTES];
 
+            // little endian byte array of the negabinary representation of x
+            let mut bytes = [0; NBYTES];
+            // current index into bytes
             let mut i = 0;
-
+            // current bit mask for bytes[i]
             let mut bit = 0x1_u8;
+
+            // has the sign of the input been flipped?
+            // since we cannot multiply by -1 if the input is unsigned, we keep
+            //  track of sign flips instead
             let mut flipped_sign = false;
 
             while x != 0 {
+                // if x is odd, output a 1 to the bit array
                 if (x % 2) != 0 {
-                    bits[i] |= bit;
+                    bytes[i] |= bit;
                 }
-                bit = bit.rotate_left(1);
 
+                // rotate the bit mask left, and increment i if it wraps around
+                bit = bit.rotate_left(1);
                 if bit == 0x1_u8 {
                     i += 1;
                 }
 
+                // x.div_floor(2) without requring type annotations
                 let floor_x_2 = if (x % 2) < 0 { (x / 2) - 1 } else { x / 2 };
 
+                // x := (x / -2) + ((x % -2) < 1)
+                // where x's sign is flipped before or after
                 if (x % 2) == 0 {
                     x = floor_x_2;
                 } else if flipped_sign {
@@ -116,12 +138,14 @@ macro_rules! discriminant {
                     x = floor_x_2;
                 }
 
+                // dividing by -2 will flip the sign
                 flipped_sign = !flipped_sign;
             }
 
-            bits
+            bytes
         };
 
+        // const-construct the discriminant
         $crate::Discriminant { value: &NEGABINARY }
     }};
 }
