@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/ser.rs`."><title>ser.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-590a400c.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="const_type_layout" data-themes="" data-resource-suffix="" data-rustdoc-version="1.84.0-nightly (b3f75cc87 2024-11-02)" data-channel="nightly" data-search-js="search-c5a66128.js" data-settings-js="settings-0f613d39.js" ><script src="../../static.files/storage-59e33391.js"></script><script defer src="../../static.files/src-script-56102188.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">const_type_layout/</div>ser.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `src/ser.rs`."><title>ser.rs - source</title><script>if(window.location.protocol!=="file:")document.head.insertAdjacentHTML("beforeend","SourceSerif4-Regular-6b053e98.ttf.woff2,FiraSans-Regular-0fe48ade.woff2,FiraSans-Medium-e1aa3f0a.woff2,SourceCodePro-Regular-8badfe75.ttf.woff2,SourceCodePro-Semibold-aa29a496.ttf.woff2".split(",").map(f=>`<link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/${f}">`).join(""))</script><link rel="stylesheet" href="../../static.files/normalize-9960930a.css"><link rel="stylesheet" href="../../static.files/rustdoc-42caa33d.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="const_type_layout" data-themes="" data-resource-suffix="" data-rustdoc-version="1.84.0-nightly (8adb4b30f 2024-11-13)" data-channel="nightly" data-search-js="search-853ef39b.js" data-settings-js="settings-0f613d39.js" ><script src="../../static.files/storage-59e33391.js"></script><script defer src="../../static.files/src-script-56102188.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-5f194d8c.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-893ab5e7.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-6580c154.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-044be391.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title"><h2>Files</h2></div></nav><div class="sidebar-resizer"></div><main><rustdoc-search></rustdoc-search><section id="main-content" class="content"><div class="main-heading"><h1><div class="sub-heading">const_type_layout/</div>ser.rs</h1><rustdoc-toolbar></rustdoc-toolbar></div><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers">
 <a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
@@ -263,38 +263,8 @@
 <a href="#262" id="262">262</a>
 <a href="#263" id="263">263</a>
 <a href="#264" id="264">264</a>
-<a href="#265" id="265">265</a>
-<a href="#266" id="266">266</a>
-<a href="#267" id="267">267</a>
-<a href="#268" id="268">268</a>
-<a href="#269" id="269">269</a>
-<a href="#270" id="270">270</a>
-<a href="#271" id="271">271</a>
-<a href="#272" id="272">272</a>
-<a href="#273" id="273">273</a>
-<a href="#274" id="274">274</a>
-<a href="#275" id="275">275</a>
-<a href="#276" id="276">276</a>
-<a href="#277" id="277">277</a>
-<a href="#278" id="278">278</a>
-<a href="#279" id="279">279</a>
-<a href="#280" id="280">280</a>
-<a href="#281" id="281">281</a>
-<a href="#282" id="282">282</a>
-<a href="#283" id="283">283</a>
-<a href="#284" id="284">284</a>
-<a href="#285" id="285">285</a>
-<a href="#286" id="286">286</a>
-<a href="#287" id="287">287</a>
-<a href="#288" id="288">288</a>
-<a href="#289" id="289">289</a>
-<a href="#290" id="290">290</a>
-<a href="#291" id="291">291</a>
-<a href="#292" id="292">292</a>
-<a href="#293" id="293">293</a>
-<a href="#294" id="294">294</a></pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
-    Discriminant, Field, MaybeUninhabited, TypeLayout, TypeLayoutGraph, TypeLayoutInfo,
-    TypeStructure, Variant,
+<a href="#265" id="265">265</a></pre></div><pre class="rust"><code><span class="kw">use crate</span>::{
+    Discriminant, Field, MaybeUninhabited, TypeLayoutGraph, TypeLayoutInfo, TypeStructure, Variant,
 };
 
 <span class="kw">pub enum </span>Serialiser&lt;<span class="lifetime">'a</span>&gt; {
@@ -425,56 +395,28 @@
     }
 
     <span class="kw">const fn </span>serialise_discriminant_bytes(<span class="kw-2">&amp;mut </span><span class="self">self</span>, value_bytes: <span class="kw-2">&amp;</span>[u8]) {
-        <span class="kw">let </span><span class="kw-2">mut </span>leading_zeroes = <span class="number">0</span>;
+        <span class="kw">let </span><span class="kw-2">mut </span>trailing_zeroes = <span class="number">0</span>;
 
-        <span class="kw">while </span>leading_zeroes &lt; value_bytes.len() {
-            <span class="kw">if </span>value_bytes[leading_zeroes] != <span class="number">0_u8 </span>{
+        <span class="kw">while </span>trailing_zeroes &lt; value_bytes.len() {
+            <span class="kw">if </span>value_bytes[value_bytes.len() - <span class="number">1 </span>- trailing_zeroes] != <span class="number">0_u8 </span>{
                 <span class="kw">break</span>;
             }
 
-            leading_zeroes += <span class="number">1</span>;
+            trailing_zeroes += <span class="number">1</span>;
         }
 
-        <span class="self">self</span>.serialise_usize(value_bytes.len() - leading_zeroes);
+        <span class="self">self</span>.serialise_usize(value_bytes.len() - trailing_zeroes);
 
-        <span class="kw">let </span><span class="kw-2">mut </span>i = leading_zeroes;
+        <span class="kw">let </span><span class="kw-2">mut </span>i = <span class="number">0</span>;
 
-        <span class="kw">while </span>i &lt; value_bytes.len() {
+        <span class="kw">while </span>i &lt; (value_bytes.len() - trailing_zeroes) {
             <span class="self">self</span>.write_byte(value_bytes[i]);
             i += <span class="number">1</span>;
         }
     }
 
     <span class="kw">pub const fn </span>serialise_discriminant(<span class="kw-2">&amp;mut </span><span class="self">self</span>, value: <span class="kw-2">&amp;</span>Discriminant) {
-        <span class="kw">match </span>value {
-            Discriminant::I8(<span class="kw">_</span>) =&gt; <span class="self">self</span>.serialise_str(&lt;i8 <span class="kw">as </span>TypeLayout&gt;::TYPE_LAYOUT.name),
-            Discriminant::I16(<span class="kw">_</span>) =&gt; <span class="self">self</span>.serialise_str(&lt;i16 <span class="kw">as </span>TypeLayout&gt;::TYPE_LAYOUT.name),
-            Discriminant::I32(<span class="kw">_</span>) =&gt; <span class="self">self</span>.serialise_str(&lt;i32 <span class="kw">as </span>TypeLayout&gt;::TYPE_LAYOUT.name),
-            Discriminant::I64(<span class="kw">_</span>) =&gt; <span class="self">self</span>.serialise_str(&lt;i64 <span class="kw">as </span>TypeLayout&gt;::TYPE_LAYOUT.name),
-            Discriminant::I128(<span class="kw">_</span>) =&gt; <span class="self">self</span>.serialise_str(&lt;i128 <span class="kw">as </span>TypeLayout&gt;::TYPE_LAYOUT.name),
-            Discriminant::Isize(<span class="kw">_</span>) =&gt; <span class="self">self</span>.serialise_str(&lt;isize <span class="kw">as </span>TypeLayout&gt;::TYPE_LAYOUT.name),
-            Discriminant::U8(<span class="kw">_</span>) =&gt; <span class="self">self</span>.serialise_str(&lt;u8 <span class="kw">as </span>TypeLayout&gt;::TYPE_LAYOUT.name),
-            Discriminant::U16(<span class="kw">_</span>) =&gt; <span class="self">self</span>.serialise_str(&lt;u16 <span class="kw">as </span>TypeLayout&gt;::TYPE_LAYOUT.name),
-            Discriminant::U32(<span class="kw">_</span>) =&gt; <span class="self">self</span>.serialise_str(&lt;u32 <span class="kw">as </span>TypeLayout&gt;::TYPE_LAYOUT.name),
-            Discriminant::U64(<span class="kw">_</span>) =&gt; <span class="self">self</span>.serialise_str(&lt;u64 <span class="kw">as </span>TypeLayout&gt;::TYPE_LAYOUT.name),
-            Discriminant::U128(<span class="kw">_</span>) =&gt; <span class="self">self</span>.serialise_str(&lt;u128 <span class="kw">as </span>TypeLayout&gt;::TYPE_LAYOUT.name),
-            Discriminant::Usize(<span class="kw">_</span>) =&gt; <span class="self">self</span>.serialise_str(&lt;usize <span class="kw">as </span>TypeLayout&gt;::TYPE_LAYOUT.name),
-        };
-
-        <span class="kw">match </span>value {
-            Discriminant::I8(v) =&gt; <span class="self">self</span>.serialise_discriminant_bytes(<span class="kw-2">&amp;</span>v.to_be_bytes()),
-            Discriminant::I16(v) =&gt; <span class="self">self</span>.serialise_discriminant_bytes(<span class="kw-2">&amp;</span>v.to_be_bytes()),
-            Discriminant::I32(v) =&gt; <span class="self">self</span>.serialise_discriminant_bytes(<span class="kw-2">&amp;</span>v.to_be_bytes()),
-            Discriminant::I64(v) =&gt; <span class="self">self</span>.serialise_discriminant_bytes(<span class="kw-2">&amp;</span>v.to_be_bytes()),
-            Discriminant::I128(v) =&gt; <span class="self">self</span>.serialise_discriminant_bytes(<span class="kw-2">&amp;</span>v.to_be_bytes()),
-            Discriminant::Isize(v) =&gt; <span class="self">self</span>.serialise_discriminant_bytes(<span class="kw-2">&amp;</span>v.to_be_bytes()),
-            Discriminant::U8(v) =&gt; <span class="self">self</span>.serialise_discriminant_bytes(<span class="kw-2">&amp;</span>v.to_be_bytes()),
-            Discriminant::U16(v) =&gt; <span class="self">self</span>.serialise_discriminant_bytes(<span class="kw-2">&amp;</span>v.to_be_bytes()),
-            Discriminant::U32(v) =&gt; <span class="self">self</span>.serialise_discriminant_bytes(<span class="kw-2">&amp;</span>v.to_be_bytes()),
-            Discriminant::U64(v) =&gt; <span class="self">self</span>.serialise_discriminant_bytes(<span class="kw-2">&amp;</span>v.to_be_bytes()),
-            Discriminant::U128(v) =&gt; <span class="self">self</span>.serialise_discriminant_bytes(<span class="kw-2">&amp;</span>v.to_be_bytes()),
-            Discriminant::Usize(v) =&gt; <span class="self">self</span>.serialise_discriminant_bytes(<span class="kw-2">&amp;</span>v.to_be_bytes()),
-        };
+        <span class="self">self</span>.serialise_discriminant_bytes(value.value);
     }
 
     <span class="kw">pub const fn </span>serialise_field(<span class="kw-2">&amp;mut </span><span class="self">self</span>, value: <span class="kw-2">&amp;</span>Field) {
