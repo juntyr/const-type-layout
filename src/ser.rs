@@ -1,6 +1,5 @@
 use crate::{
-    discriminant::Discriminant, Field, MaybeUninhabited, TypeLayoutGraph, TypeLayoutInfo,
-    TypeStructure, Variant,
+    Discriminant, Field, MaybeUninhabited, TypeLayoutGraph, TypeLayoutInfo, TypeStructure, Variant,
 };
 
 pub enum Serialiser<'a> {

@@ -82,7 +82,7 @@ pub unsafe trait ComputeTypeSet: crate::TypeLayout {
     /// type links to.
     ///
     /// Enums implementing [`crate::TypeLayout`] and [`ComputeTypeSet`]
-    /// manually should include [`crate::ExtractDiscriminant::Discriminant`] in
+    /// manually should include [`core::mem::Discriminant<Self>`] in
     /// their [`ComputeTypeSet::Output`] using the [`tset`] helper macro.
     type Output<T: ExpandTypeSet>: ExpandTypeSet;
 }

@@ -35,23 +35,17 @@ unsafe impl TypeLayout for core::cmp::Ordering {
             variants: &[
                 Variant {
                     name: "Less",
-                    discriminant: MaybeUninhabited::Inhabited(crate::discriminant::discriminant!(
-                        -1
-                    )),
+                    discriminant: MaybeUninhabited::Inhabited(crate::discriminant!(-1)),
                     fields: &[],
                 },
                 Variant {
                     name: "Equal",
-                    discriminant: MaybeUninhabited::Inhabited(crate::discriminant::discriminant!(
-                        0
-                    )),
+                    discriminant: MaybeUninhabited::Inhabited(crate::discriminant!(0)),
                     fields: &[],
                 },
                 Variant {
                     name: "Greater",
-                    discriminant: MaybeUninhabited::Inhabited(crate::discriminant::discriminant!(
-                        1
-                    )),
+                    discriminant: MaybeUninhabited::Inhabited(crate::discriminant!(1)),
                     fields: &[],
                 },
             ],

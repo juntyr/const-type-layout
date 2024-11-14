@@ -158,11 +158,13 @@ use core::ops::Deref;
 #[cfg(feature = "derive")]
 pub use const_type_layout_derive::TypeLayout;
 
-pub mod discriminant;
+mod discriminant;
 mod impls;
 pub mod inhabited;
 mod ser;
 pub mod typeset;
+
+pub use discriminant::Discriminant;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize))]
@@ -421,7 +423,7 @@ pub struct Variant<'a, F: Deref<Target = [Field<'a>]> = &'a [Field<'a>]> {
     /// The variant's descriminant, iff the variant is
     /// [inhabited](https://doc.rust-lang.org/reference/glossary.html#inhabited).
     #[cfg_attr(feature = "serde", serde(borrow))]
-    pub discriminant: MaybeUninhabited<discriminant::Discriminant<'a>>,
+    pub discriminant: MaybeUninhabited<Discriminant<'a>>,
     /// The variant's fields.
     pub fields: F,
 }
