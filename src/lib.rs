@@ -158,10 +158,13 @@ use core::ops::Deref;
 #[cfg(feature = "derive")]
 pub use const_type_layout_derive::TypeLayout;
 
+mod discriminant;
 mod impls;
 pub mod inhabited;
 mod ser;
 pub mod typeset;
+
+pub use discriminant::Discriminant;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize))]
@@ -419,120 +422,10 @@ pub struct Variant<'a, F: Deref<Target = [Field<'a>]> = &'a [Field<'a>]> {
     pub name: &'a str,
     /// The variant's descriminant, iff the variant is
     /// [inhabited](https://doc.rust-lang.org/reference/glossary.html#inhabited).
-    pub discriminant: MaybeUninhabited<Discriminant>,
+    #[cfg_attr(feature = "serde", serde(borrow))]
+    pub discriminant: MaybeUninhabited<Discriminant<'a>>,
     /// The variant's fields.
     pub fields: F,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-#[cfg_attr(feature = "serde", allow(clippy::unsafe_derive_deserialize))]
-#[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
-/// Discriminant value of a type.
-pub enum Discriminant {
-    /// `#[repr(i8)]` discriminant.
-    I8(i8),
-    /// `#[repr(i16)]` discriminant.
-    I16(i16),
-    /// `#[repr(i32)]` discriminant.
-    I32(i32),
-    /// `#[repr(i64)]` discriminant.
-    I64(i64),
-    /// `#[repr(i128)]` discriminant.
-    I128(i128),
-    /// `#[repr(isize)]` discriminant (default).
-    Isize(isize),
-    /// `#[repr(u8)]` discriminant.
-    U8(u8),
-    /// `#[repr(u16)]` discriminant.
-    U16(u16),
-    /// `#[repr(u32)]` discriminant.
-    U32(u32),
-    /// `#[repr(u64)]` discriminant.
-    U64(u64),
-    /// `#[repr(u128)]` discriminant.
-    U128(u128),
-    /// `#[repr(usize)]` discriminant.
-    Usize(usize),
-}
-
-impl Discriminant {
-    #[allow(clippy::missing_panics_doc)]
-    #[must_use]
-    /// Constructs a [`Discriminant`] value with the given value `v`.
-    ///
-    /// `T` must be a valid discriminant kind type, i.e. one of the variants
-    /// that [`Discriminant`] can represent.
-    pub const fn new<T: Copy>(v: T) -> Self {
-        // TODO: can this constructor be written without panic or specialisation
-        #[repr(C)]
-        union Transmute<T: Copy> {
-            v: T,
-            i8: i8,
-            i16: i16,
-            i32: i32,
-            i64: i64,
-            i128: i128,
-            isize: isize,
-            u8: u8,
-            u16: u16,
-            u32: u32,
-            u64: u64,
-            u128: u128,
-            usize: usize,
-        }
-
-        if <T as Same<i8>>::EQ {
-            // SAFETY: v is of type T::TY which is equivalent to i8
-            return Self::I8(unsafe { Transmute { v }.i8 });
-        } else if <T as Same<i16>>::EQ {
-            // SAFETY: v is of type T::TY which is equivalent to i16
-            return Self::I16(unsafe { Transmute { v }.i16 });
-        } else if <T as Same<i32>>::EQ {
-            // SAFETY: v is of type T::TY which is equivalent to i32
-            return Self::I32(unsafe { Transmute { v }.i32 });
-        } else if <T as Same<i64>>::EQ {
-            // SAFETY: v is of type T::TY which is equivalent to i64
-            return Self::I64(unsafe { Transmute { v }.i64 });
-        } else if <T as Same<i128>>::EQ {
-            // SAFETY: v is of type T::TY which is equivalent to i128
-            return Self::I128(unsafe { Transmute { v }.i128 });
-        } else if <T as Same<isize>>::EQ {
-            // SAFETY: v is of type T::TY which is equivalent to isize
-            return Self::Isize(unsafe { Transmute { v }.isize });
-        } else if <T as Same<u8>>::EQ {
-            // SAFETY: v is of type T::TY which is equivalent to u8
-            return Self::U8(unsafe { Transmute { v }.u8 });
-        } else if <T as Same<u16>>::EQ {
-            // SAFETY: v is of type T::TY which is equivalent to u16
-            return Self::U16(unsafe { Transmute { v }.u16 });
-        } else if <T as Same<u32>>::EQ {
-            // SAFETY: v is of type T::TY which is equivalent to u32
-            return Self::U32(unsafe { Transmute { v }.u32 });
-        } else if <T as Same<u64>>::EQ {
-            // SAFETY: v is of type T::TY which is equivalent to u64
-            return Self::U64(unsafe { Transmute { v }.u64 });
-        } else if <T as Same<u128>>::EQ {
-            // SAFETY: v is of type T::TY which is equivalent to u128
-            return Self::U128(unsafe { Transmute { v }.u128 });
-        } else if <T as Same<usize>>::EQ {
-            // SAFETY: v is of type T::TY which is equivalent to usize
-            return Self::Usize(unsafe { Transmute { v }.usize });
-        }
-
-        panic!("bug: unknown discriminant kind")
-    }
-}
-
-trait Same<T> {
-    const EQ: bool;
-}
-
-impl<T, U> Same<U> for T {
-    default const EQ: bool = false;
-}
-
-impl<T> Same<T> for T {
-    const EQ: bool = true;
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]

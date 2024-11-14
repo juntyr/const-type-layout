@@ -14,7 +14,7 @@ unsafe impl<T: TypeLayout, E: TypeLayout> TypeLayout for core::result::Result<T,
             variants: &[
                 Variant {
                     name: "Ok",
-                    discriminant: MaybeUninhabited::new::<T>(crate::Discriminant::Isize(0)),
+                    discriminant: MaybeUninhabited::new::<T>(crate::discriminant!(0)),
                     fields: &[Field {
                         name: "0",
                         offset: MaybeUninhabited::new::<T>(::core::mem::offset_of!(Self, Ok.0)),
@@ -23,7 +23,7 @@ unsafe impl<T: TypeLayout, E: TypeLayout> TypeLayout for core::result::Result<T,
                 },
                 Variant {
                     name: "Err",
-                    discriminant: MaybeUninhabited::new::<E>(crate::Discriminant::Isize(1)),
+                    discriminant: MaybeUninhabited::new::<E>(crate::discriminant!(1)),
                     fields: &[Field {
                         name: "0",
                         offset: MaybeUninhabited::new::<E>(::core::mem::offset_of!(Self, Err.0)),

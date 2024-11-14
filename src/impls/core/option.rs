@@ -14,12 +14,12 @@ unsafe impl<T: TypeLayout> TypeLayout for core::option::Option<T> {
             variants: &[
                 Variant {
                     name: "None",
-                    discriminant: MaybeUninhabited::Inhabited(crate::Discriminant::Isize(0)),
+                    discriminant: MaybeUninhabited::Inhabited(crate::discriminant!(0)),
                     fields: &[],
                 },
                 Variant {
                     name: "Some",
-                    discriminant: MaybeUninhabited::new::<T>(crate::Discriminant::Isize(1)),
+                    discriminant: MaybeUninhabited::new::<T>(crate::discriminant!(1)),
                     fields: &[Field {
                         name: "0",
                         offset: MaybeUninhabited::new::<T>(::core::mem::offset_of!(Self, Some.0)),
