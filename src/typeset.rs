@@ -1,6 +1,8 @@
 //! Helper module to compute the set of types that a type links to and expand it
 //! into the complete type graph.
 
+#![allow(missing_docs)] // FIXME
+
 use core::{marker::Freeze, mem::MaybeUninit};
 
 use crate::{TypeLayout, TypeLayoutInfo};
@@ -71,12 +73,12 @@ const fn expand_type_layout_graph<
                     panic!("bug: type layout graph too small");
                 }
                 tys[tys_len] = MaybeUninit::new(info);
-                if <T::Output<S> as private::HList>::LEN == 0 {
+                if <<T::Output as private::TypeHList>::Concat<S> as private::HList>::LEN == 0 {
                     return tys_len + 1;
                 }
                 expand_type_layout_graph_erased::<
-                    <T::Output<S> as private::TypeHList>::Head,
-                    <T::Output<S> as private::TypeHList>::Tail,
+                    <<T::Output as private::TypeHList>::Concat<S> as private::TypeHList>::Head,
+                    <<T::Output as private::TypeHList>::Concat<S> as private::TypeHList>::Tail,
                 >(tys, tys_len + 1)
             }
 
@@ -122,85 +124,22 @@ const fn expand_type_layout_graph<
 
         it = &i.next;
     }
-    if <T::Output<S> as private::HList>::LEN == 0 {
+    if <<T::Output as private::TypeHList>::Concat<S> as private::HList>::LEN == 0 {
         return fill_type_layout_graph::<A, private::Cons<TypeLayoutInfo<'static>, G>>();
     }
     expand_type_layout_graph::<
         A,
         private::Cons<TypeLayoutInfo<'static>, G>,
-        <T::Output<S> as private::TypeHList>::Head,
-        <T::Output<S> as private::TypeHList>::Tail,
+        <<T::Output as private::TypeHList>::Concat<S> as private::TypeHList>::Head,
+        <<T::Output as private::TypeHList>::Concat<S> as private::TypeHList>::Tail,
     >(Some(&Node {
         ty: info,
         next: tys,
     }))
 }
 
-/// Computes the set of types that a type links to.
-///
-/// # Safety
-///
-/// It is only safe to implement this trait if it accurately includes
-/// all inner component types that are referenced by this type's layout. Use
-/// [`#[derive(TypeLayout)]`](const_type_layout_derive::TypeLayout) instead.
-///
-/// # Example
-///
-/// The struct `Foo` with `u8` and `u16` fields links to `u8` and `u16`:
-///
-/// ```rust
-/// # #![feature(const_type_name)]
-/// # #![feature(offset_of)]
-/// # use const_type_layout::{
-/// #    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
-/// # };
-/// # use const_type_layout::inhabited;
-/// # use const_type_layout::typeset::{ComputeTypeSet, ExpandTypeHList, tset};
-/// struct Foo {
-///     a: u8,
-///     b: u16,
-/// }
-///
-/// # unsafe impl TypeLayout for Foo {
-/// #     const INHABITED: MaybeUninhabited = inhabited::all![u8, u16];
-/// #
-/// #     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
-/// #         name: ::core::any::type_name::<Self>(),
-/// #         size: ::core::mem::size_of::<Self>(),
-/// #         alignment: ::core::mem::align_of::<Self>(),
-/// #         structure: TypeStructure::Struct {
-/// #             repr: "",
-/// #             fields: &[
-/// #                 Field {
-/// #                     name: "a",
-/// #                     offset: MaybeUninhabited::new::<u8>(::core::mem::offset_of!(Self, a)),
-/// #                     ty: ::core::any::type_name::<u8>(),
-/// #                 },
-/// #                 Field {
-/// #                     name: "b",
-/// #                     offset: MaybeUninhabited::new::<u16>(::core::mem::offset_of!(Self, b)),
-/// #                     ty: ::core::any::type_name::<u16>(),
-/// #                 },
-/// #             ],
-/// #         },
-/// #     };
-/// # }
-///
-/// unsafe impl ComputeTypeSet for Foo {
-///     type Output<T: ExpandTypeHList> = tset![u8, u16];
-/// }
-/// ```
-///
-/// Note that to you implement [`ComputeTypeSet`] you must also implement
-/// [`crate::TypeLayout`] for it.
 pub unsafe trait ComputeTypeSet: crate::TypeLayout {
-    /// Extend the set `T` into a (larger) set containing also the types this
-    /// type links to.
-    ///
-    /// Enums implementing [`crate::TypeLayout`] and [`ComputeTypeSet`]
-    /// manually should include [`core::mem::Discriminant<Self>`] in
-    /// their [`ComputeTypeSet::Output`] using the [`tset`] helper macro.
-    type Output<T: ExpandTypeHList>: ExpandTypeHList;
+    type Output: ExpandTypeHList;
 }
 
 /// Helper macro to expand a list of types, e.g. `H, R1, R2`, and an optional
@@ -210,12 +149,8 @@ pub unsafe trait ComputeTypeSet: crate::TypeLayout {
 /// associated type to specify the list of types a type links to.
 pub macro tset {
     () => { private::Empty },
-    (.. @ $T:tt) => { $T },
     ($H:ty $(, $R:ty)*) => {
         private::Cons<$H, tset![$($R),*]>
-    },
-    ($H:ty, $($R:ty,)* .. @ $T:ty ) => {
-        private::Cons<$H, tset![$($R,)* .. @ $T]>
     },
 }
 
@@ -230,7 +165,7 @@ impl ExpandTypeHList for private::Empty {
 
 impl<H: ComputeTypeSet, T: ExpandTypeHList> ExpandTypeHList for private::Cons<H, T> {
     type Output<R: ExpandTypeHList> =
-        <T as ExpandTypeHList>::Output<private::Cons<H, <H as ComputeTypeSet>::Output<R>>>;
+        <T as ExpandTypeHList>::Output<private::Cons<H, <<H as ComputeTypeSet>::Output as private::TypeHList>::Concat<R>>>;
 }
 
 mod private {
@@ -262,16 +197,22 @@ mod private {
     pub trait TypeHList: HList {
         type Head: ComputeTypeSet;
         type Tail: ExpandTypeHList;
+
+        type Concat<L: ExpandTypeHList>: ExpandTypeHList;
     }
 
     impl TypeHList for Empty {
         // Empty's head can be anything since we never use it
         type Head = ();
         type Tail = Self;
+
+        type Concat<L: ExpandTypeHList> = L;
     }
 
-    impl<H2: ComputeTypeSet, T: ExpandTypeHList> TypeHList for Cons<H2, T> {
-        type Head = H2;
+    impl<H: ComputeTypeSet, T: ExpandTypeHList> TypeHList for Cons<H, T> {
+        type Head = H;
         type Tail = T;
+
+        type Concat<L: ExpandTypeHList> = Cons<H, T::Concat<L>>;
     }
 }

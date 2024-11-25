@@ -1,5 +1,5 @@
 use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeHList},
+    typeset::{tset, ComputeTypeSet},
     Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
@@ -25,7 +25,7 @@ macro_rules! impl_tuple_type_layout {
         }
 
         unsafe impl<$($T: ComputeTypeSet),*> ComputeTypeSet for ($($T,)*) {
-            type Output<T: ExpandTypeHList> = tset![$($T),*, .. @ T];
+            type Output = tset![$($T),*];
         }
     };
     ($(($($a:tt => $T:ident),+)),*) => {
