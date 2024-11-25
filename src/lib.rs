@@ -128,9 +128,12 @@ r#"TypeLayoutInfo {
 #![feature(decl_macro)]
 #![feature(freeze)]
 #![feature(offset_of_enum)]
+#![feature(maybe_uninit_array_assume_init)]
+#![feature(inline_const)]
 // required, soon-stabilized features
 #![cfg_attr(not(version("1.83")), feature(const_mut_refs))]
 #![cfg_attr(not(version("1.82")), feature(offset_of_nested))]
+#![cfg_attr(not(version("1.80")), feature(const_maybe_uninit_array_assume_init))]
 // docs-specific features
 #![cfg_attr(doc, feature(doc_auto_cfg))]
 // optional feature-gated features
@@ -146,7 +149,7 @@ r#"TypeLayoutInfo {
 // required INCOMPLETE features
 #![allow(incomplete_features)]
 #![feature(generic_const_exprs)]
-#![feature(specialization)]
+// #![feature(specialization)]
 // further crate attributes
 #![cfg_attr(
     all(doc, not(docsrs)),
@@ -157,7 +160,7 @@ r#"TypeLayoutInfo {
 extern crate alloc;
 
 use alloc::fmt;
-use core::ops::Deref;
+use core::{mem::MaybeUninit, ops::Deref};
 
 #[cfg(feature = "derive")]
 pub use const_type_layout_derive::TypeLayout;
@@ -309,27 +312,27 @@ pub trait TypeGraphLayout: TypeLayout + typeset::ComputeTypeSet {
     const TYPE_GRAPH: TypeLayoutGraph<'static>;
 }
 
-impl<T: TypeLayout + typeset::ComputeTypeSet> TypeGraphLayout for T {
+impl<T: TypeLayout + typeset::ComputeTypeSet> TypeGraphLayout for T where [(); typeset::foo::typset_len::<T>()]: {
     const TYPE_GRAPH: TypeLayoutGraph<'static> = TypeLayoutGraph::new::<T>();
 }
 
-#[must_use]
-/// Compute the number of bytes that this type's [`TypeLayoutGraph`] serialises
-/// into.
-pub const fn serialised_type_graph_len<T: TypeGraphLayout>() -> usize {
-    T::TYPE_GRAPH.serialised_len()
-}
+// #[must_use]
+// /// Compute the number of bytes that this type's [`TypeLayoutGraph`] serialises
+// /// into.
+// pub const fn serialised_type_graph_len<T: TypeGraphLayout>() -> usize {
+//     T::TYPE_GRAPH.serialised_len()
+// }
 
-#[must_use]
-/// Serialise this type's [`TypeLayoutGraph`] into an array of bytes of length
-/// [`serialised_type_graph_len`].
-pub const fn serialise_type_graph<T: TypeGraphLayout>() -> [u8; serialised_type_graph_len::<T>()] {
-    let mut bytes = [0_u8; serialised_type_graph_len::<T>()];
+// #[must_use]
+// /// Serialise this type's [`TypeLayoutGraph`] into an array of bytes of length
+// /// [`serialised_type_graph_len`].
+// pub const fn serialise_type_graph<T: TypeGraphLayout>() -> [u8; serialised_type_graph_len::<T>()] {
+//     let mut bytes = [0_u8; serialised_type_graph_len::<T>()];
 
-    T::TYPE_GRAPH.serialise(&mut bytes);
+//     T::TYPE_GRAPH.serialise(&mut bytes);
 
-    bytes
-}
+//     bytes
+// }
 
 #[must_use]
 /// Hash this type's [`TypeLayoutGraph`] using the provided `seed`.
@@ -348,8 +351,8 @@ pub struct TypeLayoutGraph<
     'a,
     F: Deref<Target = [Field<'a>]> = &'a [Field<'a>],
     V: Deref<Target = [Variant<'a, F>]> = &'a [Variant<'a, F>],
-    I: Deref<Target = TypeLayoutInfo<'a, F, V>> = &'a TypeLayoutInfo<'a, F, V>,
-    G: Deref<Target = [I]> = &'a [I],
+    // I: Deref<Target = TypeLayoutInfo<'a, F, V>> = &'a TypeLayoutInfo<'a, F, V>,
+    G: Deref<Target = [TypeLayoutInfo<'a, F, V>]> = &'a [TypeLayoutInfo<'a, F, V>],
 > {
     /// The type's fully-qualified name.
     #[cfg_attr(feature = "serde", serde(borrow))]
@@ -452,7 +455,19 @@ pub struct Field<'a> {
 impl TypeLayoutGraph<'static> {
     #[must_use]
     /// Construct the deep type layout descriptor for a type `T`.
-    pub const fn new<T: TypeLayout + typeset::ComputeTypeSet>() -> Self {
+    pub const fn new<T: TypeLayout + typeset::ComputeTypeSet>() -> Self where [(); typeset::foo::typset_len::<T>()]: {
+        const fn tys<T: TypeLayout + typeset::ComputeTypeSet>() -> [TypeLayoutInfo<'static>; typeset::foo::typset_len::<T>()] {
+            let mut tys = [MaybeUninit::uninit(); typeset::foo::typset_len::<T>()];
+
+            let len = typeset::foo::typeset_tys::<T>(&mut tys);
+
+            if len != typeset::foo::typset_len::<T>() {
+                panic!("failed to initalize all types");
+            }
+
+            unsafe { MaybeUninit::array_assume_init(tys) }
+        }
+
         Self {
             ty: <T as TypeLayout>::TYPE_LAYOUT.name,
             // SAFETY:
@@ -463,10 +478,16 @@ impl TypeLayoutGraph<'static> {
             // - the HList is layout-equivalent to an array of the same length as ComputeSet::LEN
             // - ComputeSet::TYS provides a static non-dangling reference that we can use to produce
             //   the data pointer for a slice
+            // tys: unsafe {
+            //     core::slice::from_raw_parts(
+            //         core::ptr::from_ref(<typeset::TypeSet<T> as typeset::ComputeSet>::TYS).cast(),
+            //         <typeset::TypeSet<T> as typeset::ComputeSet>::LEN,
+            //     )
+            // },
             tys: unsafe {
                 core::slice::from_raw_parts(
-                    core::ptr::from_ref(<typeset::TypeSet<T> as typeset::ComputeSet>::TYS).cast(),
-                    <typeset::TypeSet<T> as typeset::ComputeSet>::LEN,
+                    core::ptr::from_ref(&const { tys::<T>() }).cast(),
+                    typeset::foo::typset_len::<T>(),
                 )
             },
         }
@@ -535,9 +556,9 @@ impl<
         'a,
         F: Deref<Target = [Field<'a>]> + fmt::Debug,
         V: Deref<Target = [Variant<'a, F>]> + fmt::Debug,
-        I: Deref<Target = TypeLayoutInfo<'a, F, V>> + fmt::Debug,
-        G: Deref<Target = [I]> + fmt::Debug,
-    > fmt::Debug for TypeLayoutGraph<'a, F, V, I, G>
+        // I: Deref<Target = TypeLayoutInfo<'a, F, V>> + fmt::Debug,
+        G: Deref<Target = [TypeLayoutInfo<'a, F, V>]> + fmt::Debug,
+    > fmt::Debug for TypeLayoutGraph<'a, F, V, G>
 {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.write_fmt(format_args!("TypeLayoutGraph<{}>({:?})", self.ty, self.tys))

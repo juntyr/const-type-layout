@@ -257,7 +257,7 @@ impl Serialiser<'_> {
         let mut i = 0;
 
         while i < value.tys.len() {
-            self.serialise_type_layout_info(value.tys[i]);
+            self.serialise_type_layout_info(&value.tys[i]);
 
             i += 1;
         }

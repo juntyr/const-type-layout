@@ -247,12 +247,12 @@ fn main() {
     println!("{:#?}", <List<u8>>::TYPE_GRAPH);
     println!("{:#?}", <Tree<u8>>::TYPE_GRAPH);
 
-    let mut ascii_escaped_layout = String::new();
-    for b in SERIALISED_LIST_U8_LAYOUT {
-        let part: Vec<u8> = std::ascii::escape_default(b).collect();
-        ascii_escaped_layout.push_str(std::str::from_utf8(&part).unwrap());
-    }
-    println!("{ascii_escaped_layout}");
+    // let mut ascii_escaped_layout = String::new();
+    // for b in SERIALISED_LIST_U8_LAYOUT {
+    //     let part: Vec<u8> = std::ascii::escape_default(b).collect();
+    //     ascii_escaped_layout.push_str(std::str::from_utf8(&part).unwrap());
+    // }
+    // println!("{ascii_escaped_layout}");
 
     let ron_layout = ron::to_string(&<List<u8>>::TYPE_GRAPH).unwrap();
     println!("{ron_layout}");
@@ -262,5 +262,5 @@ fn non_static_ref<'a>(_val: &'a u128) {
     println!("{:#?}", <Referencing<&'a u8>>::TYPE_GRAPH);
 }
 
-const SERIALISED_LIST_U8_LAYOUT: [u8; const_type_layout::serialised_type_graph_len::<List<u8>>()] =
-    const_type_layout::serialise_type_graph::<List<u8>>();
+// const SERIALISED_LIST_U8_LAYOUT: [u8; const_type_layout::serialised_type_graph_len::<List<u8>>()] =
+//     const_type_layout::serialise_type_graph::<List<u8>>();
