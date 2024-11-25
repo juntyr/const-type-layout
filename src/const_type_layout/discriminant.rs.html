@@ -245,7 +245,19 @@
 <a href="#244" id="244">244</a>
 <a href="#245" id="245">245</a>
 <a href="#246" id="246">246</a>
-<a href="#247" id="247">247</a></pre></div><pre class="rust"><code><span class="attr">#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+<a href="#247" id="247">247</a>
+<a href="#248" id="248">248</a>
+<a href="#249" id="249">249</a>
+<a href="#250" id="250">250</a>
+<a href="#251" id="251">251</a>
+<a href="#252" id="252">252</a>
+<a href="#253" id="253">253</a>
+<a href="#254" id="254">254</a>
+<a href="#255" id="255">255</a>
+<a href="#256" id="256">256</a>
+<a href="#257" id="257">257</a></pre></div><pre class="rust"><code><span class="kw">use </span>core::{marker::PhantomData, ops::Deref};
+
+<span class="attr">#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = <span class="string">"serde"</span>, derive(::serde::Serialize, ::serde::Deserialize))]
 </span><span class="doccomment">/// Discriminant of an enum variant.
 ///
@@ -253,7 +265,7 @@
 /// macro.
 ///
 /// [`discriminant!`]: crate::discriminant!
-</span><span class="kw">pub struct </span>Discriminant&lt;<span class="lifetime">'a</span>&gt; {
+</span><span class="kw">pub struct </span>Discriminant&lt;<span class="lifetime">'a</span>, D: Deref&lt;Target = [u8]&gt; = <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[u8]&gt; {
     <span class="doccomment">/// The numeric value of the discriminant.
     ///
     /// The value is stored in [negabinary] representation in little-endian
@@ -272,8 +284,10 @@
     /// - for all `i &gt;= value.len()`, `value[i]` is implicitly all-zero
     ///
     /// [negabinary]: https://oeis.org/wiki/Negabinary
-    </span><span class="attr">#[cfg_attr(feature = <span class="string">"serde"</span>, serde(borrow))]
-    </span><span class="kw">pub </span>value: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[u8],
+    </span><span class="kw">pub </span>value: D,
+    <span class="attr">#[doc(hidden)]
+    #[cfg_attr(feature = <span class="string">"serde"</span>, serde(borrow, skip))]
+    </span><span class="kw">pub </span>_marker: PhantomData&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>[u8]&gt;,
 }
 
 <span class="doccomment">/// Helper macro to construct a [`Discriminant`] from its constant value.
@@ -393,12 +407,17 @@
         };
 
         <span class="comment">// const-construct the discriminant
-        </span><span class="macro-nonterminal">$crate::Discriminant </span>{ value: <span class="kw-2">&amp;</span>NEGABINARY }
+        </span><span class="macro-nonterminal">$crate::Discriminant </span>{
+            value: <span class="kw-2">&amp;</span>NEGABINARY <span class="kw">as </span><span class="kw-2">&amp;</span>[u8],
+            _marker: ::core::marker::PhantomData::&lt;<span class="kw-2">&amp;</span><span class="lifetime">'static </span>[u8]&gt;,
+        }
     }};
 }
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
+    <span class="kw">use </span>core::marker::PhantomData;
+
     <span class="attr">#[test]
     </span><span class="kw">fn </span>negabinary() {
         <span class="macro">macro_rules!</span> check {
@@ -406,7 +425,8 @@
                 $(
                     <span class="macro">assert_eq!</span>(
                         <span class="macro">crate::discriminant!</span>(<span class="macro-nonterminal">$n</span>), <span class="kw">crate</span>::Discriminant {
-                            value: <span class="kw-2">&amp;</span>[$(<span class="macro-nonterminal">$c</span>),<span class="kw-2">*</span>],
+                            value: [$(<span class="macro-nonterminal">$c</span>),<span class="kw-2">*</span>].as_slice(),
+                            _marker: PhantomData::&lt;<span class="kw-2">&amp;</span><span class="lifetime">'static </span>[u8]&gt;,
                         }, <span class="string">"wrong negabinary for {}"</span>, <span class="macro-nonterminal">$n</span>,
                     );
                 )*
