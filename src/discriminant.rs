@@ -1,3 +1,5 @@
+use core::{marker::PhantomData, ops::Deref};
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 /// Discriminant of an enum variant.
@@ -6,7 +8,7 @@
 /// macro.
 ///
 /// [`discriminant!`]: crate::discriminant!
-pub struct Discriminant<'a> {
+pub struct Discriminant<'a, D: Deref<Target = [u8]> = &'a [u8]> {
     /// The numeric value of the discriminant.
     ///
     /// The value is stored in [negabinary] representation in little-endian
@@ -25,8 +27,10 @@ pub struct Discriminant<'a> {
     /// - for all `i >= value.len()`, `value[i]` is implicitly all-zero
     ///
     /// [negabinary]: https://oeis.org/wiki/Negabinary
-    #[cfg_attr(feature = "serde", serde(borrow))]
-    pub value: &'a [u8],
+    pub value: D,
+    #[doc(hidden)]
+    #[cfg_attr(feature = "serde", serde(borrow, skip))]
+    pub _marker: PhantomData<&'a [u8]>,
 }
 
 /// Helper macro to construct a [`Discriminant`] from its constant value.
@@ -146,12 +150,17 @@ macro_rules! discriminant {
         };
 
         // const-construct the discriminant
-        $crate::Discriminant { value: &NEGABINARY }
+        $crate::Discriminant {
+            value: &NEGABINARY as &[u8],
+            _marker: ::core::marker::PhantomData::<&'static [u8]>,
+        }
     }};
 }
 
 #[cfg(test)]
 mod tests {
+    use core::marker::PhantomData;
+
     #[test]
     fn negabinary() {
         macro_rules! check {
@@ -159,7 +168,8 @@ mod tests {
                 $(
                     assert_eq!(
                         crate::discriminant!($n), crate::Discriminant {
-                            value: &[$($c),*],
+                            value: [$($c),*].as_slice(),
+                            _marker: PhantomData::<&'static [u8]>,
                         }, "wrong negabinary for {}", $n,
                     );
                 )*

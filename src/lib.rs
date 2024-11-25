@@ -352,8 +352,9 @@ pub const fn hash_type_graph<T: TypeGraphLayout>(seed: u64) -> u64 {
 pub struct TypeLayoutGraph<
     'a,
     F: Deref<Target = [Field<'a>]> = &'a [Field<'a>],
-    V: Deref<Target = [Variant<'a, F>]> = &'a [Variant<'a, F>],
-    I: Deref<Target = TypeLayoutInfo<'a, F, V>> = &'a TypeLayoutInfo<'a, F, V>,
+    D: Deref<Target = [u8]> = &'a [u8],
+    V: Deref<Target = [Variant<'a, F, D>]> = &'a [Variant<'a, F, D>],
+    I: Deref<Target = TypeLayoutInfo<'a, F, D, V>> = &'a TypeLayoutInfo<'a, F, D, V>,
     G: Deref<Target = [I]> = &'a [I],
 > {
     /// The type's fully-qualified name.
@@ -370,7 +371,8 @@ pub struct TypeLayoutGraph<
 pub struct TypeLayoutInfo<
     'a,
     F: Deref<Target = [Field<'a>]> = &'a [Field<'a>],
-    V: Deref<Target = [Variant<'a, F>]> = &'a [Variant<'a, F>],
+    D: Deref<Target = [u8]> = &'a [u8],
+    V: Deref<Target = [Variant<'a, F, D>]> = &'a [Variant<'a, F, D>],
 > {
     /// The type's fully-qualified name.
     #[cfg_attr(feature = "serde", serde(borrow))]
@@ -381,7 +383,7 @@ pub struct TypeLayoutInfo<
     pub alignment: usize,
     /// The type's shallow structure.
     #[cfg_attr(feature = "serde", serde(borrow))]
-    pub structure: TypeStructure<'a, F, V>,
+    pub structure: TypeStructure<'a, F, D, V>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -390,7 +392,8 @@ pub struct TypeLayoutInfo<
 pub enum TypeStructure<
     'a,
     F: Deref<Target = [Field<'a>]> = &'a [Field<'a>],
-    V: Deref<Target = [Variant<'a, F>]> = &'a [Variant<'a, F>],
+    D: Deref<Target = [u8]> = &'a [u8],
+    V: Deref<Target = [Variant<'a, F, D>]> = &'a [Variant<'a, F, D>],
 > {
     /// A primitive type, e.g. `()`, `u8`, `*const i32`, `&mut bool`, `[char;
     /// 4]`, or `fn(f32) -> !`.
@@ -425,14 +428,18 @@ pub enum TypeStructure<
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(feature = "serde", derive(::serde::Serialize, ::serde::Deserialize))]
 /// Description of the shallow layout of a variant
-pub struct Variant<'a, F: Deref<Target = [Field<'a>]> = &'a [Field<'a>]> {
+pub struct Variant<
+    'a,
+    F: Deref<Target = [Field<'a>]> = &'a [Field<'a>],
+    D: Deref<Target = [u8]> = &'a [u8],
+> {
     /// The variant's name.
     #[cfg_attr(feature = "serde", serde(borrow))]
     pub name: &'a str,
     /// The variant's descriminant, iff the variant is
     /// [inhabited](https://doc.rust-lang.org/reference/glossary.html#inhabited).
     #[cfg_attr(feature = "serde", serde(borrow))]
-    pub discriminant: MaybeUninhabited<Discriminant<'a>>,
+    pub discriminant: MaybeUninhabited<Discriminant<'a, D>>,
     /// The variant's fields.
     pub fields: F,
 }
@@ -539,10 +546,11 @@ impl TypeLayoutGraph<'_> {
 impl<
         'a,
         F: Deref<Target = [Field<'a>]> + fmt::Debug,
-        V: Deref<Target = [Variant<'a, F>]> + fmt::Debug,
-        I: Deref<Target = TypeLayoutInfo<'a, F, V>> + fmt::Debug,
+        D: Deref<Target = [u8]> + fmt::Debug,
+        V: Deref<Target = [Variant<'a, F, D>]> + fmt::Debug,
+        I: Deref<Target = TypeLayoutInfo<'a, F, D, V>> + fmt::Debug,
         G: Deref<Target = [I]> + fmt::Debug,
-    > fmt::Debug for TypeLayoutGraph<'a, F, V, I, G>
+    > fmt::Debug for TypeLayoutGraph<'a, F, D, V, I, G>
 {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.write_fmt(format_args!("TypeLayoutGraph<{}>({:?})", self.ty, self.tys))
