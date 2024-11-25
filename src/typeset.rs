@@ -292,7 +292,7 @@ mod private {
         type Output<H: ComputeTypeSet> = Cons<H, Self>;
         type TyHList = Self;
 
-        type Head = !; // FIXME
+        type Head = (); // FIXME
         type Tail = Self;
 
         const LEN: usize = 0;
