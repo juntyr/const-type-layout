@@ -128,6 +128,8 @@ r#"TypeLayoutInfo {
 #![feature(decl_macro)]
 #![feature(freeze)]
 #![feature(offset_of_enum)]
+#![feature(inline_const)]
+#![feature(const_slice_from_raw_parts_mut)]
 // required, soon-stabilized features
 #![cfg_attr(not(version("1.83")), feature(const_mut_refs))]
 #![cfg_attr(not(version("1.82")), feature(offset_of_nested))]
@@ -354,8 +356,7 @@ pub struct TypeLayoutGraph<
     F: Deref<Target = [Field<'a>]> = &'a [Field<'a>],
     D: Deref<Target = [u8]> = &'a [u8],
     V: Deref<Target = [Variant<'a, F, D>]> = &'a [Variant<'a, F, D>],
-    I: Deref<Target = TypeLayoutInfo<'a, F, D, V>> = &'a TypeLayoutInfo<'a, F, D, V>,
-    G: Deref<Target = [I]> = &'a [I],
+    G: Deref<Target = [TypeLayoutInfo<'a, F, D, V>]> = &'a [TypeLayoutInfo<'a, F, D, V>],
 > {
     /// The type's fully-qualified name.
     #[cfg_attr(feature = "serde", serde(borrow))]
@@ -475,12 +476,12 @@ impl TypeLayoutGraph<'static> {
             // - the HList is layout-equivalent to an array of the same length as ComputeSet::LEN
             // - ComputeSet::TYS provides a static non-dangling reference that we can use to produce
             //   the data pointer for a slice
-            tys: unsafe {
+            tys: /*unsafe {
                 core::slice::from_raw_parts(
                     core::ptr::from_ref(<typeset::TypeSet<T> as typeset::ComputeSet>::TYS).cast(),
                     <typeset::TypeSet<T> as typeset::ComputeSet>::LEN,
                 )
-            },
+            }*/typeset::foo::type_layout_graph::<T>(),
         }
     }
 }
@@ -548,9 +549,8 @@ impl<
         F: Deref<Target = [Field<'a>]> + fmt::Debug,
         D: Deref<Target = [u8]> + fmt::Debug,
         V: Deref<Target = [Variant<'a, F, D>]> + fmt::Debug,
-        I: Deref<Target = TypeLayoutInfo<'a, F, D, V>> + fmt::Debug,
-        G: Deref<Target = [I]> + fmt::Debug,
-    > fmt::Debug for TypeLayoutGraph<'a, F, D, V, I, G>
+        G: Deref<Target = [TypeLayoutInfo<'a, F, D, V>]> + fmt::Debug,
+    > fmt::Debug for TypeLayoutGraph<'a, F, D, V, G>
 {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.write_fmt(format_args!("TypeLayoutGraph<{}>({:?})", self.ty, self.tys))
