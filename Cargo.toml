@@ -47,11 +47,19 @@ rust-version = { workspace = true }
 derive = ["dep:const-type-layout-derive"]
 serde = ["dep:serde"]
 
+# uses the nightly-only `cfg_target_has_atomic` feature
 impl-atomics = []
+# uses the nightly-only `integer_atomics` feature
 impl-atomics-128 = ["impl-atomics"]
+# uses the nightly-only `never_type` feature
 impl-never = []
+# uses the nightly-only `exclusive_wrapper` feature
 impl-sync-exclusive = []
+# uses the nightly-only `sync_unsafe_cell` feature
 impl-sync-unsafe-cell = []
+
+# uses the nightly-only and incomplete `generic_const_exprs` feature
+serialize-to-generic-const-array = []
 
 [dependencies]
 const-type-layout-derive = { version = "0.3.1", path = "const-type-layout-derive", optional = true }

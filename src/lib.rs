@@ -145,8 +145,12 @@ r#"TypeLayoutInfo {
 #![cfg_attr(feature = "impl-sync-unsafe-cell", feature(sync_unsafe_cell))]
 // required INCOMPLETE features
 #![allow(incomplete_features)]
-#![feature(generic_const_exprs)]
 #![feature(specialization)]
+// optional feature-gated INCOMPLETE features
+#![cfg_attr(
+    feature = "serialize-to-generic-const-array",
+    feature(generic_const_exprs)
+)]
 // further crate attributes
 #![cfg_attr(
     all(doc, not(docsrs)),
@@ -320,6 +324,7 @@ pub const fn serialised_type_graph_len<T: TypeGraphLayout>() -> usize {
     T::TYPE_GRAPH.serialised_len()
 }
 
+#[cfg(feature = "serialize-to-generic-const-array")]
 #[must_use]
 /// Serialise this type's [`TypeLayoutGraph`] into an array of bytes of length
 /// [`serialised_type_graph_len`].

@@ -8,6 +8,9 @@ rust-version = { workspace = true }
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+serialize-to-generic-const-array = ["const-type-layout/serialize-to-generic-const-array"]
+
 [dependencies]
 const-type-layout = { path = "..", features = [
     # stable features
@@ -15,7 +18,7 @@ const-type-layout = { path = "..", features = [
     # unstable impls for stable-ish types
     "impl-atomics", "impl-never",
     # unstable impls for unstable types
-    "impl-sync-unsafe-cell", "impl-sync-exclusive",
+    "impl-atomics-128", "impl-sync-unsafe-cell", "impl-sync-exclusive",
 ] }
 
 serde = { version = "1.0", default-features = false }

@@ -4,6 +4,7 @@
 #[doc(hidden)]
 pub trait ComputeSet: sealed::ComputeSet {
     const LEN: usize;
+    type Len;
 
     type Output<H: ComputeTypeSet>: ExpandTypeSet;
 
@@ -143,6 +144,7 @@ mod private {
     }
 
     impl ComputeSet for Empty {
+        type Len = Self;
         type Output<H: ComputeTypeSet> = Cons<H, Self>;
         type TyHList = Self;
 
@@ -151,6 +153,7 @@ mod private {
     }
 
     impl<H2: ComputeTypeSet, T: ExpandTypeSet> ComputeSet for Cons<H2, T> {
+        type Len = Cons<(), T::Len>;
         type Output<H1: ComputeTypeSet> = <Self as ComputeCons<H1>>::Output;
         type TyHList = Cons<&'static crate::TypeLayoutInfo<'static>, T::TyHList>;
 
@@ -181,19 +184,18 @@ mod private {
         type Output: ExpandTypeSet;
     }
 
-    impl<T: ExpandTypeSet, E: ExpandTypeSet> ComputeTypeSetFixedPoint<E> for T {
-        default type Output = <E as ComputeTypeSetFixedPoint<<E as ExpandTypeSet>::Output<Empty>>>::Output;
-    }
-
-    trait True {}
-    struct Assert<const ASSERT: bool>;
-    impl True for Assert<true> {}
+    trait Same<T> {}
+    impl<T> Same<T> for T {}
 
     impl<T: ExpandTypeSet, E: ExpandTypeSet> ComputeTypeSetFixedPoint<E> for T
     where
-        Assert<{ T::LEN == E::LEN }>: True,
+        T::Len: Same<E::Len>,
     {
-        type Output = T;
+        type Output = Self;
+    }
+
+    impl<T: ExpandTypeSet, E: ExpandTypeSet> ComputeTypeSetFixedPoint<E> for T {
+        default type Output = <E as ComputeTypeSetFixedPoint<<E as ExpandTypeSet>::Output<Empty>>>::Output;
     }
 }
 
