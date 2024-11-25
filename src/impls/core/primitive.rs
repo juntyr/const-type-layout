@@ -1,5 +1,5 @@
 use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
+    typeset::{tset, ComputeTypeSet, ExpandTypeHList},
     TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
@@ -17,7 +17,7 @@ macro_rules! impl_primitive_type_layout {
         }
 
         unsafe impl ComputeTypeSet for $ty {
-            type Output<T: ExpandTypeSet> = tset![.. @ T];
+            type Output<T: ExpandTypeHList> = tset![.. @ T];
         }
     };
     ($($ty:ty => $val:expr),*) => {
@@ -45,5 +45,5 @@ unsafe impl TypeLayout for ! {
 
 #[cfg(feature = "impl-never")]
 unsafe impl ComputeTypeSet for ! {
-    type Output<T: ExpandTypeSet> = tset![.. @ T];
+    type Output<T: ExpandTypeHList> = tset![.. @ T];
 }

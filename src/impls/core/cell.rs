@@ -1,5 +1,5 @@
 use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
+    typeset::{tset, ComputeTypeSet, ExpandTypeHList},
     Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
@@ -21,7 +21,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::cell::UnsafeCell<T> {
 }
 
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::cell::UnsafeCell<T> {
-    type Output<R: ExpandTypeSet> = tset![T, .. @ R];
+    type Output<R: ExpandTypeHList> = tset![T, .. @ R];
 }
 
 unsafe impl<T: TypeLayout> TypeLayout for core::cell::Cell<T> {
@@ -42,7 +42,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::cell::Cell<T> {
 }
 
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::cell::Cell<T> {
-    type Output<R: ExpandTypeSet> = tset![core::cell::UnsafeCell<T>, .. @ R];
+    type Output<R: ExpandTypeHList> = tset![core::cell::UnsafeCell<T>, .. @ R];
 }
 
 #[cfg(feature = "impl-sync-unsafe-cell")]
@@ -65,7 +65,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::cell::SyncUnsafeCell<T> {
 
 #[cfg(feature = "impl-sync-unsafe-cell")]
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::cell::SyncUnsafeCell<T> {
-    type Output<R: ExpandTypeSet> = tset![core::cell::UnsafeCell<T>, .. @ R];
+    type Output<R: ExpandTypeHList> = tset![core::cell::UnsafeCell<T>, .. @ R];
 }
 
 unsafe impl<T: TypeLayout> TypeLayout for core::cell::OnceCell<T> {
@@ -86,5 +86,6 @@ unsafe impl<T: TypeLayout> TypeLayout for core::cell::OnceCell<T> {
 }
 
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::cell::OnceCell<T> {
-    type Output<R: ExpandTypeSet> = tset![core::cell::UnsafeCell<core::option::Option<T>>, .. @ R];
+    type Output<R: ExpandTypeHList> =
+        tset![core::cell::UnsafeCell<core::option::Option<T>>, .. @ R];
 }

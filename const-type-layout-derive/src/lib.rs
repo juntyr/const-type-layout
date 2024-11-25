@@ -114,7 +114,7 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
         unsafe impl #type_set_impl_generics #crate_path::typeset::ComputeTypeSet for
             #ty_name #type_set_ty_generics #type_set_where_clause
         {
-            type Output<__TypeSetRest: #crate_path::typeset::ExpandTypeSet> =
+            type Output<__TypeSetRest: #crate_path::typeset::ExpandTypeHList> =
                 #crate_path::typeset::tset![
                     #(#inner_types,)* #discriminant_ty .. @ __TypeSetRest
                 ];

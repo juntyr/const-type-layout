@@ -1,5 +1,5 @@
 use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
+    typeset::{tset, ComputeTypeSet, ExpandTypeHList},
     Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure, Variant,
 };
 
@@ -21,7 +21,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::cmp::Reverse<T> {
 }
 
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::cmp::Reverse<T> {
-    type Output<R: ExpandTypeSet> = tset![T, .. @ R];
+    type Output<R: ExpandTypeHList> = tset![T, .. @ R];
 }
 
 unsafe impl TypeLayout for core::cmp::Ordering {
@@ -54,7 +54,7 @@ unsafe impl TypeLayout for core::cmp::Ordering {
 }
 
 unsafe impl ComputeTypeSet for core::cmp::Ordering {
-    type Output<R: ExpandTypeSet> = tset![
+    type Output<R: ExpandTypeHList> = tset![
         ::core::mem::Discriminant<Self>, .. @ R
     ];
 }

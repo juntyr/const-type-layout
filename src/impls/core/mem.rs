@@ -1,5 +1,5 @@
 use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
+    typeset::{tset, ComputeTypeSet, ExpandTypeHList},
     Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
@@ -21,7 +21,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::mem::ManuallyDrop<T> {
 }
 
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::mem::ManuallyDrop<T> {
-    type Output<R: ExpandTypeSet> = tset![T, .. @ R];
+    type Output<R: ExpandTypeHList> = tset![T, .. @ R];
 }
 
 unsafe impl<T: TypeLayout> TypeLayout for core::mem::MaybeUninit<T> {
@@ -49,7 +49,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::mem::MaybeUninit<T> {
 }
 
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::mem::MaybeUninit<T> {
-    type Output<R: ExpandTypeSet> = tset![(), core::mem::ManuallyDrop<T>, .. @ R];
+    type Output<R: ExpandTypeHList> = tset![(), core::mem::ManuallyDrop<T>, .. @ R];
 }
 
 unsafe impl<T> TypeLayout for core::mem::Discriminant<T> {
@@ -63,5 +63,5 @@ unsafe impl<T> TypeLayout for core::mem::Discriminant<T> {
 }
 
 unsafe impl<T> ComputeTypeSet for core::mem::Discriminant<T> {
-    type Output<R: ExpandTypeSet> = tset![.. @ R];
+    type Output<R: ExpandTypeHList> = tset![.. @ R];
 }

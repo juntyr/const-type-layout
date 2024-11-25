@@ -1,5 +1,5 @@
 use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
+    typeset::{tset, ComputeTypeSet, ExpandTypeHList},
     Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure, Variant,
 };
 
@@ -28,7 +28,7 @@ unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::Range<Idx> {
 }
 
 unsafe impl<Idx: ComputeTypeSet> ComputeTypeSet for core::ops::Range<Idx> {
-    type Output<R: ExpandTypeSet> = tset![Idx, .. @ R];
+    type Output<R: ExpandTypeHList> = tset![Idx, .. @ R];
 }
 
 unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::RangeFrom<Idx> {
@@ -49,7 +49,7 @@ unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::RangeFrom<Idx> {
 }
 
 unsafe impl<Idx: ComputeTypeSet> ComputeTypeSet for core::ops::RangeFrom<Idx> {
-    type Output<R: ExpandTypeSet> = tset![Idx, .. @ R];
+    type Output<R: ExpandTypeHList> = tset![Idx, .. @ R];
 }
 
 unsafe impl TypeLayout for core::ops::RangeFull {
@@ -66,7 +66,7 @@ unsafe impl TypeLayout for core::ops::RangeFull {
 }
 
 unsafe impl ComputeTypeSet for core::ops::RangeFull {
-    type Output<R: ExpandTypeSet> = tset![.. @ R];
+    type Output<R: ExpandTypeHList> = tset![.. @ R];
 }
 
 unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::RangeTo<Idx> {
@@ -87,7 +87,7 @@ unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::RangeTo<Idx> {
 }
 
 unsafe impl<Idx: ComputeTypeSet> ComputeTypeSet for core::ops::RangeTo<Idx> {
-    type Output<R: ExpandTypeSet> = tset![Idx, .. @ R];
+    type Output<R: ExpandTypeHList> = tset![Idx, .. @ R];
 }
 
 unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::RangeToInclusive<Idx> {
@@ -108,7 +108,7 @@ unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::RangeToInclusive<Idx> {
 }
 
 unsafe impl<Idx: ComputeTypeSet> ComputeTypeSet for core::ops::RangeToInclusive<Idx> {
-    type Output<R: ExpandTypeSet> = tset![Idx, .. @ R];
+    type Output<R: ExpandTypeHList> = tset![Idx, .. @ R];
 }
 
 unsafe impl<T: TypeLayout> TypeLayout for core::ops::Bound<T> {
@@ -153,7 +153,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::ops::Bound<T> {
 }
 
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::ops::Bound<T> {
-    type Output<R: ExpandTypeSet> = tset![
+    type Output<R: ExpandTypeHList> = tset![
         T, ::core::mem::Discriminant<Self>, .. @ R
     ];
 }
@@ -193,7 +193,7 @@ unsafe impl<B: TypeLayout, C: TypeLayout> TypeLayout for core::ops::ControlFlow<
 }
 
 unsafe impl<B: ComputeTypeSet, C: ComputeTypeSet> ComputeTypeSet for core::ops::ControlFlow<B, C> {
-    type Output<R: ExpandTypeSet> = tset![
+    type Output<R: ExpandTypeHList> = tset![
         B, C, ::core::mem::Discriminant<Self>, .. @ R
     ];
 }

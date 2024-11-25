@@ -1,6 +1,6 @@
 #[cfg(feature = "impl-sync-exclusive")]
 use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
+    typeset::{tset, ComputeTypeSet, ExpandTypeHList},
     Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
@@ -27,5 +27,5 @@ unsafe impl<T: TypeLayout> TypeLayout for core::sync::Exclusive<T> {
 
 #[cfg(feature = "impl-sync-exclusive")]
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::sync::Exclusive<T> {
-    type Output<R: ExpandTypeSet> = tset![T, .. @ R];
+    type Output<R: ExpandTypeHList> = tset![T, .. @ R];
 }

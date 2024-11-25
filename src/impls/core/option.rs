@@ -1,5 +1,5 @@
 use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
+    typeset::{tset, ComputeTypeSet, ExpandTypeHList},
     Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure, Variant,
 };
 
@@ -32,7 +32,7 @@ unsafe impl<T: TypeLayout> TypeLayout for core::option::Option<T> {
 }
 
 unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::option::Option<T> {
-    type Output<R: ExpandTypeSet> = tset![
+    type Output<R: ExpandTypeHList> = tset![
         T, ::core::mem::Discriminant<Self>, .. @ R
     ];
 }

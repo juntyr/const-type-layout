@@ -1,5 +1,5 @@
 use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
+    typeset::{tset, ComputeTypeSet, ExpandTypeHList},
     TypeLayout, TypeLayoutInfo, TypeStructure,
 };
 
@@ -31,7 +31,7 @@ macro_rules! impl_fn_pointer_type_layout {
         }
 
         unsafe impl<$R: ComputeTypeSet, $($T: ComputeTypeSet),*> ComputeTypeSet for $ty {
-            type Output<Z: ExpandTypeSet> = tset![$R $(, $T)*, .. @ Z];
+            type Output<Z: ExpandTypeHList> = tset![$R $(, $T)*, .. @ Z];
         }
     };
     ($(fn($($T:ident),*) -> $R:ident),*) => {
@@ -76,7 +76,7 @@ macro_rules! impl_variadic_extern_fn_pointer_type_layout {
         unsafe impl<$R: ComputeTypeSet, $($T: ComputeTypeSet),*> ComputeTypeSet
             for unsafe extern $abi fn($($T),*, ...) -> $R
         {
-            type Output<Z: ExpandTypeSet> = tset![$R $(, $T)*, .. @ Z];
+            type Output<Z: ExpandTypeHList> = tset![$R $(, $T)*, .. @ Z];
         }
     };
     ($(unsafe extern "C" fn($($T:ident),+, ...) -> $R:ident),*) => {
