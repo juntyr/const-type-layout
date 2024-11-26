@@ -15,7 +15,7 @@ pub macro hlist {
 
 #[allow(clippy::module_name_repetitions)]
 #[must_use]
-pub const fn type_layout_graph<T: TypeLayout>() -> &'static [TypeLayoutInfo<'static>] {
+pub const fn type_layout_graph<T: TypeLayout>() -> &'static [&'static TypeLayoutInfo<'static>] {
     expand_type_layout_graph::<T, private::Empty, T, private::Empty>(None)
 }
 
@@ -26,15 +26,15 @@ const fn expand_type_layout_graph<
     S: private::TypeHList,
 >(
     tys: Option<&Node>,
-) -> &'static [TypeLayoutInfo<'static>] {
+) -> &'static [&'static TypeLayoutInfo<'static>] {
     const fn fill_type_layout_graph<A: TypeLayout, G: 'static + Copy + Freeze + private::HList>(
-    ) -> &'static [TypeLayoutInfo<'static>] {
+    ) -> &'static [&'static TypeLayoutInfo<'static>] {
         const fn fill_type_layout_graph_erased<A: TypeLayout, G: private::HList>() -> G {
             const fn expand_type_layout_graph_erased<T: TypeLayout, S: private::TypeHList>(
-                tys: &mut [MaybeUninit<TypeLayoutInfo<'static>>],
+                tys: &mut [MaybeUninit<&'static TypeLayoutInfo<'static>>],
                 tys_len: usize,
             ) -> usize {
-                let info = T::TYPE_LAYOUT;
+                let info = &T::TYPE_LAYOUT;
                 let mut i = 0;
                 while i < tys_len {
                     // Safety: tys has been initialized for 0..tys_len
@@ -105,7 +105,7 @@ const fn expand_type_layout_graph<
         }
     }
 
-    let info = T::TYPE_LAYOUT;
+    let info = &T::TYPE_LAYOUT;
     let mut it = &tys;
     while let Some(i) = it {
         if str_eq(i.ty.name, info.name) {
@@ -118,11 +118,11 @@ const fn expand_type_layout_graph<
         it = &i.next;
     }
     if <<T::TypeGraphEdges as private::TypeHList>::Concat<S> as private::HList>::LEN == 0 {
-        return fill_type_layout_graph::<A, private::Cons<TypeLayoutInfo<'static>, G>>();
+        return fill_type_layout_graph::<A, private::Cons<&'static TypeLayoutInfo<'static>, G>>();
     }
     expand_type_layout_graph::<
         A,
-        private::Cons<TypeLayoutInfo<'static>, G>,
+        private::Cons<&'static TypeLayoutInfo<'static>, G>,
         <<T::TypeGraphEdges as private::TypeHList>::Concat<S> as private::TypeHList>::Head,
         <<T::TypeGraphEdges as private::TypeHList>::Concat<S> as private::TypeHList>::Tail,
     >(Some(&Node {
@@ -132,7 +132,7 @@ const fn expand_type_layout_graph<
 }
 
 struct Node<'a> {
-    ty: TypeLayoutInfo<'static>,
+    ty: &'static TypeLayoutInfo<'static>,
     next: Option<&'a Self>,
 }
 

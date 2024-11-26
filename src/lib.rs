@@ -355,7 +355,8 @@ pub struct TypeLayoutGraph<
     F: Deref<Target = [Field<'a>]> = &'a [Field<'a>],
     D: Deref<Target = [u8]> = &'a [u8],
     V: Deref<Target = [Variant<'a, F, D>]> = &'a [Variant<'a, F, D>],
-    G: Deref<Target = [TypeLayoutInfo<'a, F, D, V>]> = &'a [TypeLayoutInfo<'a, F, D, V>],
+    I: Deref<Target = TypeLayoutInfo<'a, F, D, V>> = &'a TypeLayoutInfo<'a, F, D, V>,
+    G: Deref<Target = [I]> = &'a [I],
 > {
     /// The type's fully-qualified name.
     #[cfg_attr(feature = "serde", serde(borrow))]
@@ -535,8 +536,9 @@ impl<
         F: Deref<Target = [Field<'a>]> + fmt::Debug,
         D: Deref<Target = [u8]> + fmt::Debug,
         V: Deref<Target = [Variant<'a, F, D>]> + fmt::Debug,
-        G: Deref<Target = [TypeLayoutInfo<'a, F, D, V>]> + fmt::Debug,
-    > fmt::Debug for TypeLayoutGraph<'a, F, D, V, G>
+        I: Deref<Target = TypeLayoutInfo<'a, F, D, V>> + fmt::Debug,
+        G: Deref<Target = [I]> + fmt::Debug,
+    > fmt::Debug for TypeLayoutGraph<'a, F, D, V, I, G>
 {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         fmt.write_fmt(format_args!("TypeLayoutGraph<{}>({:?})", self.ty, self.tys))
