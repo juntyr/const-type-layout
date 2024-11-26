@@ -1,9 +1,8 @@
-use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeHList},
-    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
-};
+use crate::{graph::hlist, Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure};
 
 unsafe impl<T: TypeLayout + core::ops::Deref> TypeLayout for core::pin::Pin<T> {
+    type TypeGraphEdges = hlist![T];
+
     const INHABITED: crate::MaybeUninhabited = T::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -18,8 +17,4 @@ unsafe impl<T: TypeLayout + core::ops::Deref> TypeLayout for core::pin::Pin<T> {
             }],
         },
     };
-}
-
-unsafe impl<T: ComputeTypeSet + core::ops::Deref> ComputeTypeSet for core::pin::Pin<T> {
-    type Output<R: ExpandTypeHList> = tset![T, .. @ R];
 }

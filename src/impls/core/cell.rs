@@ -1,9 +1,8 @@
-use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeHList},
-    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
-};
+use crate::{graph::hlist, Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure};
 
 unsafe impl<T: TypeLayout> TypeLayout for core::cell::UnsafeCell<T> {
+    type TypeGraphEdges = hlist![T];
+
     const INHABITED: crate::MaybeUninhabited = T::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -20,11 +19,9 @@ unsafe impl<T: TypeLayout> TypeLayout for core::cell::UnsafeCell<T> {
     };
 }
 
-unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::cell::UnsafeCell<T> {
-    type Output<R: ExpandTypeHList> = tset![T, .. @ R];
-}
-
 unsafe impl<T: TypeLayout> TypeLayout for core::cell::Cell<T> {
+    type TypeGraphEdges = hlist![core::cell::UnsafeCell<T>];
+
     const INHABITED: crate::MaybeUninhabited = T::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -39,14 +36,12 @@ unsafe impl<T: TypeLayout> TypeLayout for core::cell::Cell<T> {
             }],
         },
     };
-}
-
-unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::cell::Cell<T> {
-    type Output<R: ExpandTypeHList> = tset![core::cell::UnsafeCell<T>, .. @ R];
 }
 
 #[cfg(feature = "impl-sync-unsafe-cell")]
 unsafe impl<T: TypeLayout> TypeLayout for core::cell::SyncUnsafeCell<T> {
+    type TypeGraphEdges = hlist![core::cell::UnsafeCell<T>];
+
     const INHABITED: crate::MaybeUninhabited = T::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -63,12 +58,9 @@ unsafe impl<T: TypeLayout> TypeLayout for core::cell::SyncUnsafeCell<T> {
     };
 }
 
-#[cfg(feature = "impl-sync-unsafe-cell")]
-unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::cell::SyncUnsafeCell<T> {
-    type Output<R: ExpandTypeHList> = tset![core::cell::UnsafeCell<T>, .. @ R];
-}
-
 unsafe impl<T: TypeLayout> TypeLayout for core::cell::OnceCell<T> {
+    type TypeGraphEdges = hlist![core::cell::UnsafeCell<core::option::Option<T>>];
+
     const INHABITED: crate::MaybeUninhabited = T::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -83,9 +75,4 @@ unsafe impl<T: TypeLayout> TypeLayout for core::cell::OnceCell<T> {
             }],
         },
     };
-}
-
-unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::cell::OnceCell<T> {
-    type Output<R: ExpandTypeHList> =
-        tset![core::cell::UnsafeCell<core::option::Option<T>>, .. @ R];
 }

@@ -1,9 +1,10 @@
 use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeHList},
-    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure, Variant,
+    graph::hlist, Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure, Variant,
 };
 
 unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::Range<Idx> {
+    type TypeGraphEdges = hlist![Idx];
+
     const INHABITED: crate::MaybeUninhabited = Idx::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -27,11 +28,9 @@ unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::Range<Idx> {
     };
 }
 
-unsafe impl<Idx: ComputeTypeSet> ComputeTypeSet for core::ops::Range<Idx> {
-    type Output<R: ExpandTypeHList> = tset![Idx, .. @ R];
-}
-
 unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::RangeFrom<Idx> {
+    type TypeGraphEdges = hlist![Idx];
+
     const INHABITED: crate::MaybeUninhabited = Idx::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -48,11 +47,9 @@ unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::RangeFrom<Idx> {
     };
 }
 
-unsafe impl<Idx: ComputeTypeSet> ComputeTypeSet for core::ops::RangeFrom<Idx> {
-    type Output<R: ExpandTypeHList> = tset![Idx, .. @ R];
-}
-
 unsafe impl TypeLayout for core::ops::RangeFull {
+    type TypeGraphEdges = hlist![];
+
     const INHABITED: crate::MaybeUninhabited = crate::inhabited::all![];
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -65,11 +62,9 @@ unsafe impl TypeLayout for core::ops::RangeFull {
     };
 }
 
-unsafe impl ComputeTypeSet for core::ops::RangeFull {
-    type Output<R: ExpandTypeHList> = tset![.. @ R];
-}
-
 unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::RangeTo<Idx> {
+    type TypeGraphEdges = hlist![Idx];
+
     const INHABITED: crate::MaybeUninhabited = Idx::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -84,13 +79,11 @@ unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::RangeTo<Idx> {
             }],
         },
     };
-}
-
-unsafe impl<Idx: ComputeTypeSet> ComputeTypeSet for core::ops::RangeTo<Idx> {
-    type Output<R: ExpandTypeHList> = tset![Idx, .. @ R];
 }
 
 unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::RangeToInclusive<Idx> {
+    type TypeGraphEdges = hlist![Idx];
+
     const INHABITED: crate::MaybeUninhabited = Idx::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -107,11 +100,9 @@ unsafe impl<Idx: TypeLayout> TypeLayout for core::ops::RangeToInclusive<Idx> {
     };
 }
 
-unsafe impl<Idx: ComputeTypeSet> ComputeTypeSet for core::ops::RangeToInclusive<Idx> {
-    type Output<R: ExpandTypeHList> = tset![Idx, .. @ R];
-}
-
 unsafe impl<T: TypeLayout> TypeLayout for core::ops::Bound<T> {
+    type TypeGraphEdges = hlist![T, ::core::mem::Discriminant<Self>];
+
     const INHABITED: crate::MaybeUninhabited = crate::inhabited::all![];
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -152,13 +143,9 @@ unsafe impl<T: TypeLayout> TypeLayout for core::ops::Bound<T> {
     };
 }
 
-unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::ops::Bound<T> {
-    type Output<R: ExpandTypeHList> = tset![
-        T, ::core::mem::Discriminant<Self>, .. @ R
-    ];
-}
-
 unsafe impl<B: TypeLayout, C: TypeLayout> TypeLayout for core::ops::ControlFlow<B, C> {
+    type TypeGraphEdges = hlist![B, C, ::core::mem::Discriminant<Self>];
+
     const INHABITED: crate::MaybeUninhabited = crate::inhabited::any![B, C];
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -190,10 +177,4 @@ unsafe impl<B: TypeLayout, C: TypeLayout> TypeLayout for core::ops::ControlFlow<
             ],
         },
     };
-}
-
-unsafe impl<B: ComputeTypeSet, C: ComputeTypeSet> ComputeTypeSet for core::ops::ControlFlow<B, C> {
-    type Output<R: ExpandTypeHList> = tset![
-        B, C, ::core::mem::Discriminant<Self>, .. @ R
-    ];
 }

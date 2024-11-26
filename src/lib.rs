@@ -167,10 +167,10 @@ use core::ops::Deref;
 pub use const_type_layout_derive::TypeLayout;
 
 mod discriminant;
+pub mod graph;
 mod impls;
 pub mod inhabited;
 mod ser;
-pub mod typeset;
 
 pub use discriminant::Discriminant;
 
@@ -262,8 +262,7 @@ impl<T: Default> Default for MaybeUninhabited<T> {
 /// # use const_type_layout::{
 /// #    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
 /// # };
-/// # use const_type_layout::inhabited;
-/// # use const_type_layout::typeset::{ComputeTypeSet, ExpandTypeHList, tset};
+/// # use const_type_layout::{graph, inhabited};
 /// struct Foo {
 ///     a: u8,
 ///     b: u16,
@@ -292,11 +291,10 @@ impl<T: Default> Default for MaybeUninhabited<T> {
 ///             ],
 ///         },
 ///     };
+///
+///     type TypeGraphEdges = graph::hlist![u8, u16];
 /// }
 /// ```
-///
-/// Note that if you implement [`TypeLayout`], you should also implement
-/// [`typeset::ComputeTypeSet`] for it.
 pub unsafe trait TypeLayout: Sized {
     /// Marker for whether the type is
     /// [inhabited](https://doc.rust-lang.org/reference/glossary.html#inhabited) or
@@ -305,15 +303,18 @@ pub unsafe trait TypeLayout: Sized {
 
     /// Shallow layout of the type.
     const TYPE_LAYOUT: TypeLayoutInfo<'static>;
+
+    #[allow(missing_docs)] // FIXME
+    type TypeGraphEdges: graph::TypeHList;
 }
 
 /// Utility trait that provides the deep layout of a type.
-pub trait TypeGraphLayout: TypeLayout + typeset::ComputeTypeSet {
+pub trait TypeGraphLayout: TypeLayout {
     /// Shallow layout of the type.
     const TYPE_GRAPH: TypeLayoutGraph<'static>;
 }
 
-impl<T: TypeLayout + typeset::ComputeTypeSet> TypeGraphLayout for T {
+impl<T: TypeLayout> TypeGraphLayout for T {
     const TYPE_GRAPH: TypeLayoutGraph<'static> = TypeLayoutGraph::new::<T>();
 }
 
@@ -463,10 +464,10 @@ pub struct Field<'a> {
 impl TypeLayoutGraph<'static> {
     #[must_use]
     /// Construct the deep type layout descriptor for a type `T`.
-    pub const fn new<T: TypeLayout + typeset::ComputeTypeSet>() -> Self {
+    pub const fn new<T: TypeLayout>() -> Self {
         Self {
             ty: <T as TypeLayout>::TYPE_LAYOUT.name,
-            tys: typeset::type_layout_graph::<T>(),
+            tys: graph::type_layout_graph::<T>(),
         }
     }
 }

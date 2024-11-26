@@ -1,9 +1,8 @@
-use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeHList},
-    TypeLayout, TypeLayoutInfo, TypeStructure,
-};
+use crate::{graph::hlist, TypeLayout, TypeLayoutInfo, TypeStructure};
 
 unsafe impl TypeLayout for core::ffi::c_void {
+    type TypeGraphEdges = hlist![];
+
     const INHABITED: crate::MaybeUninhabited = crate::inhabited::all![];
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -14,8 +13,4 @@ unsafe impl TypeLayout for core::ffi::c_void {
             variants: &[],
         },
     };
-}
-
-unsafe impl ComputeTypeSet for core::ffi::c_void {
-    type Output<T: ExpandTypeHList> = tset![.. @ T];
 }

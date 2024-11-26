@@ -1,9 +1,8 @@
-use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeHList},
-    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
-};
+use crate::{graph::hlist, Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure};
 
 unsafe impl<T: TypeLayout> TypeLayout for core::mem::ManuallyDrop<T> {
+    type TypeGraphEdges = hlist![T];
+
     const INHABITED: crate::MaybeUninhabited = T::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -20,11 +19,9 @@ unsafe impl<T: TypeLayout> TypeLayout for core::mem::ManuallyDrop<T> {
     };
 }
 
-unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::mem::ManuallyDrop<T> {
-    type Output<R: ExpandTypeHList> = tset![T, .. @ R];
-}
-
 unsafe impl<T: TypeLayout> TypeLayout for core::mem::MaybeUninit<T> {
+    type TypeGraphEdges = hlist![(), core::mem::ManuallyDrop<T>];
+
     const INHABITED: crate::MaybeUninhabited = crate::inhabited::all![];
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -48,11 +45,9 @@ unsafe impl<T: TypeLayout> TypeLayout for core::mem::MaybeUninit<T> {
     };
 }
 
-unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::mem::MaybeUninit<T> {
-    type Output<R: ExpandTypeHList> = tset![(), core::mem::ManuallyDrop<T>, .. @ R];
-}
-
 unsafe impl<T> TypeLayout for core::mem::Discriminant<T> {
+    type TypeGraphEdges = hlist![];
+
     const INHABITED: crate::MaybeUninhabited = crate::inhabited::all![];
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -60,8 +55,4 @@ unsafe impl<T> TypeLayout for core::mem::Discriminant<T> {
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Primitive,
     };
-}
-
-unsafe impl<T> ComputeTypeSet for core::mem::Discriminant<T> {
-    type Output<R: ExpandTypeHList> = tset![.. @ R];
 }
