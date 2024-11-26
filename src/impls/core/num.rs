@@ -1,7 +1,4 @@
-use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
-    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
-};
+use crate::{graph::hlist, Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure};
 
 macro_rules! impl_nonzero_type_layout {
     (impl $nz:ident => $ty:ty) => {
@@ -23,10 +20,8 @@ macro_rules! impl_nonzero_type_layout {
                     ],
                 },
             };
-        }
 
-        unsafe impl ComputeTypeSet for core::num::$nz {
-            type Output<T: ExpandTypeSet> = tset![$ty, .. @ T];
+            type TypeGraphEdges = hlist![$ty];
         }
     };
     ($($nz:ident => $ty:ty),*) => {
@@ -42,6 +37,8 @@ impl_nonzero_type_layout! {
 }
 
 unsafe impl<T: TypeLayout> TypeLayout for core::num::Wrapping<T> {
+    type TypeGraphEdges = hlist![T];
+
     const INHABITED: crate::MaybeUninhabited = T::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -56,13 +53,11 @@ unsafe impl<T: TypeLayout> TypeLayout for core::num::Wrapping<T> {
             }],
         },
     };
-}
-
-unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::num::Wrapping<T> {
-    type Output<R: ExpandTypeSet> = tset![T, .. @ R];
 }
 
 unsafe impl<T: TypeLayout> TypeLayout for core::num::Saturating<T> {
+    type TypeGraphEdges = hlist![T];
+
     const INHABITED: crate::MaybeUninhabited = T::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -77,8 +72,4 @@ unsafe impl<T: TypeLayout> TypeLayout for core::num::Saturating<T> {
             }],
         },
     };
-}
-
-unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::num::Saturating<T> {
-    type Output<R: ExpandTypeSet> = tset![T, .. @ R];
 }

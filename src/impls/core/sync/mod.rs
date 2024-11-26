@@ -1,14 +1,13 @@
 #[cfg(feature = "impl-sync-exclusive")]
-use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
-    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
-};
+use crate::{graph::hlist, Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure};
 
 #[cfg(feature = "impl-atomics")]
 mod atomic;
 
 #[cfg(feature = "impl-sync-exclusive")]
 unsafe impl<T: TypeLayout> TypeLayout for core::sync::Exclusive<T> {
+    type TypeGraphEdges = hlist![T];
+
     const INHABITED: crate::MaybeUninhabited = T::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -23,9 +22,4 @@ unsafe impl<T: TypeLayout> TypeLayout for core::sync::Exclusive<T> {
             }],
         },
     };
-}
-
-#[cfg(feature = "impl-sync-exclusive")]
-unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::sync::Exclusive<T> {
-    type Output<R: ExpandTypeSet> = tset![T, .. @ R];
 }

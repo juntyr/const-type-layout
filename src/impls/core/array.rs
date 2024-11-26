@@ -1,9 +1,8 @@
-use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
-    TypeLayout, TypeLayoutInfo, TypeStructure,
-};
+use crate::{graph::hlist, TypeLayout, TypeLayoutInfo, TypeStructure};
 
 unsafe impl<T: TypeLayout, const N: usize> TypeLayout for [T; N] {
+    type TypeGraphEdges = hlist![T];
+
     const INHABITED: crate::MaybeUninhabited = T::INHABITED;
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -11,8 +10,4 @@ unsafe impl<T: TypeLayout, const N: usize> TypeLayout for [T; N] {
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Primitive,
     };
-}
-
-unsafe impl<T: ComputeTypeSet, const N: usize> ComputeTypeSet for [T; N] {
-    type Output<R: ExpandTypeSet> = tset![T, .. @ R];
 }

@@ -78,22 +78,18 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
     let inhabited = inhabited_for_type(&crate_path, &input.data);
     let layout = layout_of_type(&crate_path, &ty_name, &ty_generics, &input.data, &reprs);
 
-    let inner_types = extract_inner_types(&input.data);
+    let mut inner_types = extract_inner_types(&input.data);
 
-    let discriminant_ty = if let syn::Data::Enum(_) = input.data {
-        Some(quote! { ::core::mem::Discriminant<Self>, })
-    } else {
-        None
-    };
+    let discriminant_ty: syn::Type;
+    if let syn::Data::Enum(_) = input.data {
+        discriminant_ty = syn::parse_quote! { ::core::mem::Discriminant<Self> };
+        inner_types.push(&discriminant_ty);
+    }
 
-    let Generics {
-        type_layout_input_generics,
-        type_set_input_generics,
-    } = generate_generics(&crate_path, &input.generics, &extra_bounds, &type_params);
+    let type_layout_input_generics =
+        generate_generics(&crate_path, &input.generics, &extra_bounds, &type_params);
     let (type_layout_impl_generics, type_layout_ty_generics, type_layout_where_clause) =
         type_layout_input_generics.split_for_impl();
-    let (type_set_impl_generics, type_set_ty_generics, type_set_where_clause) =
-        type_set_input_generics.split_for_impl();
 
     quote! {
         unsafe impl #type_layout_impl_generics #crate_path::TypeLayout for
@@ -109,15 +105,8 @@ pub fn derive_type_layout(input: TokenStream) -> TokenStream {
                     structure: #layout,
                 }
             };
-        }
 
-        unsafe impl #type_set_impl_generics #crate_path::typeset::ComputeTypeSet for
-            #ty_name #type_set_ty_generics #type_set_where_clause
-        {
-            type Output<__TypeSetRest: #crate_path::typeset::ExpandTypeSet> =
-                #crate_path::typeset::tset![
-                    #(#inner_types,)* #discriminant_ty .. @ __TypeSetRest
-                ];
+            type TypeGraphEdges = #crate_path::graph::hlist![#(#inner_types),*];
         }
     }
     .into()
@@ -308,19 +297,13 @@ fn extract_inner_types(data: &syn::Data) -> Vec<&syn::Type> {
     inner_types
 }
 
-struct Generics {
-    type_layout_input_generics: syn::Generics,
-    type_set_input_generics: syn::Generics,
-}
-
 fn generate_generics(
     crate_path: &syn::Path,
     generics: &syn::Generics,
     extra_bounds: &[syn::WherePredicate],
     type_params: &[&syn::Ident],
-) -> Generics {
+) -> syn::Generics {
     let mut type_layout_input_generics = generics.clone();
-    let mut type_set_input_generics = generics.clone();
 
     for ty in type_params {
         type_layout_input_generics
@@ -329,13 +312,6 @@ fn generate_generics(
             .push(syn::parse_quote! {
                 #ty: #crate_path::TypeLayout
             });
-
-        type_set_input_generics
-            .make_where_clause()
-            .predicates
-            .push(syn::parse_quote! {
-                #ty: #crate_path::typeset::ComputeTypeSet
-            });
     }
 
     for bound in extra_bounds {
@@ -343,17 +319,9 @@ fn generate_generics(
             .make_where_clause()
             .predicates
             .push(bound.clone());
-
-        type_set_input_generics
-            .make_where_clause()
-            .predicates
-            .push(bound.clone());
     }
 
-    Generics {
-        type_layout_input_generics,
-        type_set_input_generics,
-    }
+    type_layout_input_generics
 }
 
 fn layout_of_type(

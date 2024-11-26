@@ -1,7 +1,4 @@
-use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
-    TypeLayout, TypeLayoutInfo, TypeStructure,
-};
+use crate::{graph::hlist, TypeLayout, TypeLayoutInfo, TypeStructure};
 
 macro_rules! impl_fn_pointer_type_layout {
     (impl extern $abi:literal fn($($T:ident),*) -> $R:ident) => {
@@ -28,10 +25,8 @@ macro_rules! impl_fn_pointer_type_layout {
                 alignment: ::core::mem::align_of::<Self>(),
                 structure: TypeStructure::Primitive,
             };
-        }
 
-        unsafe impl<$R: ComputeTypeSet, $($T: ComputeTypeSet),*> ComputeTypeSet for $ty {
-            type Output<Z: ExpandTypeSet> = tset![$R $(, $T)*, .. @ Z];
+            type TypeGraphEdges = hlist![$R $(, $T)*];
         }
     };
     ($(fn($($T:ident),*) -> $R:ident),*) => {
@@ -71,12 +66,8 @@ macro_rules! impl_variadic_extern_fn_pointer_type_layout {
                 alignment: ::core::mem::align_of::<Self>(),
                 structure: TypeStructure::Primitive,
             };
-        }
 
-        unsafe impl<$R: ComputeTypeSet, $($T: ComputeTypeSet),*> ComputeTypeSet
-            for unsafe extern $abi fn($($T),*, ...) -> $R
-        {
-            type Output<Z: ExpandTypeSet> = tset![$R $(, $T)*, .. @ Z];
+            type TypeGraphEdges = hlist![$R $(, $T)*];
         }
     };
     ($(unsafe extern "C" fn($($T:ident),+, ...) -> $R:ident),*) => {

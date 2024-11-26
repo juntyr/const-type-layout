@@ -1,9 +1,8 @@
-use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
-    TypeLayout, TypeLayoutInfo, TypeStructure,
-};
+use crate::{graph::hlist, TypeLayout, TypeLayoutInfo, TypeStructure};
 
 unsafe impl<T> TypeLayout for core::marker::PhantomData<T> {
+    type TypeGraphEdges = hlist![];
+
     const INHABITED: crate::MaybeUninhabited = crate::inhabited::all![];
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -14,13 +13,11 @@ unsafe impl<T> TypeLayout for core::marker::PhantomData<T> {
             fields: &[],
         },
     };
-}
-
-unsafe impl<T> ComputeTypeSet for core::marker::PhantomData<T> {
-    type Output<R: ExpandTypeSet> = tset![.. @ R];
 }
 
 unsafe impl TypeLayout for core::marker::PhantomPinned {
+    type TypeGraphEdges = hlist![];
+
     const INHABITED: crate::MaybeUninhabited = crate::inhabited::all![];
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -31,8 +28,4 @@ unsafe impl TypeLayout for core::marker::PhantomPinned {
             fields: &[],
         },
     };
-}
-
-unsafe impl ComputeTypeSet for core::marker::PhantomPinned {
-    type Output<T: ExpandTypeSet> = tset![.. @ T];
 }

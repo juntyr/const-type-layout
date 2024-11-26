@@ -1,9 +1,8 @@
-use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
-    TypeLayout, TypeLayoutInfo, TypeStructure,
-};
+use crate::{graph::hlist, TypeLayout, TypeLayoutInfo, TypeStructure};
 
 unsafe impl TypeLayout for core::convert::Infallible {
+    type TypeGraphEdges = hlist![];
+
     const INHABITED: crate::MaybeUninhabited = crate::inhabited::any![];
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -14,8 +13,4 @@ unsafe impl TypeLayout for core::convert::Infallible {
             variants: &[],
         },
     };
-}
-
-unsafe impl ComputeTypeSet for core::convert::Infallible {
-    type Output<T: ExpandTypeSet> = tset![.. @ T];
 }

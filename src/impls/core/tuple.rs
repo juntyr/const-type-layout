@@ -1,7 +1,4 @@
-use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
-    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure,
-};
+use crate::{graph::hlist, Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure};
 
 macro_rules! impl_tuple_type_layout {
     (impl ($($a:tt => $T:ident),+)) => {
@@ -22,10 +19,8 @@ macro_rules! impl_tuple_type_layout {
                     }),*],
                 },
             };
-        }
 
-        unsafe impl<$($T: ComputeTypeSet),*> ComputeTypeSet for ($($T,)*) {
-            type Output<T: ExpandTypeSet> = tset![$($T),*, .. @ T];
+            type TypeGraphEdges = hlist![$($T),*];
         }
     };
     ($(($($a:tt => $T:ident),+)),*) => {

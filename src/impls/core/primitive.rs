@@ -1,7 +1,4 @@
-use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
-    TypeLayout, TypeLayoutInfo, TypeStructure,
-};
+use crate::{graph::hlist, TypeLayout, TypeLayoutInfo, TypeStructure};
 
 macro_rules! impl_primitive_type_layout {
     (impl $ty:ty => $val:expr) => {
@@ -14,10 +11,8 @@ macro_rules! impl_primitive_type_layout {
                 alignment: ::core::mem::align_of::<Self>(),
                 structure: TypeStructure::Primitive,
             };
-        }
 
-        unsafe impl ComputeTypeSet for $ty {
-            type Output<T: ExpandTypeSet> = tset![.. @ T];
+            type TypeGraphEdges = hlist![];
         }
     };
     ($($ty:ty => $val:expr),*) => {
@@ -34,6 +29,8 @@ impl_primitive_type_layout! {
 
 #[cfg(feature = "impl-never")]
 unsafe impl TypeLayout for ! {
+    type TypeGraphEdges = hlist![];
+
     const INHABITED: crate::MaybeUninhabited = crate::inhabited::any![];
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -41,9 +38,4 @@ unsafe impl TypeLayout for ! {
         alignment: ::core::mem::align_of::<Self>(),
         structure: TypeStructure::Primitive,
     };
-}
-
-#[cfg(feature = "impl-never")]
-unsafe impl ComputeTypeSet for ! {
-    type Output<T: ExpandTypeSet> = tset![.. @ T];
 }

@@ -1,9 +1,10 @@
 use crate::{
-    typeset::{tset, ComputeTypeSet, ExpandTypeSet},
-    Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure, Variant,
+    graph::hlist, Field, MaybeUninhabited, TypeLayout, TypeLayoutInfo, TypeStructure, Variant,
 };
 
 unsafe impl<T: TypeLayout> TypeLayout for core::option::Option<T> {
+    type TypeGraphEdges = hlist![T, ::core::mem::Discriminant<Self>];
+
     const INHABITED: crate::MaybeUninhabited = crate::inhabited::all![];
     const TYPE_LAYOUT: TypeLayoutInfo<'static> = TypeLayoutInfo {
         name: ::core::any::type_name::<Self>(),
@@ -29,10 +30,4 @@ unsafe impl<T: TypeLayout> TypeLayout for core::option::Option<T> {
             ],
         },
     };
-}
-
-unsafe impl<T: ComputeTypeSet> ComputeTypeSet for core::option::Option<T> {
-    type Output<R: ExpandTypeSet> = tset![
-        T, ::core::mem::Discriminant<Self>, .. @ R
-    ];
 }
